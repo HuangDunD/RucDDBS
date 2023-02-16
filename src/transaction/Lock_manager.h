@@ -96,7 +96,7 @@ public:
         int shared_lock_num_ = 0;
         // the number of IX locks
         int IX_lock_num_ = 0;
-        
+
     };
 
 
@@ -118,6 +118,8 @@ public:
     auto UnLockRow(Transaction *txn,  const table_oid_t &oid, const partition_id_t &p_id, const row_id_t &row_id) -> bool;
 
     auto Unlock(Transaction *txn, const Lock_data_id &l_id ) -> bool;
+
+    auto isLockCompatible(const LockRequest *lock_request, const LockMode &target_lock_mode) -> bool;
 
 private:
     std::mutex latch_;  // 锁表的互斥锁，用于锁表的互斥访问
