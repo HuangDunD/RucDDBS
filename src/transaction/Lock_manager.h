@@ -1,10 +1,11 @@
 #pragma once
 
-#include <mutex>
 #include "Transaction.h"
+#include <mutex>
 #include <condition_variable>  // NOLINT
 #include <list>
 #include <cassert>
+#include <unordered_map>
 
 using table_oid_t = int32_t;
 using row_id_t = int32_t;
@@ -58,7 +59,7 @@ struct std::hash<Lock_data_id>
 {
     size_t operator() (const Lock_data_id& lock_data) const noexcept
     {
-        return hash<size_t>()(lock_data.Get());
+        return hash<size_t>() (lock_data.Get());
     }
 }; // 间接调用原生Hash.
 
@@ -80,7 +81,7 @@ public:
 
     class LockRequestQueue {
     public:
-        /** List of lock requests for the same resource (table or row) */
+        /** List of lock requests for the same resource (table, partition or row) */
         std::list<LockRequest *> request_queue_;
         /** For notifying blocked transactions on this rid */
         std::condition_variable cv_;
@@ -95,6 +96,7 @@ public:
         int shared_lock_num_ = 0;
         // the number of IX locks
         int IX_lock_num_ = 0;
+        
     };
 
 
@@ -107,17 +109,20 @@ public:
 
     auto UnLockTable(Transaction *txn, const table_oid_t &oid) -> bool;
 
-    auto LockPartition(Transaction *txn, const table_oid_t &oid, const partition_id_t &p_id) -> bool;
+    auto LockPartition(Transaction *txn, LockMode lock_mode, const table_oid_t &oid, const partition_id_t &p_id) -> bool;
 
-    auto UnLockPartition(Transaction *txn, const table_oid_t &oid) -> bool;
+    auto UnLockPartition(Transaction *txn, const table_oid_t &oid, const partition_id_t &p_id) -> bool;
 
-    auto LockRow(Transaction *txn, LockMode lock_mode, const table_oid_t &oid, const row_id_t &row_id) -> bool;
+    auto LockRow(Transaction *txn, LockMode lock_mode, const table_oid_t &oid, const partition_id_t &p_id, const row_id_t &row_id) -> bool;
 
-    auto UnLockRow(Transaction *txn,  const table_oid_t &oid, const row_id_t &row_id) -> bool;
+    auto UnLockRow(Transaction *txn,  const table_oid_t &oid, const partition_id_t &p_id, const row_id_t &row_id) -> bool;
 
+    auto Unlock(Transaction *txn, const Lock_data_id &l_id ) -> bool;
 
 private:
-    std::mutex table_lock_latch_;  // 表锁表的互斥锁，用于表锁表的互斥访问
-    std::mutex partition_lock_latch_;  // 分区锁表的互斥锁，用于表锁表的互斥访问
-    std::mutex row_lock_latch_;  // 行锁表的互斥锁，用于表锁表的互斥访问
+    std::mutex latch_;  // 锁表的互斥锁，用于锁表的互斥访问
+    std::unordered_map<Lock_data_id, LockRequestQueue> lock_map_;  //可上锁的数据(表,分区,行)数据与锁请求队列的对应关系
+
+    // std::mutex partition_lock_latch_;  // 分区锁表的互斥锁，用于表锁表的互斥访问
+    // std::mutex row_lock_latch_;  // 行锁表的互斥锁，用于表锁表的互斥访问
 };
