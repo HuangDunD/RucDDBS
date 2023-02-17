@@ -2,8 +2,8 @@
 #include "Lock_manager.h"
 
 //NOTE:
-auto Lock_manager::isLockCompatible(const Lock_manager::LockRequest *iter, const Lock_manager::LockMode &target_lock_mode) -> bool {
-     switch (target_lock_mode) {
+auto Lock_manager::isLockCompatible(const LockRequest *iter, const LockMode &target_lock_mode) -> bool {
+        switch (target_lock_mode) {
             case LockMode::INTENTION_SHARED:
                 if(iter->lock_mode_ == LockMode::EXLUCSIVE){
                     return false;
@@ -29,7 +29,7 @@ auto Lock_manager::isLockCompatible(const Lock_manager::LockRequest *iter, const
             default:
                 return false;
             }
-      return true;
+        return true;
             // if(iter->lock_mode_==LockMode::INTENTION_SHARED && target_lock_mode == LockMode::EXLUCSIVE) return false;
             // if(iter->lock_mode_==LockMode::INTENTION_EXCLUSIVE && target_lock_mode == LockMode::SHARED) return false;
             // if(iter->lock_mode_==LockMode::INTENTION_EXCLUSIVE && target_lock_mode == LockMode::S_IX) return false;
@@ -39,6 +39,37 @@ auto Lock_manager::isLockCompatible(const Lock_manager::LockRequest *iter, const
             // if(iter->lock_mode_==LockMode::SHARED && target_lock_mode == LockMode::EXLUCSIVE) return false;
             // if(iter->lock_mode_==LockMode::S_IX && target_lock_mode != LockMode::INTENTION_SHARED) return false;
             // if(iter->lock_mode_==LockMode::EXLUCSIVE) return false;
+}
+
+auto Lock_manager::isUpdateCompatible(const LockRequest *iter, const LockMode &upgrade_lock_mode) -> bool {
+    switch (iter->lock_mode_) {
+            case LockMode::INTENTION_SHARED:
+                if(upgrade_lock_mode == LockMode::INTENTION_SHARED){
+                    return false;
+                }
+                break;
+            case LockMode::SHARED:
+                if(upgrade_lock_mode != LockMode::EXLUCSIVE && upgrade_lock_mode != LockMode::S_IX){
+                    return false;
+                }
+                break;
+            case LockMode::INTENTION_EXCLUSIVE:
+                if(upgrade_lock_mode != LockMode::EXLUCSIVE && upgrade_lock_mode != LockMode::S_IX){
+                    return false;
+                }
+                break;
+            case LockMode::S_IX:
+                if(upgrade_lock_mode != LockMode::EXLUCSIVE){
+                    return false;
+                }
+                break;
+            case LockMode::EXLUCSIVE:
+                return false;
+                break;
+            default:
+                return false;
+            }
+        return true;
 }
 
 auto Lock_manager::LockTable(Transaction *txn, LockMode lock_mode, const table_oid_t &oid) -> bool {
@@ -60,19 +91,32 @@ auto Lock_manager::LockTable(Transaction *txn, LockMode lock_mode, const table_o
     std::unique_lock<std::mutex> queue_lock(request_queue->latch_);
     Latch.unlock();
 
-    // checkCompatible() 检查是否兼容
-    //步骤四: 查找当前事务是否已经申请了目标数据项上的锁，如果存在则根据锁类型进行操作，否则执行下一步操作
+    //步骤四: 
+    //查找当前事务是否已经申请了目标数据项上的锁，
+    //如果存在,并且申请锁模式相同,返回申请成功
+    //如果存在,但任何之一的模式斗鱼则检查该队列是否允许锁升级
+    //并检查升级是否兼容，如果该目标没有执行下一步操作
     auto target_lock_mode = lock_mode;
     for(auto &iter : request_queue->request_queue_){
-        if(iter->granted_ && iter->txn_id_ == txn->get_txn_id() ){
-            
+        if( iter->txn_id_ == txn->get_txn_id() ){
+            //如果当前事务已经/正在申请锁
+            if(iter->lock_mode_ == target_lock_mode) 
+            if(request_queue->upgrading_ == true){
+                throw TransactionAbortException (txn->get_txn_id(), AbortReason::UPGRADE_CONFLICT);
+                return false;
+            }
+            if(Lock_manager::isUpdateCompatible(iter, lock_mode) == true){
+                request_queue->upgrading_ = true;    
+            }else{
+                throw TransactionAbortException (txn->get_txn_id(), AbortReason::INCOMPATIBLE_UPGRADE);
+            }
         }
 
         if(iter->granted_ && iter->txn_id_ != txn->get_txn_id() ){
-           
+            if(Lock_manager::isLockCompatible(iter, lock_mode) != true){
+                throw TransactionAbortException (txn->get_txn_id(), AbortReason::);
+            }
         }
-
-
 
     }
 
