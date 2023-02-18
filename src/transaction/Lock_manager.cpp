@@ -94,12 +94,16 @@ auto Lock_manager::LockTable(Transaction *txn, LockMode lock_mode, const table_o
     //步骤四: 
     //查找当前事务是否已经申请了目标数据项上的锁，
     //如果存在,并且申请锁模式相同,返回申请成功
-    //如果存在,但任何之一的模式斗鱼则检查该队列是否允许锁升级
+    //如果存在,但任何之一的模式相同则检查该队列是否允许锁升级
     //并检查升级是否兼容，如果该目标没有执行下一步操作
     auto target_lock_mode = lock_mode;
+    if(txn->get_lock_set()->count(l_id)==1){
+        //已经获取锁, 上锁成功
+        return true;
+    }
     for(auto &iter : request_queue->request_queue_){
         if( iter->txn_id_ == txn->get_txn_id() ){
-            //如果当前事务已经/正在申请锁
+            //如果当前事务正在申请锁
             if(iter->lock_mode_ == target_lock_mode) 
             if(request_queue->upgrading_ == true){
                 throw TransactionAbortException (txn->get_txn_id(), AbortReason::UPGRADE_CONFLICT);
@@ -114,7 +118,7 @@ auto Lock_manager::LockTable(Transaction *txn, LockMode lock_mode, const table_o
 
         if(iter->granted_ && iter->txn_id_ != txn->get_txn_id() ){
             if(Lock_manager::isLockCompatible(iter, lock_mode) != true){
-                throw TransactionAbortException (txn->get_txn_id(), AbortReason::);
+                throw TransactionAbortException (txn->get_txn_id(), AbortReason::ATTEMPTED_INTENTION_LOCK_ON_ROW);
             }
         }
 

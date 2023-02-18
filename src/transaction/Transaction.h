@@ -1,7 +1,10 @@
 #pragma once
 
+#include "txn.h"
 #include <cstdint>
 #include <unordered_set>
+#include <memory>
+#include <utility> 
 
 enum class TransactionState { DEFAULT, GROWING, SHRINKING, COMMITTED, ABORTED };
 enum class IsolationLevel { READ_UNCOMMITTED, REPEATABLE_READ, READ_COMMITTED, SERIALIZABLE };
@@ -67,7 +70,7 @@ private:
     txn_id_t txn_id;
     TransactionState state_;
     IsolationLevel isolation_ ;
-    std::shared_ptr<std::unordered_set<std::pair<Lock_data_id,Lock_manager::LockMode>>> lock_set_;  
+    std::shared_ptr<std::unordered_set<Lock_data_id>> lock_set_;  
 
 public:
 
@@ -81,6 +84,7 @@ public:
 
     inline IsolationLevel get_isolation() const {return isolation_;}
 
+    inline std::shared_ptr<std::unordered_set<Lock_data_id>> get_lock_set() {return lock_set_;} 
 
     Transaction(){};
     ~Transaction(){};
