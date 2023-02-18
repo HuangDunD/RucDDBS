@@ -43,33 +43,37 @@ auto Lock_manager::isLockCompatible(const LockRequest *iter, const LockMode &tar
 
 auto Lock_manager::isUpdateCompatible(const LockRequest *iter, const LockMode &upgrade_lock_mode) -> bool {
     switch (iter->lock_mode_) {
-            case LockMode::INTENTION_SHARED:
-                if(upgrade_lock_mode == LockMode::INTENTION_SHARED){
-                    return false;
-                }
-                break;
-            case LockMode::SHARED:
-                if(upgrade_lock_mode != LockMode::EXLUCSIVE && upgrade_lock_mode != LockMode::S_IX){
-                    return false;
-                }
-                break;
-            case LockMode::INTENTION_EXCLUSIVE:
-                if(upgrade_lock_mode != LockMode::EXLUCSIVE && upgrade_lock_mode != LockMode::S_IX){
-                    return false;
-                }
-                break;
-            case LockMode::S_IX:
-                if(upgrade_lock_mode != LockMode::EXLUCSIVE){
-                    return false;
-                }
-                break;
-            case LockMode::EXLUCSIVE:
-                return false;
-                break;
-            default:
+        case LockMode::INTENTION_SHARED:
+            if(upgrade_lock_mode == LockMode::INTENTION_SHARED){
                 return false;
             }
-        return true;
+            break;
+        case LockMode::SHARED:
+            if(upgrade_lock_mode != LockMode::EXLUCSIVE && upgrade_lock_mode != LockMode::S_IX){
+                return false;
+            }
+            break;
+        case LockMode::INTENTION_EXCLUSIVE:
+            if(upgrade_lock_mode != LockMode::EXLUCSIVE && upgrade_lock_mode != LockMode::S_IX){
+                return false;
+            }
+            break;
+        case LockMode::S_IX:
+            if(upgrade_lock_mode != LockMode::EXLUCSIVE){
+                return false;
+            }
+            break;
+        case LockMode::EXLUCSIVE:
+            return false;
+            break;
+        default:
+            return false;
+        }
+    return true;
+}
+
+auto Lock_manager::checkQueueCompatible(const LockRequestQueue *request_queue, const LockRequest &request) -> bool {
+
 }
 
 auto Lock_manager::LockTable(Transaction *txn, LockMode lock_mode, const table_oid_t &oid) -> bool {
@@ -93,19 +97,24 @@ auto Lock_manager::LockTable(Transaction *txn, LockMode lock_mode, const table_o
 
     //步骤四: 
     //查找当前事务是否已经申请了目标数据项上的锁，
-    //如果存在,并且申请锁模式相同,返回申请成功
-    //如果存在,但任何之一的模式相同则检查该队列是否允许锁升级
-    //并检查升级是否兼容，如果该目标没有执行下一步操作
+    //如果存在, 并且申请锁模式相同,返回申请成功
+    //如果存在, 但没有任何请求的模式与之相同, 则准备升级, 并检查升级是否兼容
     auto target_lock_mode = lock_mode;
-    if(txn->get_lock_set()->count(l_id)==1){
-        //已经获取锁, 上锁成功
-        return true;
-    }
     for(auto &iter : request_queue->request_queue_){
         if( iter->txn_id_ == txn->get_txn_id() ){
-            //如果当前事务正在申请锁
-            if(iter->lock_mode_ == target_lock_mode) 
-            if(request_queue->upgrading_ == true){
+            //如果当前事务正在或已经申请同等模式的锁
+            if(iter->lock_mode_ == target_lock_mode && iter->granted_ == true){
+                // 已经获取锁, 上锁成功
+                return true; 
+            }
+            else if(iter->lock_mode_ == target_lock_mode && iter->granted_ == false){
+                //正在申请锁, 等待这个请求申请成功后返回
+                request_queue->cv_.wait(queue_lock, [&request_queue, &iter, &txn]{
+                    return Lock_manager::checkQueueCompatible(request_queue, *iter) || 
+                        txn->get_state()==TransactionState::ABORTED;
+                });
+            }
+            else if(request_queue->upgrading_ == true){
                 throw TransactionAbortException (txn->get_txn_id(), AbortReason::UPGRADE_CONFLICT);
                 return false;
             }
@@ -115,15 +124,15 @@ auto Lock_manager::LockTable(Transaction *txn, LockMode lock_mode, const table_o
                 throw TransactionAbortException (txn->get_txn_id(), AbortReason::INCOMPATIBLE_UPGRADE);
             }
         }
-
-        if(iter->granted_ && iter->txn_id_ != txn->get_txn_id() ){
-            if(Lock_manager::isLockCompatible(iter, lock_mode) != true){
-                throw TransactionAbortException (txn->get_txn_id(), AbortReason::ATTEMPTED_INTENTION_LOCK_ON_ROW);
-            }
-        }
-
     }
 
+    LockRequest lock_request(txn->get_txn_id(), target_lock_mode);
+    request_queue->request_queue_.emplace_back(lock_request);
+
+    request_queue->cv_.wait(queue_lock, [&request_queue, &iter, &txn]{
+                    return Lock_manager::checkQueueCompatible(request_queue, *iter) || 
+                        txn->get_state()==TransactionState::ABORTED;
+                });
     return true;
 
 }

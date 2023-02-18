@@ -66,6 +66,8 @@ public:
 
     auto isUpdateCompatible(const LockRequest *lock_request, const LockMode &upgrade_lock_mode) -> bool; 
 
+    static auto checkQueueCompatible(const LockRequestQueue *request_queue, const LockRequest &request) -> bool;
+
 private:
     std::mutex latch_;  // 锁表的互斥锁，用于锁表的互斥访问
     std::unordered_map<Lock_data_id, LockRequestQueue> lock_map_;  //可上锁的数据(表,分区,行)数据与锁请求队列的对应关系
