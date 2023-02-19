@@ -10,7 +10,7 @@
 class Lock_manager
 {
 public:
-    enum class LockMode { SHARED, EXLUCSIVE, INTENTION_SHARED, INTENTION_EXCLUSIVE, S_IX };
+    //enum class LockMode { SHARED, EXLUCSIVE, INTENTION_SHARED, INTENTION_EXCLUSIVE, S_IX };
 
     class LockRequest {
     public:
@@ -65,6 +65,8 @@ public:
     auto isLockCompatible(const LockRequest *lock_request, const LockMode &target_lock_mode) -> bool;
 
     auto isUpdateCompatible(const LockRequest *lock_request, const LockMode &upgrade_lock_mode) -> bool; 
+
+    auto checkSameTxnLockRequest(Transaction *txn, LockRequestQueue *request_queue, const LockMode targrt_lock_mode) -> int;
 
     static auto checkQueueCompatible(const LockRequestQueue *request_queue, const LockRequest *request) -> bool;
 

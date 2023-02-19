@@ -9,6 +9,7 @@ using row_id_t = int32_t;
 using partition_id_t = int32_t;
 
 enum class Lock_data_type {TABLE, PARTITION, ROW};
+enum class LockMode { SHARED, EXLUCSIVE, INTENTION_SHARED, INTENTION_EXCLUSIVE, S_IX };
 
 class Lock_data_id
 {

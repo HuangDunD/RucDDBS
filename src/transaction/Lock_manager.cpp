@@ -72,6 +72,11 @@ auto Lock_manager::isUpdateCompatible(const LockRequest *iter, const LockMode &u
     return true;
 }
 
+auto Lock_manager::checkSameTxnLockRequest(Transaction *txn, LockRequestQueue *request_queue, const LockMode targrt_lock_mode) -> int
+{
+    return true;
+}
+
 auto Lock_manager::checkQueueCompatible(const LockRequestQueue *request_queue, const LockRequest *request) -> bool {
     return true;
 }
@@ -136,7 +141,7 @@ auto Lock_manager::LockTable(Transaction *txn, LockMode lock_mode, const table_o
                 request_queue->upgrading_ = false;
                 iter->granted_ = true;
                 //TODO, 加入锁集
-                txn->get_lock_set()->emplace(l_id);
+                txn->get_table_S_lock_set()->emplace(l_id);
                 return true;
             } 
         }
@@ -153,12 +158,33 @@ auto Lock_manager::LockTable(Transaction *txn, LockMode lock_mode, const table_o
                 });
     lock_request->granted_ = true;
     //TODO, 加入锁集
-    txn->get_lock_set()->emplace(l_id);
+    txn->get_table_S_lock_set()->emplace(l_id);
 
     return true;
 }
 
 auto Lock_manager::LockPartition(Transaction *txn, LockMode lock_mode, const table_oid_t &oid, const partition_id_t &p_id) -> bool {
+
+    //步骤一: 检查事务状态
+    if(txn->get_state() != TransactionState::GROWING){
+        txn->set_transaction_state(TransactionState::ABORTED);
+        throw TransactionAbortException (txn->get_txn_id(), AbortReason::LOCK_ON_SHRINKING);
+        return false;
+    }
+
+    Lock_data_id l_id(oid, p_id, Lock_data_type::PARTITION);
+    Lock_data_id parent_table_l_id(oid, p_id, Lock_data_type::TABLE);
+
+    if(lock_mode == LockMode::SHARED || lock_mode == LockMode::INTENTION_SHARED){
+        if()
+    }
+
+    //步骤三: 通过mutex申请全局锁表
+    // latch_.lock();
+    std::unique_lock<std::mutex> Latch(latch_);
+    LockRequestQueue* request_queue = &lock_map_[l_id];
+    std::unique_lock<std::mutex> queue_lock(request_queue->latch_);
+    Latch.unlock();
 
 
     return true;
@@ -166,6 +192,10 @@ auto Lock_manager::LockPartition(Transaction *txn, LockMode lock_mode, const tab
 
 auto Lock_manager::LockRow(Transaction *txn, LockMode lock_mode, const table_oid_t &oid, const partition_id_t &p_id, const row_id_t &row_id) -> bool {
 
+    if(lock_mode != LockMode::SHARED && lock_mode != LockMode::EXLUCSIVE){
+        throw TransactionAbortException(txn->get_txn_id(), AbortReason::ATTEMPTED_INTENTION_LOCK_ON_ROW);
+    }
+    
     return true;
 }
 

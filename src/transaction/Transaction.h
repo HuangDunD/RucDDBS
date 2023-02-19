@@ -34,7 +34,7 @@ class TransactionAbortException : public std::exception {
 
  public:
   explicit TransactionAbortException(txn_id_t txn_id, AbortReason abort_reason)
-      : txn_id_(txn_id), abort_reason_(abort_reason) {}
+      : txn_id_(txn_id), abort_reason_(abort_reason){}
   auto GetTransactionId() -> txn_id_t { return txn_id_; }
   auto GetAbortReason() -> AbortReason { return abort_reason_; }
   auto GetInfo() -> std::string {
@@ -64,13 +64,46 @@ class TransactionAbortException : public std::exception {
   }
 };
 
+struct pair_hash
+{
+    size_t operator() (const Lock_data_id& lock_data, const LockMode& lock_mode) const noexcept
+    {
+        return std::hash<size_t>() (lock_data.Get()) ^ std::hash<size_t>()(static_cast<std::size_t>(lock_mode));
+    }
+}; 
+
+
+struct pair_equal
+{
+    bool operator()(const std::pair<Lock_data_id, LockMode> &com1, const std::pair<Lock_data_id, LockMode> &com2) const noexcept
+    {
+      return com1.first == com2.first && com1.second == com2.second;
+    }
+};
+
 class Transaction
 {
 private:
     txn_id_t txn_id;
     TransactionState state_;
     IsolationLevel isolation_ ;
-    std::shared_ptr<std::unordered_set<Lock_data_id>> lock_set_;  
+    // std::shared_ptr<std::unordered_set<std::pair<Lock_data_id, LockMode>>> all_lock_set_;
+
+    std::shared_ptr<std::unordered_set<Lock_data_id>> table_S_lock_set_;
+    std::shared_ptr<std::unordered_set<Lock_data_id>> table_X_lock_set_;  
+    std::shared_ptr<std::unordered_set<Lock_data_id>> table_IS_lock_set_;  
+    std::shared_ptr<std::unordered_set<Lock_data_id>> table_IX_lock_set_;  
+    std::shared_ptr<std::unordered_set<Lock_data_id>> table_SIX_lock_set_;
+
+    std::shared_ptr<std::unordered_set<Lock_data_id>> partition_S_lock_set_;  
+    std::shared_ptr<std::unordered_set<Lock_data_id>> partition_X_lock_set_;  
+    std::shared_ptr<std::unordered_set<Lock_data_id>> partition_IS_lock_set_;  
+    std::shared_ptr<std::unordered_set<Lock_data_id>> partition_IX_lock_set_;  
+    std::shared_ptr<std::unordered_set<Lock_data_id>> partition_SIX_lock_set_;  
+
+    std::shared_ptr<std::unordered_set<Lock_data_id>> row_S_lock_set_;  
+    std::shared_ptr<std::unordered_set<Lock_data_id>> row_X_lock_set_;  
+
 
 public:
 
@@ -84,9 +117,26 @@ public:
 
     inline IsolationLevel get_isolation() const {return isolation_;}
 
-    inline std::shared_ptr<std::unordered_set<Lock_data_id>> get_lock_set() {return lock_set_;} 
+    inline std::shared_ptr<std::unordered_set<Lock_data_id>> get_table_S_lock_set() {return table_S_lock_set_;} 
+    inline std::shared_ptr<std::unordered_set<Lock_data_id>> get_table_X_lock_set() {return table_X_lock_set_;} 
+    inline std::shared_ptr<std::unordered_set<Lock_data_id>> get_table_IS_lock_set() {return table_IS_lock_set_;} 
+    inline std::shared_ptr<std::unordered_set<Lock_data_id>> get_table_IX_lock_set() {return table_IX_lock_set_;} 
+    inline std::shared_ptr<std::unordered_set<Lock_data_id>> get_table_SIX_lock_set() {return table_SIX_lock_set_;} 
+
+    inline std::shared_ptr<std::unordered_set<Lock_data_id>> get_partition_S_lock_set() {return partition_S_lock_set_;} 
+    inline std::shared_ptr<std::unordered_set<Lock_data_id>> get_partition_X_lock_set() {return partition_X_lock_set_;} 
+    inline std::shared_ptr<std::unordered_set<Lock_data_id>> get_partition_IS_lock_set() {return partition_IS_lock_set_;} 
+    inline std::shared_ptr<std::unordered_set<Lock_data_id>> get_partition_IX_lock_set() {return partition_IX_lock_set_;} 
+    inline std::shared_ptr<std::unordered_set<Lock_data_id>> get_partition_SIX_lock_set() {return partition_SIX_lock_set_;}
+
+    inline std::shared_ptr<std::unordered_set<Lock_data_id>> get_row_S_lock_set() {return row_S_lock_set_;}
+    inline std::shared_ptr<std::unordered_set<Lock_data_id>> get_row_X_lock_set() {return row_X_lock_set_;}
+
+    // inline std::shared_ptr<std::unordered_set<std::pair<Lock_data_id, LockMode>>> get_all_lock_set_() {return all_lock_set_;}
 
     Transaction(){};
+    // Transaction():
+    //   all_lock_set_{new std::unordered_set<std::pair<Lock_data_id, LockMode>, pair_hash, pair_equal> }{}
     ~Transaction(){};
 };
 
