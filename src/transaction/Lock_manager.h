@@ -66,7 +66,7 @@ public:
 
     auto isUpdateCompatible(const LockRequest *lock_request, const LockMode &upgrade_lock_mode) -> bool; 
 
-    static auto checkQueueCompatible(const LockRequestQueue *request_queue, const LockRequest &request) -> bool;
+    static auto checkQueueCompatible(const LockRequestQueue *request_queue, const LockRequest *request) -> bool;
 
 private:
     std::mutex latch_;  // 锁表的互斥锁，用于锁表的互斥访问
