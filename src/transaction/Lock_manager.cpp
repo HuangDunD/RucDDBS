@@ -78,7 +78,12 @@ auto Lock_manager::checkSameTxnLockRequest(Transaction *txn, LockRequestQueue *r
 }
 
 auto Lock_manager::checkQueueCompatible(const LockRequestQueue *request_queue, const LockRequest *request) -> bool {
-    
+    for(auto iter : request_queue->request_queue_ ){
+        if(iter != request && iter->granted_ == true){
+            if(isLockCompatible(iter, request->lock_mode_) == false)
+                return false;
+        }
+    }
     return true;
 }
 
@@ -119,6 +124,7 @@ auto Lock_manager::LockTable(Transaction *txn, LockMode lock_mode, const table_o
                     return Lock_manager::checkQueueCompatible(request_queue, iter) || 
                         txn->get_state()==TransactionState::ABORTED;
                 });
+                
                 iter->granted_ = true;
                 return true; 
             }
