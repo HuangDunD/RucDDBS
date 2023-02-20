@@ -19,6 +19,7 @@ enum class AbortReason {
   UPGRADE_CONFLICT,
   LOCK_SHARED_ON_READ_UNCOMMITTED,
   TABLE_LOCK_NOT_PRESENT,
+  PARTITION_LOCK_NOT_PRESENT, 
   ATTEMPTED_INTENTION_LOCK_ON_ROW,
   TABLE_UNLOCKED_BEFORE_UNLOCKING_ROWS,
   INCOMPATIBLE_UPGRADE,
@@ -48,6 +49,8 @@ class TransactionAbortException : public std::exception {
       case AbortReason::LOCK_SHARED_ON_READ_UNCOMMITTED:
         return "Transaction " + std::to_string(txn_id_) + " aborted on lockshared on READ_UNCOMMITTED\n";
       case AbortReason::TABLE_LOCK_NOT_PRESENT:
+        return "Transaction " + std::to_string(txn_id_) + " aborted because table lock not present\n";
+      case AbortReason::PARTITION_LOCK_NOT_PRESENT:
         return "Transaction " + std::to_string(txn_id_) + " aborted because table lock not present\n";
       case AbortReason::ATTEMPTED_INTENTION_LOCK_ON_ROW:
         return "Transaction " + std::to_string(txn_id_) + " aborted because intention lock attempted on row\n";
