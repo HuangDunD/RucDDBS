@@ -66,7 +66,7 @@ public:
 
     static auto isUpdateCompatible(const LockRequest *lock_request, const LockMode &upgrade_lock_mode) -> bool; 
 
-    static auto checkSameTxnLockRequest(Transaction *txn, LockRequestQueue *request_queue, const LockMode targrt_lock_mode) -> int;
+    static auto checkSameTxnLockRequest(Transaction *txn, LockRequestQueue *request_queue, const LockMode targrt_lock_mode, std::unique_lock<std::mutex> &queue_lock) -> int;
 
     static auto checkQueueCompatible(const LockRequestQueue *request_queue, const LockRequest *request) -> bool;
 
