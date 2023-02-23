@@ -257,7 +257,6 @@ auto Lock_manager::LockRow(Transaction *txn, LockMode lock_mode, const table_oid
     std::unique_lock<std::mutex> queue_lock(request_queue->latch_);
     Latch.unlock();
 
-    //TODO
     auto target_lock_mode = lock_mode;
     if(checkSameTxnLockRequest(txn, request_queue, target_lock_mode, queue_lock)==true)
         return true;
@@ -279,28 +278,71 @@ auto Lock_manager::LockRow(Transaction *txn, LockMode lock_mode, const table_oid
 }
 
 auto Lock_manager::UnLockTable(Transaction *txn,  const table_oid_t &oid) -> bool {
-    Lock_data_id l_id(oid, Lock_data_type::ROW);
+
+    Lock_data_id l_id(oid, Lock_data_type::TABLE);
+    
+    Unlock(txn, l_id);
+
+    //由于锁升级, 需要将所有lock_set中的记录都删除
+    txn->get_lock_set(Lock_data_type::TABLE, LockMode::SHARED)->erase(l_id);
+    txn->get_lock_set(Lock_data_type::TABLE, LockMode::EXLUCSIVE)->erase(l_id);
+    txn->get_lock_set(Lock_data_type::TABLE, LockMode::INTENTION_EXCLUSIVE)->erase(l_id);
+    txn->get_lock_set(Lock_data_type::TABLE, LockMode::INTENTION_SHARED)->erase(l_id);
+    txn->get_lock_set(Lock_data_type::TABLE, LockMode::S_IX)->erase(l_id);
 
     return true;
 }
 
 auto Lock_manager::UnLockPartition(Transaction *txn, const table_oid_t &oid, const partition_id_t &p_id ) -> bool {
-    Lock_data_id l_id(oid, p_id, Lock_data_type::ROW);
+
+    Lock_data_id l_id(oid, p_id, Lock_data_type::PARTITION);
+
+    Unlock(txn, l_id);
+
+    txn->get_lock_set(Lock_data_type::PARTITION, LockMode::SHARED)->erase(l_id);
+    txn->get_lock_set(Lock_data_type::PARTITION, LockMode::EXLUCSIVE)->erase(l_id);
+    txn->get_lock_set(Lock_data_type::PARTITION, LockMode::INTENTION_EXCLUSIVE)->erase(l_id);
+    txn->get_lock_set(Lock_data_type::PARTITION, LockMode::INTENTION_SHARED)->erase(l_id);
+    txn->get_lock_set(Lock_data_type::PARTITION, LockMode::S_IX)->erase(l_id);
 
     return true;
 }
 
 auto Lock_manager::UnLockRow(Transaction *txn, const table_oid_t &oid, const partition_id_t &p_id, const row_id_t &row_id) -> bool {
+
     Lock_data_id l_id(oid, p_id, row_id, Lock_data_type::ROW);
+
+    Unlock(txn, l_id);
+
+    txn->get_lock_set(Lock_data_type::ROW, LockMode::SHARED)->erase(l_id);
+    txn->get_lock_set(Lock_data_type::ROW, LockMode::EXLUCSIVE)->erase(l_id);
 
     return true;
 }
 
 auto Lock_manager::Unlock(Transaction *txn, const Lock_data_id &l_id) -> bool {
+
+    std::unique_lock<std::mutex> Latch(latch_);
+    LockRequestQueue* request_queue = &lock_map_[l_id];
+    std::unique_lock<std::mutex> queue_lock(request_queue->latch_);
+    Latch.unlock();
+    
     if(txn->get_state() == TransactionState::GROWING){
         txn->set_transaction_state(TransactionState::SHRINKING);
     }
 
+    auto iter = request_queue->request_queue_.begin();
+    for( ; iter != request_queue->request_queue_.end(); iter++){
+        if((*iter)->txn_id_ == txn->get_txn_id() && (*iter)->granted_ == true){
+            break;
+        }
+    }
+    if(iter == request_queue->request_queue_.end()){
+        throw TransactionAbortException(txn->get_txn_id(), AbortReason::ATTEMPTED_UNLOCK_BUT_NO_LOCK_HELD);
+    }
+
+    request_queue->request_queue_.erase(iter);
+    request_queue->cv_.notify_all();
     return true;
 }
 
