@@ -155,7 +155,10 @@ auto Lock_manager::LockTable(Transaction *txn, LockMode lock_mode, const table_o
     auto target_lock_mode = lock_mode;
     if(checkSameTxnLockRequest(txn, request_queue, target_lock_mode, queue_lock)==true)
         return true;
-
+    if(txn->get_lock_set(Lock_data_type::TABLE,target_lock_mode)->count(l_id)==0){
+        txn->add_lock_set(target_lock_mode, l_id);
+    }
+    
     //步骤五, 如果当前事务在请求队列中没有申请该数据项的锁, 则新建请求加入队列
     //检查是否可以上锁, 否则阻塞, 使用条件变量cv来实现
     LockRequest* lock_request = new LockRequest(txn->get_txn_id(), target_lock_mode); 
@@ -167,7 +170,7 @@ auto Lock_manager::LockTable(Transaction *txn, LockMode lock_mode, const table_o
                 });
     lock_request->granted_ = true;
     //TODO, 加入锁集
-    txn->add_lock_set(Lock_data_type::TABLE, target_lock_mode, l_id); 
+    txn->add_lock_set(target_lock_mode, l_id); 
 
     return true;
 }
@@ -203,46 +206,10 @@ auto Lock_manager::LockPartition(Transaction *txn, LockMode lock_mode, const tab
     Latch.unlock();
 
     auto target_lock_mode = lock_mode;
-    for(auto &iter : request_queue->request_queue_){
-        if( iter->txn_id_ == txn->get_txn_id() ){
-            //如果当前事务正在或已经申请同等模式的锁
-            if(iter->lock_mode_ == target_lock_mode && iter->granted_ == true){
-                // 已经获取锁, 上锁成功
-                return true; 
-            }
-            else if(iter->lock_mode_ == target_lock_mode && iter->granted_ == false){
-                //正在申请锁, 等待这个请求申请成功后返回
-                request_queue->cv_.wait(queue_lock, [&request_queue, &iter, &txn]{
-                    return Lock_manager::checkQueueCompatible(request_queue, iter) || 
-                        txn->get_state()==TransactionState::ABORTED;
-                });
-                iter->granted_ = true;
-                return true; 
-            }
-            //如果锁的模式不同, 则需要对锁进行升级, 首先检查是否有正在升级的锁, 如果有, 则返回升级冲突
-            else if(request_queue->upgrading_ == true){
-                throw TransactionAbortException (txn->get_txn_id(), AbortReason::UPGRADE_CONFLICT);
-                return false;
-            }
-            else if(Lock_manager::isUpdateCompatible(iter, lock_mode) == false){
-                //如果没有冲突则检查是否锁兼容, 如果升级不兼容
-                throw TransactionAbortException (txn->get_txn_id(), AbortReason::INCOMPATIBLE_UPGRADE);
-            }else{
-                //如果升级兼容, 则upgrade 
-                request_queue->upgrading_ = true; 
-                iter->lock_mode_ = target_lock_mode;
-                iter->granted_ = false;
-                request_queue->cv_.wait(queue_lock, [&request_queue, &iter, &txn]{
-                    return Lock_manager::checkQueueCompatible(request_queue, iter) || 
-                        txn->get_state()==TransactionState::ABORTED;
-                });
-                request_queue->upgrading_ = false;
-                iter->granted_ = true;
-                //TODO, 加入锁集
-                txn->add_lock_set(Lock_data_type::PARTITION, target_lock_mode, l_id); 
-                return true;
-            } 
-        }
+    if(checkSameTxnLockRequest(txn, request_queue, target_lock_mode, queue_lock)==true)
+        return true;
+    if(txn->get_lock_set(Lock_data_type::PARTITION,target_lock_mode)->count(l_id)==0){
+        txn->add_lock_set(target_lock_mode, l_id);
     }
 
     //检查是否可以上锁, 否则阻塞, 使用条件变量cv来实现
@@ -254,7 +221,7 @@ auto Lock_manager::LockPartition(Transaction *txn, LockMode lock_mode, const tab
                         txn->get_state()==TransactionState::ABORTED;
                 });
     lock_request->granted_ = true;
-    txn->add_lock_set(Lock_data_type::PARTITION, lock_mode, l_id); 
+    txn->add_lock_set(lock_mode, l_id); 
 
     return true;
 }
@@ -291,7 +258,12 @@ auto Lock_manager::LockRow(Transaction *txn, LockMode lock_mode, const table_oid
     Latch.unlock();
 
     //TODO
-
+    auto target_lock_mode = lock_mode;
+    if(checkSameTxnLockRequest(txn, request_queue, target_lock_mode, queue_lock)==true)
+        return true;
+    if(txn->get_lock_set(Lock_data_type::ROW,target_lock_mode)->count(l_id)==0){
+        txn->add_lock_set(target_lock_mode, l_id);
+    }
 
     LockRequest* lock_request = new LockRequest(txn->get_txn_id(), lock_mode); 
     request_queue->request_queue_.emplace_back(lock_request); 
@@ -301,7 +273,7 @@ auto Lock_manager::LockRow(Transaction *txn, LockMode lock_mode, const table_oid
                         txn->get_state()==TransactionState::ABORTED;
                 });
     lock_request->granted_ = true;
-    txn->add_lock_set(Lock_data_type::ROW, lock_mode, l_id); 
+    txn->add_lock_set(lock_mode, l_id); 
 
     return true;
 }

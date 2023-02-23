@@ -135,8 +135,8 @@ public:
     inline std::shared_ptr<std::unordered_set<Lock_data_id>> get_row_S_lock_set() {return row_S_lock_set_;}
     inline std::shared_ptr<std::unordered_set<Lock_data_id>> get_row_X_lock_set() {return row_X_lock_set_;}
 
-    inline void add_lock_set(Lock_data_type data_type, LockMode lock_mode, Lock_data_id l_id){
-      switch (data_type)
+    inline void add_lock_set(LockMode lock_mode, Lock_data_id l_id){
+      switch (l_id.type_)
       {
         case Lock_data_type::TABLE:
           switch (lock_mode)
@@ -196,6 +196,61 @@ public:
           }
         break;
       }
+    }
+
+    inline std::shared_ptr<std::unordered_set<Lock_data_id>> get_lock_set(Lock_data_type type, LockMode lock_mode)
+    {
+      switch (type)
+      {
+        case Lock_data_type::TABLE:
+          switch (lock_mode)
+          {
+          case LockMode::SHARED:
+            return table_S_lock_set_;
+          case LockMode::EXLUCSIVE:
+            return table_X_lock_set_;
+          case LockMode::INTENTION_SHARED:
+            return table_IS_lock_set_;
+          case LockMode::INTENTION_EXCLUSIVE:
+            return table_IX_lock_set_;
+          case LockMode::S_IX:
+            return table_SIX_lock_set_;
+          default:
+            break;
+          }
+        break;
+          case Lock_data_type::PARTITION:
+          switch (lock_mode)
+          {
+          case LockMode::SHARED:
+            return partition_S_lock_set_;
+          case LockMode::EXLUCSIVE:
+            return partition_X_lock_set_;
+          case LockMode::INTENTION_SHARED:
+            return partition_IS_lock_set_;
+          case LockMode::INTENTION_EXCLUSIVE:
+            return partition_IX_lock_set_;
+          case LockMode::S_IX:
+            return partition_SIX_lock_set_;
+          default:
+            break;
+          }
+        break;
+          case Lock_data_type::ROW:
+          switch (lock_mode)
+          {
+          case LockMode::SHARED:
+            return row_S_lock_set_;
+          case LockMode::EXLUCSIVE:
+            return row_X_lock_set_;
+          default:
+            break;
+          }
+        break;
+        default:
+        break;
+      }
+      return nullptr;
     }
 
     // inline std::shared_ptr<std::unordered_set<std::pair<Lock_data_id, LockMode>>> get_all_lock_set_() {return all_lock_set_;}
