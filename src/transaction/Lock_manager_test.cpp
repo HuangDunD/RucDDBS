@@ -44,3 +44,4 @@ TEST_F(LockManagerTest, TransactionStateTest) {
     t0.join();
     t1.join();
 }
+

@@ -132,6 +132,9 @@ auto Lock_manager::checkQueueCompatible(const LockRequestQueue *request_queue, c
 auto Lock_manager::LockTable(Transaction *txn, LockMode lock_mode, const table_oid_t &oid) -> bool {
     
     //步骤一: 检查事务状态
+    if(txn->get_state() == TransactionState::DEFAULT){
+        txn->set_transaction_state(TransactionState::GROWING);
+    } 
     if(txn->get_state() != TransactionState::GROWING){
         txn->set_transaction_state(TransactionState::ABORTED);
         throw TransactionAbortException (txn->get_txn_id(), AbortReason::LOCK_ON_SHRINKING);
@@ -178,6 +181,9 @@ auto Lock_manager::LockTable(Transaction *txn, LockMode lock_mode, const table_o
 auto Lock_manager::LockPartition(Transaction *txn, LockMode lock_mode, const table_oid_t &oid, const partition_id_t &p_id) -> bool {
 
     //检查事务状态
+    if(txn->get_state() == TransactionState::DEFAULT){
+        txn->set_transaction_state(TransactionState::GROWING);
+    } 
     if(txn->get_state() != TransactionState::GROWING){
         txn->set_transaction_state(TransactionState::ABORTED);
         throw TransactionAbortException (txn->get_txn_id(), AbortReason::LOCK_ON_SHRINKING);
@@ -230,6 +236,9 @@ auto Lock_manager::LockPartition(Transaction *txn, LockMode lock_mode, const tab
 
 auto Lock_manager::LockRow(Transaction *txn, LockMode lock_mode, const table_oid_t &oid, const partition_id_t &p_id, const row_id_t &row_id) -> bool {
 
+    if(txn->get_state() == TransactionState::DEFAULT){
+        txn->set_transaction_state(TransactionState::GROWING);
+    } 
     if(txn->get_state() != TransactionState::GROWING){
         txn->set_transaction_state(TransactionState::ABORTED);
         throw TransactionAbortException (txn->get_txn_id(), AbortReason::LOCK_ON_SHRINKING);

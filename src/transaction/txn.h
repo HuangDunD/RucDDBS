@@ -14,9 +14,9 @@ enum class LockMode { SHARED, EXLUCSIVE, INTENTION_SHARED, INTENTION_EXCLUSIVE, 
 class Lock_data_id
 {
 public:
-    table_oid_t oid_;
-    partition_id_t p_id_;
-    row_id_t row_id_;
+    table_oid_t oid_ = 0;
+    partition_id_t p_id_ = 0;
+    row_id_t row_id_ = 0;
     Lock_data_type type_;
 
     bool operator==(const Lock_data_id &other) const{
