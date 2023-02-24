@@ -5,6 +5,7 @@
 #include <unordered_set>
 #include <memory>
 #include <utility> 
+#include <thread>
 
 enum class TransactionState { DEFAULT, GROWING, SHRINKING, COMMITTED, ABORTED };
 enum class IsolationLevel { READ_UNCOMMITTED, REPEATABLE_READ, READ_COMMITTED, SERIALIZABLE };
@@ -87,9 +88,11 @@ struct pair_equal
 class Transaction
 {
 private:
-    txn_id_t txn_id;
+    txn_id_t txn_id_;
     TransactionState state_;
     IsolationLevel isolation_ ;
+    std::thread::id thread_id_;
+
     // std::shared_ptr<std::unordered_set<std::pair<Lock_data_id, LockMode>>> all_lock_set_;
 
     std::shared_ptr<std::unordered_set<Lock_data_id>> table_S_lock_set_;
@@ -110,7 +113,7 @@ private:
 
 public:
 
-    inline txn_id_t get_txn_id() const { return txn_id; }
+    inline txn_id_t get_txn_id() const { return txn_id_; }
 
     inline TransactionState get_state() const {return state_;}
 
@@ -255,9 +258,27 @@ public:
 
     // inline std::shared_ptr<std::unordered_set<std::pair<Lock_data_id, LockMode>>> get_all_lock_set_() {return all_lock_set_;}
 
-    Transaction(){};
-    // Transaction():
-    //   all_lock_set_{new std::unordered_set<std::pair<Lock_data_id, LockMode>, pair_hash, pair_equal> }{}
+    explicit Transaction(txn_id_t txn_id, IsolationLevel isolation_level = IsolationLevel::SERIALIZABLE)
+      : txn_id_(txn_id), state_(TransactionState::DEFAULT), isolation_(isolation_level)
+    {
+        table_S_lock_set_ = std::make_shared<std::unordered_set<Lock_data_id>>();
+        table_X_lock_set_ = std::make_shared<std::unordered_set<Lock_data_id>>();
+        table_IS_lock_set_ = std::make_shared<std::unordered_set<Lock_data_id>>();
+        table_IX_lock_set_ = std::make_shared<std::unordered_set<Lock_data_id>>();
+        table_SIX_lock_set_ = std::make_shared<std::unordered_set<Lock_data_id>>();
+
+        partition_S_lock_set_ = std::make_shared<std::unordered_set<Lock_data_id>>();
+        partition_X_lock_set_ = std::make_shared<std::unordered_set<Lock_data_id>>();
+        partition_IS_lock_set_ = std::make_shared<std::unordered_set<Lock_data_id>>();
+        partition_IX_lock_set_ = std::make_shared<std::unordered_set<Lock_data_id>>();
+        partition_SIX_lock_set_ = std::make_shared<std::unordered_set<Lock_data_id>>();
+
+        row_S_lock_set_ = std::make_shared<std::unordered_set<Lock_data_id>>();
+        row_X_lock_set_ = std::make_shared<std::unordered_set<Lock_data_id>>();
+
+        thread_id_ = std::this_thread::get_id();
+    };
+
     ~Transaction(){};
 };
 

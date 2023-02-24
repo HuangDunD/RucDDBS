@@ -189,15 +189,17 @@ auto Lock_manager::LockPartition(Transaction *txn, LockMode lock_mode, const tab
 
     if(lock_mode == LockMode::SHARED || lock_mode == LockMode::INTENTION_SHARED){
         //检查父节点是否上IS锁
-        if(txn->get_table_IS_lock_set()->count(parent_table_l_id)==0)
+        if(txn->get_table_IS_lock_set()->count(parent_table_l_id)==0){
             throw TransactionAbortException(txn->get_txn_id(), AbortReason::TABLE_LOCK_NOT_PRESENT);
             return false;
+        }
     }
     else if(lock_mode == LockMode::EXLUCSIVE || lock_mode == LockMode::INTENTION_EXCLUSIVE || lock_mode == LockMode::S_IX){
         //检查父节点是否上IX锁
-        if(txn->get_table_IX_lock_set()->count(parent_table_l_id)==0)
+        if(txn->get_table_IX_lock_set()->count(parent_table_l_id)==0){
             throw TransactionAbortException(txn->get_txn_id(), AbortReason::TABLE_LOCK_NOT_PRESENT);
             return false;
+        }
     }
     //通过mutex申请全局锁表
     std::unique_lock<std::mutex> Latch(latch_);
@@ -241,15 +243,17 @@ auto Lock_manager::LockRow(Transaction *txn, LockMode lock_mode, const table_oid
 
     if(lock_mode == LockMode::SHARED || lock_mode == LockMode::INTENTION_SHARED){
         //检查父节点是否上IS锁
-        if(txn->get_table_IS_lock_set()->count(parent_partition_l_id)==0)
+        if(txn->get_table_IS_lock_set()->count(parent_partition_l_id)==0){
             throw TransactionAbortException(txn->get_txn_id(), AbortReason::TABLE_LOCK_NOT_PRESENT);
             return false;
+        }
     }
     else if(lock_mode == LockMode::EXLUCSIVE || lock_mode == LockMode::INTENTION_EXCLUSIVE || lock_mode == LockMode::S_IX){
         //检查父节点是否上IX锁
-        if(txn->get_table_IX_lock_set()->count(parent_partition_l_id)==0)
+        if(txn->get_table_IX_lock_set()->count(parent_partition_l_id)==0){
             throw TransactionAbortException(txn->get_txn_id(), AbortReason::TABLE_LOCK_NOT_PRESENT);
             return false;
+        }
     }
     //通过mutex申请全局锁表
     std::unique_lock<std::mutex> Latch(latch_);
@@ -346,7 +350,6 @@ auto Lock_manager::Unlock(Transaction *txn, const Lock_data_id &l_id) -> bool {
     return true;
 }
 
-int main(){
-    std::cout << "test" << std::endl;
-
-}
+// int main(){
+//     std::cout << "test" << std::endl;
+// }
