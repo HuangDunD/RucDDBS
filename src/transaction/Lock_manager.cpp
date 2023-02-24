@@ -191,7 +191,7 @@ auto Lock_manager::LockPartition(Transaction *txn, LockMode lock_mode, const tab
     }
 
     Lock_data_id l_id(oid, p_id, Lock_data_type::PARTITION);
-    Lock_data_id parent_table_l_id(oid, p_id, Lock_data_type::TABLE);
+    Lock_data_id parent_table_l_id(oid, Lock_data_type::TABLE);
 
     if(lock_mode == LockMode::SHARED || lock_mode == LockMode::INTENTION_SHARED){
         //检查父节点是否上IS锁
@@ -246,6 +246,7 @@ auto Lock_manager::LockRow(Transaction *txn, LockMode lock_mode, const table_oid
     }
     if(lock_mode != LockMode::SHARED && lock_mode != LockMode::EXLUCSIVE){
         throw TransactionAbortException(txn->get_txn_id(), AbortReason::ATTEMPTED_INTENTION_LOCK_ON_ROW);
+        return false;
     }
     Lock_data_id l_id(oid, p_id, row_id, Lock_data_type::ROW);
     Lock_data_id parent_partition_l_id(oid, p_id, Lock_data_type::PARTITION);
