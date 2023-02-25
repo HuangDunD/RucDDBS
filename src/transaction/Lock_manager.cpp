@@ -135,11 +135,21 @@ auto Lock_manager::LockTable(Transaction *txn, LockMode lock_mode, const table_o
     if(txn->get_state() == TransactionState::DEFAULT){
         txn->set_transaction_state(TransactionState::GROWING);
     } 
-    if(txn->get_state() != TransactionState::GROWING){
-        txn->set_transaction_state(TransactionState::ABORTED);
-        throw TransactionAbortException (txn->get_txn_id(), AbortReason::LOCK_ON_SHRINKING);
+
+    try {
+        if(txn->get_state() != TransactionState::GROWING){
+            txn->set_transaction_state(TransactionState::ABORTED);
+            throw TransactionAbortException (txn->get_txn_id(), AbortReason::LOCK_ON_SHRINKING);
+            // return false;
+        }
+    }
+    catch(TransactionAbortException &e)
+    {
+        std::cerr << e.GetInfo() << '\n';
         return false;
     }
+    
+    
 
     //步骤二: 得到l_id
     Lock_data_id l_id(oid, Lock_data_type::TABLE);
@@ -156,10 +166,11 @@ auto Lock_manager::LockTable(Transaction *txn, LockMode lock_mode, const table_o
     //如果存在, 并且申请锁模式相同,返回申请成功
     //如果存在, 但与之锁的模式不同, 则准备升级, 并检查升级是否兼容
     auto target_lock_mode = lock_mode;
-    if(checkSameTxnLockRequest(txn, request_queue, target_lock_mode, queue_lock)==true)
+    if(checkSameTxnLockRequest(txn, request_queue, target_lock_mode, queue_lock)==true){
+        if(txn->get_lock_set(Lock_data_type::TABLE,target_lock_mode)->count(l_id)==0){
+            txn->add_lock_set(target_lock_mode, l_id);
+        }
         return true;
-    if(txn->get_lock_set(Lock_data_type::TABLE,target_lock_mode)->count(l_id)==0){
-        txn->add_lock_set(target_lock_mode, l_id);
     }
     
     //步骤五, 如果当前事务在请求队列中没有申请该数据项的锁, 则新建请求加入队列
@@ -214,10 +225,11 @@ auto Lock_manager::LockPartition(Transaction *txn, LockMode lock_mode, const tab
     Latch.unlock();
 
     auto target_lock_mode = lock_mode;
-    if(checkSameTxnLockRequest(txn, request_queue, target_lock_mode, queue_lock)==true)
+    if(checkSameTxnLockRequest(txn, request_queue, target_lock_mode, queue_lock)==true){
+        if(txn->get_lock_set(Lock_data_type::PARTITION,target_lock_mode)->count(l_id)==0){
+            txn->add_lock_set(target_lock_mode, l_id);
+        }
         return true;
-    if(txn->get_lock_set(Lock_data_type::PARTITION,target_lock_mode)->count(l_id)==0){
-        txn->add_lock_set(target_lock_mode, l_id);
     }
 
     //检查是否可以上锁, 否则阻塞, 使用条件变量cv来实现
@@ -272,10 +284,11 @@ auto Lock_manager::LockRow(Transaction *txn, LockMode lock_mode, const table_oid
     Latch.unlock();
 
     auto target_lock_mode = lock_mode;
-    if(checkSameTxnLockRequest(txn, request_queue, target_lock_mode, queue_lock)==true)
+    if(checkSameTxnLockRequest(txn, request_queue, target_lock_mode, queue_lock)==true){
+        if(txn->get_lock_set(Lock_data_type::ROW,target_lock_mode)->count(l_id)==0){
+            txn->add_lock_set(target_lock_mode, l_id);
+        }
         return true;
-    if(txn->get_lock_set(Lock_data_type::ROW,target_lock_mode)->count(l_id)==0){
-        txn->add_lock_set(target_lock_mode, l_id);
     }
 
     LockRequest* lock_request = new LockRequest(txn->get_txn_id(), lock_mode); 
