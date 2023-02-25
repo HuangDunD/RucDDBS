@@ -253,14 +253,14 @@ auto Lock_manager::LockRow(Transaction *txn, LockMode lock_mode, const table_oid
 
     if(lock_mode == LockMode::SHARED || lock_mode == LockMode::INTENTION_SHARED){
         //检查父节点是否上IS锁
-        if(txn->get_table_IS_lock_set()->count(parent_partition_l_id)==0){
+        if(txn->get_partition_IS_lock_set()->count(parent_partition_l_id)==0){
             throw TransactionAbortException(txn->get_txn_id(), AbortReason::TABLE_LOCK_NOT_PRESENT);
             return false;
         }
     }
     else if(lock_mode == LockMode::EXLUCSIVE || lock_mode == LockMode::INTENTION_EXCLUSIVE || lock_mode == LockMode::S_IX){
         //检查父节点是否上IX锁
-        if(txn->get_table_IX_lock_set()->count(parent_partition_l_id)==0){
+        if(txn->get_partition_IX_lock_set()->count(parent_partition_l_id)==0){
             throw TransactionAbortException(txn->get_txn_id(), AbortReason::TABLE_LOCK_NOT_PRESENT);
             return false;
         }
