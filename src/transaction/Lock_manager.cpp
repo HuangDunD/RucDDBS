@@ -131,15 +131,51 @@ auto Lock_manager::checkQueueCompatible(const LockRequestQueue *request_queue, c
 
 auto Lock_manager::LockTable(Transaction *txn, LockMode lock_mode, const table_oid_t &oid) -> bool {
     
-    //步骤一: 检查事务状态
-    if(txn->get_state() == TransactionState::DEFAULT){
-        txn->set_transaction_state(TransactionState::GROWING);
-    } 
-
-    try {
+    try{
+        //步骤一: 检查事务状态
+        if(txn->get_state() == TransactionState::DEFAULT){
+            txn->set_transaction_state(TransactionState::GROWING);
+        } 
         if(txn->get_state() != TransactionState::GROWING){
             throw TransactionAbortException (txn->get_txn_id(), AbortReason::LOCK_ON_SHRINKING);
         }
+
+        //步骤二: 得到l_id
+        Lock_data_id l_id(oid, Lock_data_type::TABLE);
+
+        //步骤三: 通过mutex申请全局锁表
+        // latch_.lock();
+        std::unique_lock<std::mutex> Latch(latch_);
+        LockRequestQueue* request_queue = &lock_map_[l_id];
+        std::unique_lock<std::mutex> queue_lock(request_queue->latch_);
+        Latch.unlock();
+
+        //步骤四: 
+        //查找当前事务是否已经申请了目标数据项上的锁，
+        //如果存在, 并且申请锁模式相同,返回申请成功
+        //如果存在, 但与之锁的模式不同, 则准备升级, 并检查升级是否兼容
+        auto target_lock_mode = lock_mode;
+        if(checkSameTxnLockRequest(txn, request_queue, target_lock_mode, queue_lock)==true){
+            if(txn->get_lock_set(Lock_data_type::TABLE,target_lock_mode)->count(l_id)==0){
+                txn->add_lock_set(target_lock_mode, l_id);
+            }
+            return true;
+        }
+        
+        //步骤五, 如果当前事务在请求队列中没有申请该数据项的锁, 则新建请求加入队列
+        //检查是否可以上锁, 否则阻塞, 使用条件变量cv来实现
+        LockRequest* lock_request = new LockRequest(txn->get_txn_id(), target_lock_mode); 
+        request_queue->request_queue_.emplace_back(lock_request); 
+        
+        request_queue->cv_.wait(queue_lock, [&request_queue, &lock_request, &txn] {
+                        return Lock_manager::checkQueueCompatible(request_queue, lock_request) || 
+                            txn->get_state()==TransactionState::ABORTED;
+                    });
+        lock_request->granted_ = true;
+        //TODO, 加入锁集
+        txn->add_lock_set(target_lock_mode, l_id); 
+
+        return true;
     }
     catch(TransactionAbortException &e)
     {
@@ -147,55 +183,61 @@ auto Lock_manager::LockTable(Transaction *txn, LockMode lock_mode, const table_o
         std::cerr << e.GetInfo() << '\n';
         return false;
     }
-
-    //步骤二: 得到l_id
-    Lock_data_id l_id(oid, Lock_data_type::TABLE);
-
-    //步骤三: 通过mutex申请全局锁表
-    // latch_.lock();
-    std::unique_lock<std::mutex> Latch(latch_);
-    LockRequestQueue* request_queue = &lock_map_[l_id];
-    std::unique_lock<std::mutex> queue_lock(request_queue->latch_);
-    Latch.unlock();
-
-    //步骤四: 
-    //查找当前事务是否已经申请了目标数据项上的锁，
-    //如果存在, 并且申请锁模式相同,返回申请成功
-    //如果存在, 但与之锁的模式不同, 则准备升级, 并检查升级是否兼容
-    auto target_lock_mode = lock_mode;
-    if(checkSameTxnLockRequest(txn, request_queue, target_lock_mode, queue_lock)==true){
-        if(txn->get_lock_set(Lock_data_type::TABLE,target_lock_mode)->count(l_id)==0){
-            txn->add_lock_set(target_lock_mode, l_id);
-        }
-        return true;
-    }
-    
-    //步骤五, 如果当前事务在请求队列中没有申请该数据项的锁, 则新建请求加入队列
-    //检查是否可以上锁, 否则阻塞, 使用条件变量cv来实现
-    LockRequest* lock_request = new LockRequest(txn->get_txn_id(), target_lock_mode); 
-    request_queue->request_queue_.emplace_back(lock_request); 
-    
-    request_queue->cv_.wait(queue_lock, [&request_queue, &lock_request, &txn] {
-                    return Lock_manager::checkQueueCompatible(request_queue, lock_request) || 
-                        txn->get_state()==TransactionState::ABORTED;
-                });
-    lock_request->granted_ = true;
-    //TODO, 加入锁集
-    txn->add_lock_set(target_lock_mode, l_id); 
-
-    return true;
 }
 
 auto Lock_manager::LockPartition(Transaction *txn, LockMode lock_mode, const table_oid_t &oid, const partition_id_t &p_id) -> bool {
 
-    //检查事务状态
-    if(txn->get_state() == TransactionState::DEFAULT){
-        txn->set_transaction_state(TransactionState::GROWING);
-    } 
-    try {
+    try{
+        //检查事务状态
+        if(txn->get_state() == TransactionState::DEFAULT){
+            txn->set_transaction_state(TransactionState::GROWING);
+        } 
         if(txn->get_state() != TransactionState::GROWING){
             throw TransactionAbortException (txn->get_txn_id(), AbortReason::LOCK_ON_SHRINKING);
         }
+
+        Lock_data_id l_id(oid, p_id, Lock_data_type::PARTITION);
+        Lock_data_id parent_table_l_id(oid, Lock_data_type::TABLE);
+
+        if(lock_mode == LockMode::SHARED || lock_mode == LockMode::INTENTION_SHARED){
+            //检查父节点是否上IS锁
+            if(txn->get_table_IS_lock_set()->count(parent_table_l_id)==0){
+                throw TransactionAbortException(txn->get_txn_id(), AbortReason::TABLE_LOCK_NOT_PRESENT);
+            }
+        } 
+        else if(lock_mode == LockMode::EXLUCSIVE || lock_mode == LockMode::INTENTION_EXCLUSIVE || lock_mode == LockMode::S_IX){
+            //检查父节点是否上IX锁
+            if(txn->get_table_IX_lock_set()->count(parent_table_l_id)==0){
+                throw TransactionAbortException(txn->get_txn_id(), AbortReason::TABLE_LOCK_NOT_PRESENT);
+            }
+        }
+        
+        //通过mutex申请全局锁表
+        std::unique_lock<std::mutex> Latch(latch_);
+        LockRequestQueue* request_queue = &lock_map_[l_id];
+        std::unique_lock<std::mutex> queue_lock(request_queue->latch_);
+        Latch.unlock();
+
+        auto target_lock_mode = lock_mode;
+        if(checkSameTxnLockRequest(txn, request_queue, target_lock_mode, queue_lock)==true){
+            if(txn->get_lock_set(Lock_data_type::PARTITION,target_lock_mode)->count(l_id)==0){
+                txn->add_lock_set(target_lock_mode, l_id);
+            }
+            return true;
+        }
+
+        //检查是否可以上锁, 否则阻塞, 使用条件变量cv来实现
+        LockRequest* lock_request = new LockRequest(txn->get_txn_id(), lock_mode); 
+        request_queue->request_queue_.emplace_back(lock_request); 
+        
+        request_queue->cv_.wait(queue_lock, [&request_queue, &lock_request, &txn] {
+                        return Lock_manager::checkQueueCompatible(request_queue, lock_request) || 
+                            txn->get_state()==TransactionState::ABORTED;
+                    });
+        lock_request->granted_ = true;
+        txn->add_lock_set(lock_mode, l_id); 
+
+        return true;
     }
     catch(TransactionAbortException &e)
     {
@@ -203,151 +245,70 @@ auto Lock_manager::LockPartition(Transaction *txn, LockMode lock_mode, const tab
         std::cerr << e.GetInfo() << '\n';
         return false;
     }
-
-    Lock_data_id l_id(oid, p_id, Lock_data_type::PARTITION);
-    Lock_data_id parent_table_l_id(oid, Lock_data_type::TABLE);
-
-    if(lock_mode == LockMode::SHARED || lock_mode == LockMode::INTENTION_SHARED){
-        //检查父节点是否上IS锁
-        try{
-            if(txn->get_table_IS_lock_set()->count(parent_table_l_id)==0){
-                throw TransactionAbortException(txn->get_txn_id(), AbortReason::TABLE_LOCK_NOT_PRESENT);
-            }
-        }
-        catch(TransactionAbortException& e)
-        {
-            txn->set_transaction_state(TransactionState::ABORTED);
-            std::cerr << e.GetInfo() << '\n';
-            return false;
-        }
-    } 
-    else if(lock_mode == LockMode::EXLUCSIVE || lock_mode == LockMode::INTENTION_EXCLUSIVE || lock_mode == LockMode::S_IX){
-        //检查父节点是否上IX锁
-        try{
-            if(txn->get_table_IX_lock_set()->count(parent_table_l_id)==0){
-                throw TransactionAbortException(txn->get_txn_id(), AbortReason::TABLE_LOCK_NOT_PRESENT);
-            }
-        }
-        catch(TransactionAbortException& e)
-        {
-            txn->set_transaction_state(TransactionState::ABORTED);
-            std::cerr << e.GetInfo() << '\n';
-            return false;
-        }
-    }
-    
-    //通过mutex申请全局锁表
-    std::unique_lock<std::mutex> Latch(latch_);
-    LockRequestQueue* request_queue = &lock_map_[l_id];
-    std::unique_lock<std::mutex> queue_lock(request_queue->latch_);
-    Latch.unlock();
-
-    auto target_lock_mode = lock_mode;
-    if(checkSameTxnLockRequest(txn, request_queue, target_lock_mode, queue_lock)==true){
-        if(txn->get_lock_set(Lock_data_type::PARTITION,target_lock_mode)->count(l_id)==0){
-            txn->add_lock_set(target_lock_mode, l_id);
-        }
-        return true;
-    }
-
-    //检查是否可以上锁, 否则阻塞, 使用条件变量cv来实现
-    LockRequest* lock_request = new LockRequest(txn->get_txn_id(), lock_mode); 
-    request_queue->request_queue_.emplace_back(lock_request); 
-    
-    request_queue->cv_.wait(queue_lock, [&request_queue, &lock_request, &txn] {
-                    return Lock_manager::checkQueueCompatible(request_queue, lock_request) || 
-                        txn->get_state()==TransactionState::ABORTED;
-                });
-    lock_request->granted_ = true;
-    txn->add_lock_set(lock_mode, l_id); 
-
-    return true;
 }
 
 auto Lock_manager::LockRow(Transaction *txn, LockMode lock_mode, const table_oid_t &oid, const partition_id_t &p_id, const row_id_t &row_id) -> bool {
 
-    if(txn->get_state() == TransactionState::DEFAULT){
-        txn->set_transaction_state(TransactionState::GROWING);
-    } 
+    try{
+        if(txn->get_state() == TransactionState::DEFAULT){
+            txn->set_transaction_state(TransactionState::GROWING);
+        } 
 
-    try {
         if(txn->get_state() != TransactionState::GROWING){
             throw TransactionAbortException (txn->get_txn_id(), AbortReason::LOCK_ON_SHRINKING);
         }
-    }
-    catch(TransactionAbortException &e) {
-        txn->set_transaction_state(TransactionState::ABORTED);
-        std::cerr << e.GetInfo() << '\n';
-        return false;
-    }
-
-    try{
-        if(lock_mode != LockMode::SHARED && lock_mode != LockMode::EXLUCSIVE)
+        if(lock_mode != LockMode::SHARED && lock_mode != LockMode::EXLUCSIVE){
             throw TransactionAbortException(txn->get_txn_id(), AbortReason::ATTEMPTED_INTENTION_LOCK_ON_ROW);
+        }
+        
+        Lock_data_id l_id(oid, p_id, row_id, Lock_data_type::ROW);
+        Lock_data_id parent_partition_l_id(oid, p_id, Lock_data_type::PARTITION);
+
+        if(lock_mode == LockMode::SHARED || lock_mode == LockMode::INTENTION_SHARED){
+            //检查父节点是否上IS锁
+            if(txn->get_partition_IS_lock_set()->count(parent_partition_l_id)==0){
+                throw TransactionAbortException(txn->get_txn_id(), AbortReason::PARTITION_LOCK_NOT_PRESENT);
+            }
+        } 
+        else if(lock_mode == LockMode::EXLUCSIVE || lock_mode == LockMode::INTENTION_EXCLUSIVE || lock_mode == LockMode::S_IX){
+            //检查父节点是否上IX锁
+            if(txn->get_partition_IX_lock_set()->count(parent_partition_l_id)==0){
+                throw TransactionAbortException(txn->get_txn_id(), AbortReason::PARTITION_LOCK_NOT_PRESENT);
+            }
+        }
+
+        //通过mutex申请全局锁表
+        std::unique_lock<std::mutex> Latch(latch_);
+        LockRequestQueue* request_queue = &lock_map_[l_id];
+        std::unique_lock<std::mutex> queue_lock(request_queue->latch_);
+        Latch.unlock();
+
+        auto target_lock_mode = lock_mode;
+        if(checkSameTxnLockRequest(txn, request_queue, target_lock_mode, queue_lock)==true){
+            if(txn->get_lock_set(Lock_data_type::ROW,target_lock_mode)->count(l_id)==0){
+                txn->add_lock_set(target_lock_mode, l_id);
+            }
+            return true;
+        }
+
+        LockRequest* lock_request = new LockRequest(txn->get_txn_id(), lock_mode); 
+        request_queue->request_queue_.emplace_back(lock_request); 
+        
+        request_queue->cv_.wait(queue_lock, [&request_queue, &lock_request, &txn] {
+                        return Lock_manager::checkQueueCompatible(request_queue, lock_request) || 
+                            txn->get_state()==TransactionState::ABORTED;
+                    });
+        lock_request->granted_ = true;
+        txn->add_lock_set(lock_mode, l_id); 
+
+        return true;
     }
-    catch(TransactionAbortException& e)
+    catch(TransactionAbortException &e)
     {
         txn->set_transaction_state(TransactionState::ABORTED);
         std::cerr << e.GetInfo() << '\n';
         return false;
     }
-    
-    Lock_data_id l_id(oid, p_id, row_id, Lock_data_type::ROW);
-    Lock_data_id parent_partition_l_id(oid, p_id, Lock_data_type::PARTITION);
-
-    if(lock_mode == LockMode::SHARED || lock_mode == LockMode::INTENTION_SHARED){
-        //检查父节点是否上IS锁
-        try{
-            if(txn->get_partition_IS_lock_set()->count(parent_partition_l_id)==0){
-                throw TransactionAbortException(txn->get_txn_id(), AbortReason::PARTITION_LOCK_NOT_PRESENT);
-            }
-        }
-        catch(TransactionAbortException& e)
-        {
-            txn->set_transaction_state(TransactionState::ABORTED);
-            std::cerr << e.GetInfo() << '\n';
-            return false;
-        }
-    } 
-    else if(lock_mode == LockMode::EXLUCSIVE || lock_mode == LockMode::INTENTION_EXCLUSIVE || lock_mode == LockMode::S_IX){
-        //检查父节点是否上IX锁
-        try{
-            if(txn->get_partition_IX_lock_set()->count(parent_partition_l_id)==0){
-                throw TransactionAbortException(txn->get_txn_id(), AbortReason::PARTITION_LOCK_NOT_PRESENT);
-            }
-        }
-        catch(TransactionAbortException& e){
-            txn->set_transaction_state(TransactionState::ABORTED);
-            std::cerr << e.GetInfo() << '\n';
-            return false;
-        }
-    }
-
-    //通过mutex申请全局锁表
-    std::unique_lock<std::mutex> Latch(latch_);
-    LockRequestQueue* request_queue = &lock_map_[l_id];
-    std::unique_lock<std::mutex> queue_lock(request_queue->latch_);
-    Latch.unlock();
-
-    auto target_lock_mode = lock_mode;
-    if(checkSameTxnLockRequest(txn, request_queue, target_lock_mode, queue_lock)==true){
-        if(txn->get_lock_set(Lock_data_type::ROW,target_lock_mode)->count(l_id)==0){
-            txn->add_lock_set(target_lock_mode, l_id);
-        }
-        return true;
-    }
-
-    LockRequest* lock_request = new LockRequest(txn->get_txn_id(), lock_mode); 
-    request_queue->request_queue_.emplace_back(lock_request); 
-    
-    request_queue->cv_.wait(queue_lock, [&request_queue, &lock_request, &txn] {
-                    return Lock_manager::checkQueueCompatible(request_queue, lock_request) || 
-                        txn->get_state()==TransactionState::ABORTED;
-                });
-    lock_request->granted_ = true;
-    txn->add_lock_set(lock_mode, l_id); 
-
-    return true;
 }
 
 auto Lock_manager::UnLockTable(Transaction *txn,  const table_oid_t &oid) -> bool {
