@@ -1,6 +1,8 @@
 #include <iostream>
 #include "Lock_manager.h"
 
+std::atomic<bool> Lock_manager::enable_no_wait_;
+
 //NOTE:
 auto Lock_manager::isLockCompatible(const LockRequest *iter, const LockMode &target_lock_mode) -> bool {
         switch (target_lock_mode) {
@@ -85,10 +87,19 @@ auto Lock_manager::checkSameTxnLockRequest(Transaction *txn, LockRequestQueue *r
                 else if(iter->lock_mode_ == target_lock_mode && iter->granted_ == false){
                     //正在申请锁, 等待这个请求申请成功后返回
                     request_queue->cv_.wait(queue_lock, [&request_queue, &iter, &txn]{
-                        return Lock_manager::checkQueueCompatible(request_queue, iter) || 
-                            txn->get_state()==TransactionState::ABORTED;
+                        //TODO deadlock
+                        if(Lock_manager::enable_no_wait_==false)
+                            return Lock_manager::checkQueueCompatible(request_queue, iter) || 
+                                txn->get_state()==TransactionState::ABORTED;
+                        if(Lock_manager::checkQueueCompatible(request_queue,iter)==true)
+                            return true;
+                        else{
+                            txn->set_transaction_state(TransactionState::ABORTED);
+                            return true;
+                        }
                     });
-                    
+                    if(txn->get_state()==TransactionState::ABORTED) 
+                        throw TransactionAbortException (txn->get_txn_id(), AbortReason::DEAD_LOCK_PREVENT_NO_WAIT) ;
                     iter->granted_ = true;
                     return true; 
                 }
@@ -105,9 +116,19 @@ auto Lock_manager::checkSameTxnLockRequest(Transaction *txn, LockRequestQueue *r
                     iter->lock_mode_ = target_lock_mode;
                     iter->granted_ = false;
                     request_queue->cv_.wait(queue_lock, [&request_queue, &iter, &txn]{
-                        return Lock_manager::checkQueueCompatible(request_queue, iter) || 
-                            txn->get_state()==TransactionState::ABORTED;
+                        //TODO deadlock
+                        if(Lock_manager::enable_no_wait_==false)
+                            return Lock_manager::checkQueueCompatible(request_queue, iter) || 
+                                txn->get_state()==TransactionState::ABORTED;
+                        if(Lock_manager::checkQueueCompatible(request_queue,iter)==true)
+                            return true;
+                        else{
+                            txn->set_transaction_state(TransactionState::ABORTED);
+                            return true;
+                        }
                     });
+                    if(txn->get_state()==TransactionState::ABORTED) 
+                        throw TransactionAbortException (txn->get_txn_id(), AbortReason::DEAD_LOCK_PREVENT_NO_WAIT) ;
                     request_queue->upgrading_ = false;
                     iter->granted_ = true;
                     // //TODO, 加入锁集
@@ -175,10 +196,26 @@ auto Lock_manager::LockTable(Transaction *txn, LockMode lock_mode, const table_o
         LockRequest* lock_request = new LockRequest(txn->get_txn_id(), target_lock_mode); 
         request_queue->request_queue_.emplace_back(lock_request); 
         
-        request_queue->cv_.wait(queue_lock, [&request_queue, &lock_request, &txn] {
-                        return Lock_manager::checkQueueCompatible(request_queue, lock_request) || 
-                            txn->get_state()==TransactionState::ABORTED;
+        // request_queue->cv_.wait(queue_lock, [&request_queue, &lock_request, &txn] {
+        //                 return Lock_manager::checkQueueCompatible(request_queue, lock_request) || 
+        //                     txn->get_state()==TransactionState::ABORTED;
+        //             });
+
+        request_queue->cv_.wait(queue_lock, [&request_queue, &lock_request, &txn]{
+                        //TODO deadlock
+                        if(Lock_manager::enable_no_wait_==false)
+                            return Lock_manager::checkQueueCompatible(request_queue, lock_request) || 
+                                txn->get_state()==TransactionState::ABORTED;
+                        if(Lock_manager::checkQueueCompatible(request_queue,lock_request)==true)
+                            return true;
+                        else{
+                            txn->set_transaction_state(TransactionState::ABORTED);
+                            return true;
+                        }
                     });
+        if(txn->get_state()==TransactionState::ABORTED) 
+            throw TransactionAbortException (txn->get_txn_id(), AbortReason::DEAD_LOCK_PREVENT_NO_WAIT) ;
+
         lock_request->granted_ = true;
         //TODO, 加入锁集
         txn->add_lock_set(target_lock_mode, l_id); 
@@ -240,10 +277,21 @@ auto Lock_manager::LockPartition(Transaction *txn, LockMode lock_mode, const tab
         LockRequest* lock_request = new LockRequest(txn->get_txn_id(), lock_mode); 
         request_queue->request_queue_.emplace_back(lock_request); 
         
-        request_queue->cv_.wait(queue_lock, [&request_queue, &lock_request, &txn] {
-                        return Lock_manager::checkQueueCompatible(request_queue, lock_request) || 
-                            txn->get_state()==TransactionState::ABORTED;
+        request_queue->cv_.wait(queue_lock, [&request_queue, &lock_request, &txn]{
+                        //TODO deadlock
+                        if(Lock_manager::enable_no_wait_==false)
+                            return Lock_manager::checkQueueCompatible(request_queue, lock_request) || 
+                                txn->get_state()==TransactionState::ABORTED;
+                        if(Lock_manager::checkQueueCompatible(request_queue,lock_request)==true)
+                            return true;
+                        else{
+                            txn->set_transaction_state(TransactionState::ABORTED);
+                            return true;
+                        }
                     });
+        if(txn->get_state()==TransactionState::ABORTED) 
+            throw TransactionAbortException (txn->get_txn_id(), AbortReason::DEAD_LOCK_PREVENT_NO_WAIT) ;
+            
         lock_request->granted_ = true;
         txn->add_lock_set(lock_mode, l_id); 
 
@@ -306,10 +354,21 @@ auto Lock_manager::LockRow(Transaction *txn, LockMode lock_mode, const table_oid
         LockRequest* lock_request = new LockRequest(txn->get_txn_id(), lock_mode); 
         request_queue->request_queue_.emplace_back(lock_request); 
         
-        request_queue->cv_.wait(queue_lock, [&request_queue, &lock_request, &txn] {
-                        return Lock_manager::checkQueueCompatible(request_queue, lock_request) || 
-                            txn->get_state()==TransactionState::ABORTED;
+        request_queue->cv_.wait(queue_lock, [&request_queue, &lock_request, &txn]{
+                        //TODO deadlock
+                        if(Lock_manager::enable_no_wait_==false)
+                            return Lock_manager::checkQueueCompatible(request_queue, lock_request) || 
+                                txn->get_state()==TransactionState::ABORTED;
+                        if(Lock_manager::checkQueueCompatible(request_queue,lock_request)==true)
+                            return true;
+                        else{
+                            txn->set_transaction_state(TransactionState::ABORTED);
+                            return true;
+                        }
                     });
+        if(txn->get_state()==TransactionState::ABORTED) 
+            throw TransactionAbortException (txn->get_txn_id(), AbortReason::DEAD_LOCK_PREVENT_NO_WAIT) ;
+
         lock_request->granted_ = true;
         txn->add_lock_set(lock_mode, l_id); 
 
@@ -398,6 +457,10 @@ auto Lock_manager::Unlock(Transaction *txn, const Lock_data_id &l_id) -> bool {
     request_queue->cv_.notify_all();
     return true;
 }
+
+auto Lock_manager::RunNoWaitDetection() -> bool{ 
+    return true;
+} 
 
 // int main(){
 //     std::cout << "test" << std::endl;

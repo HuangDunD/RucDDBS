@@ -6,7 +6,8 @@
 #include <condition_variable>  // NOLINT
 #include <list>
 #include <unordered_map>
-
+#include <atomic>
+#include <memory>
 class Lock_manager
 {
 public:
@@ -44,9 +45,24 @@ public:
 
 
 public:
-    Lock_manager(){};
+    Lock_manager(){
+        std::atomic_init(&enable_no_wait_,false);
+    };
+
+    explicit Lock_manager(bool enable_no_wait) {
+        std::atomic_init(&enable_no_wait_,enable_no_wait);
+        // enable_no_wait_ = enable_no_wait;
+        // if (enable_no_wait_) {
+        //     dead_lock_detection_ = new std::thread(&Lock_manager::RunNoWaitDetection, this);
+        //     std::cout << "Wait Die Detection thread launched";
+        // }
+    }
 
     ~Lock_manager(){};
+
+    // inline auto get_enable_no_wait() ->std::atomic<bool> { return  enable_no_wait_;}
+
+    auto RunNoWaitDetection() -> bool; 
 
     auto LockTable(Transaction *txn, LockMode lock_mode, const table_oid_t &oid) -> bool;
 
@@ -73,5 +89,8 @@ public:
 private:
     std::mutex latch_;  // 锁表的互斥锁，用于锁表的互斥访问
     std::unordered_map<Lock_data_id, LockRequestQueue> lock_map_;  //可上锁的数据(表,分区,行)数据与锁请求队列的对应关系
+
+    static std::atomic<bool> enable_no_wait_ ;
+    std::thread *dead_lock_detection_;
 
 };

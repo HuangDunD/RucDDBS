@@ -10,7 +10,7 @@ class LockManagerTest : public ::testing::Test {
    public:
     void SetUp() override {
         ::testing::Test::SetUp();
-        lock_manager_ = std::make_unique<Lock_manager>();
+        lock_manager_ = std::make_unique<Lock_manager>(true);
     }
 };
 
@@ -411,7 +411,6 @@ TEST_F(LockManagerTest, Test_Lock_UnLock_Lock){
 TEST_F(LockManagerTest, UpgradeTest1_upgrade_SToX){
 
     std::thread t0([&] {
-        printf("t0\n");
         Transaction txn0(0);
         bool res = lock_manager_->LockTable(&txn0, LockMode::INTENTION_SHARED, 0);
         EXPECT_EQ(res, true);
@@ -452,3 +451,70 @@ TEST_F(LockManagerTest, UpgradeTest1_upgrade_SToX){
     t0.join();
 
 }
+
+TEST_F(LockManagerTest, UpgradeTest2_muti_upgrade){
+
+    int num = 5;
+    
+    auto task = [&](txn_id_t txn_id){
+        Transaction txn0(txn_id);
+        bool res = lock_manager_->LockTable(&txn0, LockMode::INTENTION_SHARED, 0);
+        std::cout << txn_id << " : LockTable IS res: " << res << std::endl; 
+        // EXPECT_EQ(res, true);
+        // EXPECT_EQ(txn0.get_state(), TransactionState::GROWING);
+
+        res = lock_manager_->LockPartition(&txn0, LockMode::INTENTION_SHARED, 0, 0);
+        std::cout << txn_id << " : LockPartition IS res: " << res << std::endl; 
+        // EXPECT_EQ(res, true);
+        // EXPECT_EQ(txn0.get_state(), TransactionState::GROWING);
+
+        res = lock_manager_->LockRow(&txn0, LockMode::SHARED, 0, 0, 0);
+        std::cout << txn_id << " : LockRow S res: " << res << std::endl; 
+        // EXPECT_EQ(res, true);
+        // EXPECT_EQ(txn0.get_state(), TransactionState::GROWING);
+
+        res = lock_manager_->LockTable(&txn0, LockMode::INTENTION_EXCLUSIVE, 0);
+        std::cout << txn_id << " : LockTable IX res: " << res << std::endl; 
+        // EXPECT_EQ(res, true);
+        // EXPECT_EQ(txn0.get_state(), TransactionState::GROWING);
+
+        res = lock_manager_->LockPartition(&txn0, LockMode::INTENTION_EXCLUSIVE, 0, 0);
+        std::cout << txn_id << " : LockPartition IX res: " << res << std::endl; 
+        // EXPECT_EQ(res, true);
+        // EXPECT_EQ(txn0.get_state(), TransactionState::GROWING);
+
+        res = lock_manager_->LockRow(&txn0, LockMode::EXLUCSIVE, 0, 0, 0);
+        std::cout << txn_id << " : LockRow X res: " << res << std::endl; 
+        // EXPECT_EQ(res, true);
+        // EXPECT_EQ(txn0.get_state(), TransactionState::GROWING);
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        lock_manager_->UnLockRow(&txn0, 0, 0, 0);
+        std::cout << txn_id << " : UnLockRow res: " << res << std::endl; 
+        // EXPECT_EQ(txn0.get_state(), TransactionState::SHRINKING);
+
+        lock_manager_->UnLockPartition(&txn0, 0, 0);
+        std::cout << txn_id << " : UnLockPartition res: " << res << std::endl; 
+        // EXPECT_EQ(txn0.get_state(), TransactionState::SHRINKING);
+
+        lock_manager_->UnLockTable(&txn0, 0);
+        std::cout << txn_id << " : UnLockTable res: " << res << std::endl; 
+        // EXPECT_EQ(txn0.get_state(), TransactionState::SHRINKING);
+
+    };
+
+    std::vector<std::thread> threads;
+    threads.reserve(num);
+
+    for(int i = 0; i < num; ++i) {
+        threads.emplace_back(std::thread{task, i});
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    }
+
+    for(int i = 0; i < num; ++i) {
+        threads[i].join();
+    }
+
+
+}
+

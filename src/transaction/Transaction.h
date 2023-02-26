@@ -24,7 +24,8 @@ enum class AbortReason {
   ATTEMPTED_INTENTION_LOCK_ON_ROW,
   TABLE_UNLOCKED_BEFORE_UNLOCKING_ROWS,
   INCOMPATIBLE_UPGRADE,
-  ATTEMPTED_UNLOCK_BUT_NO_LOCK_HELD
+  ATTEMPTED_UNLOCK_BUT_NO_LOCK_HELD, 
+  DEAD_LOCK_PREVENT_NO_WAIT
 };
 
 /**
@@ -43,25 +44,27 @@ class TransactionAbortException : public std::exception {
     switch (abort_reason_) {
       case AbortReason::LOCK_ON_SHRINKING:
         return "Transaction " + std::to_string(txn_id_) +
-               " aborted because it can not take locks in the shrinking state\n";
+               " aborted because it can not take locks in the shrinking state";
       case AbortReason::UPGRADE_CONFLICT:
         return "Transaction " + std::to_string(txn_id_) +
-               " aborted because another transaction is already waiting to upgrade its lock\n";
+               " aborted because another transaction is already waiting to upgrade its lock";
       case AbortReason::LOCK_SHARED_ON_READ_UNCOMMITTED:
-        return "Transaction " + std::to_string(txn_id_) + " aborted on lockshared on READ_UNCOMMITTED\n";
+        return "Transaction " + std::to_string(txn_id_) + " aborted on lockshared on READ_UNCOMMITTED";
       case AbortReason::TABLE_LOCK_NOT_PRESENT:
-        return "Transaction " + std::to_string(txn_id_) + " aborted because table lock not present\n";
+        return "Transaction " + std::to_string(txn_id_) + " aborted because table lock not present";
       case AbortReason::PARTITION_LOCK_NOT_PRESENT:
-        return "Transaction " + std::to_string(txn_id_) + " aborted because table lock not present\n";
+        return "Transaction " + std::to_string(txn_id_) + " aborted because table lock not present";
       case AbortReason::ATTEMPTED_INTENTION_LOCK_ON_ROW:
-        return "Transaction " + std::to_string(txn_id_) + " aborted because intention lock attempted on row\n";
+        return "Transaction " + std::to_string(txn_id_) + " aborted because intention lock attempted on row";
       case AbortReason::TABLE_UNLOCKED_BEFORE_UNLOCKING_ROWS:
         return "Transaction " + std::to_string(txn_id_) +
-               " aborted because table locks dropped before dropping row locks\n";
+               " aborted because table locks dropped before dropping row locks";
       case AbortReason::INCOMPATIBLE_UPGRADE:
-        return "Transaction " + std::to_string(txn_id_) + " aborted because attempted lock upgrade is incompatible\n";
+        return "Transaction " + std::to_string(txn_id_) + " aborted because attempted lock upgrade is incompatible";
       case AbortReason::ATTEMPTED_UNLOCK_BUT_NO_LOCK_HELD:
-        return "Transaction " + std::to_string(txn_id_) + " aborted because attempted to unlock but no lock held \n";
+        return "Transaction " + std::to_string(txn_id_) + " aborted because attempted to unlock but no lock held ";
+      case AbortReason::DEAD_LOCK_PREVENT_NO_WAIT:
+        return "Transaction " + std::to_string(txn_id_) + " aborted because attempted to lock but need to wait(deadlock prevent) ";
     }
     // Todo: Should fail with unreachable.
     return "";
