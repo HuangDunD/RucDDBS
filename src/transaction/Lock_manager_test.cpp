@@ -518,3 +518,91 @@ TEST_F(LockManagerTest, UpgradeTest2_muti_upgrade){
 
 }
 
+TEST_F(LockManagerTest, DeadLock_Test1){
+    
+    std::thread t0([&]{
+        txn_id_t txn_id = 0;
+        Transaction txn0(txn_id);
+        bool res = lock_manager_->LockTable(&txn0, LockMode::INTENTION_SHARED, 0);
+        std::cout << txn_id << " : LockTable IS res: " << res << std::endl; 
+
+        res = lock_manager_->LockPartition(&txn0, LockMode::INTENTION_SHARED, 0, 0);
+        std::cout << txn_id << " : LockPartition IS res: " << res << std::endl; 
+
+        res = lock_manager_->LockRow(&txn0, LockMode::SHARED, 0, 0, 0);
+        std::cout << txn_id << " : LockRow 0 S res: " << res << std::endl; 
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+        res = lock_manager_->LockTable(&txn0, LockMode::INTENTION_EXCLUSIVE, 0);
+        std::cout << txn_id << " : LockTable IX res: " << res << std::endl; 
+
+        res = lock_manager_->LockPartition(&txn0, LockMode::INTENTION_EXCLUSIVE, 0, 0);
+        std::cout << txn_id << " : LockPartition IX res: " << res << std::endl; 
+
+        res = lock_manager_->LockRow(&txn0, LockMode::EXLUCSIVE, 0, 0, 1);
+        std::cout << txn_id << " : LockRow 1 X res: " << res << std::endl; 
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+        lock_manager_->UnLockRow(&txn0, 0, 0, 0);
+        std::cout << txn_id << " : UnLockRow 0 res: " << res << std::endl; 
+        // EXPECT_EQ(txn0.get_state(), TransactionState::SHRINKING);
+
+        lock_manager_->UnLockRow(&txn0, 0, 0, 1);
+        std::cout << txn_id << " : UnLockRow 1 res: " << res << std::endl; 
+
+        lock_manager_->UnLockPartition(&txn0, 0, 0);
+        std::cout << txn_id << " : UnLockPartition res: " << res << std::endl; 
+        // EXPECT_EQ(txn0.get_state(), TransactionState::SHRINKING);
+
+        lock_manager_->UnLockTable(&txn0, 0);
+        std::cout << txn_id << " : UnLockTable res: " << res << std::endl; 
+        // EXPECT_EQ(txn0.get_state(), TransactionState::SHRINKING);
+
+    });
+
+    std::thread t1([&]{
+        txn_id_t txn_id = 1;
+        Transaction txn0(txn_id);
+        bool res = lock_manager_->LockTable(&txn0, LockMode::INTENTION_SHARED, 0);
+        std::cout << txn_id << " : LockTable IS res: " << res << std::endl; 
+
+        res = lock_manager_->LockPartition(&txn0, LockMode::INTENTION_SHARED, 0, 0);
+        std::cout << txn_id << " : LockPartition IS res: " << res << std::endl; 
+
+        res = lock_manager_->LockRow(&txn0, LockMode::SHARED, 0, 0, 1);
+        std::cout << txn_id << " : LockRow 0 S res: " << res << std::endl; 
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+        res = lock_manager_->LockTable(&txn0, LockMode::INTENTION_EXCLUSIVE, 0);
+        std::cout << txn_id << " : LockTable IX res: " << res << std::endl; 
+
+        res = lock_manager_->LockPartition(&txn0, LockMode::INTENTION_EXCLUSIVE, 0, 0);
+        std::cout << txn_id << " : LockPartition IX res: " << res << std::endl; 
+
+        res = lock_manager_->LockRow(&txn0, LockMode::EXLUCSIVE, 0, 0, 0);
+        std::cout << txn_id << " : LockRow 1 X res: " << res << std::endl; 
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        lock_manager_->UnLockRow(&txn0, 0, 0, 0);
+        std::cout << txn_id << " : UnLockRow 0 res: " << res << std::endl; 
+        // EXPECT_EQ(txn0.get_state(), TransactionState::SHRINKING);
+
+        lock_manager_->UnLockRow(&txn0, 0, 0, 1);
+        std::cout << txn_id << " : UnLockRow 1 res: " << res << std::endl; 
+
+        lock_manager_->UnLockPartition(&txn0, 0, 0);
+        std::cout << txn_id << " : UnLockPartition res: " << res << std::endl; 
+        // EXPECT_EQ(txn0.get_state(), TransactionState::SHRINKING);
+
+        lock_manager_->UnLockTable(&txn0, 0);
+        std::cout << txn_id << " : UnLockTable res: " << res << std::endl; 
+        // EXPECT_EQ(txn0.get_state(), TransactionState::SHRINKING);
+
+    });
+
+    t0.join();
+    t1.join();
+}
