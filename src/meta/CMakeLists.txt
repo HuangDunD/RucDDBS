@@ -5,6 +5,8 @@ project(meta)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "-Wall")
 
+include_directories(../meta_server)
+
 # SET(SOURCES meta.cpp)
 # add_library(meta STATIC ${SOURCES})
 

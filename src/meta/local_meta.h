@@ -3,14 +3,18 @@
 #include <unordered_map>
 #include "table_location.h"
 
-
-
-enum ColType {
+enum class ColType {
     TYPE_INT, TYPE_FLOAT, TYPE_STRING
 };
 
+enum class PartitionType{
+    NONE_PARTITION, //非分区表
+    RANGE_PARTITION, //RANGE分区
+    HASH_PARTITION  //HASH分区
+};
+
 struct ColMeta {
-    std::string tab_name;  // 字段所属表名称
+    table_oid_t oid;       // 字段所属表id
     std::string name;      // 字段名称
     ColType type;          // 字段类型
     int len;               // 字段长度
@@ -18,12 +22,18 @@ struct ColMeta {
     bool index;            // 该字段上是否建立索引
 };
 
+struct ParMeta {
+    partition_id_t p_id; //分区id
+    PartitionType partition_type; //分区表的分区方式
+    //此处应该有一个共用体(Union)存放分区的范围或者Hash的值
+    //还没想好怎么写
+
+};
 
 struct TabMeta {
     table_oid_t oid;
     std::string name;
     std::vector<ColMeta> cols;
-    PhyTableLocation* table_location; 
 
     //TODO
     bool is_col(const std::string &col_name) const ;
