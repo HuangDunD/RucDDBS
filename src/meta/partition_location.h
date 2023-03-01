@@ -1,5 +1,6 @@
 #include <string>
 
+using table_oid_t = int32_t;
 using partition_id_t = int32_t;
 
 enum Replica_Role{
@@ -18,9 +19,9 @@ struct ReplicaLocation
 class PhyPartitionLocation
 {
 public:
-    inline table_oid_t get_table_id() {return table_oid_;}
-    inline partition_id_t get_partition_id() {return p_id_;}
-    inline int32_t get_replica_cnt() {return replica_cnt_;}
+    inline table_oid_t get_table_id() const {return table_oid_;}
+    inline partition_id_t get_partition_id() const {return p_id_;}
+    inline int32_t get_replica_cnt() const {return replica_cnt_;}
     inline std::vector<ReplicaLocation>& get_replica_location() {return repliaca_location_;}
     PhyPartitionLocation(){};
     ~PhyPartitionLocation(){};

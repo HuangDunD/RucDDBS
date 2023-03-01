@@ -2,8 +2,6 @@
 #include <stdint.h>
 #include "partition_location.h"
 
-using table_oid_t = int32_t;
-
 enum class DuplicateType : int64_t
 {
   NOT_DUPLICATE = 0, //非复制表
@@ -14,11 +12,11 @@ class PhyTableLocation {
 public:
     PhyTableLocation(){};
     ~PhyTableLocation(){};
-    inline table_oid_t get_table_id() {return table_oid_;}
+    inline table_oid_t get_table_id() const {return table_oid_;}
 
-    inline DuplicateType get_duplicate_type() { return duplicate_type_;}
+    inline DuplicateType get_duplicate_type() const { return duplicate_type_;}
 
-    inline const std::vector<PhyPartitionLocation>& get_partition_list(){return partiton_list_;}
+    inline const std::vector<PhyPartitionLocation>& get_partition_list() const {return partiton_list_;}
 
 private:
 
