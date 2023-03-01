@@ -24,7 +24,7 @@ struct ColMeta {
 
 struct ParMeta {
     partition_id_t p_id; //分区id
-    PartitionType partition_type; //分区表的分区方式
+    ColMeta partition_key; //分区键
     //此处应该有一个共用体(Union)存放分区的范围或者Hash的值
     //还没想好怎么写
 
@@ -34,6 +34,9 @@ struct TabMeta {
     table_oid_t oid;
     std::string name;
     std::vector<ColMeta> cols;
+
+    PartitionType partition_type; //分区表的分区方式
+    std::vector<ParMeta> partitions;
 
     //TODO
     bool is_col(const std::string &col_name) const ;
