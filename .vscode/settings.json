@@ -26,5 +26,9 @@
                 }
             }
         ]
-    }
+    },
+    "C_Cpp.errorSquiggles": "disabled",
+    "gtest-adapter.debugConfig": [
+        "(gdb) Launch"
+    ]
 }
