@@ -3,7 +3,7 @@
 #include <unordered_map>
 // #include "table_location.h"
 using table_oid_t = int32_t;
-
+using partition_id_t = int32_t;
 enum class ColType {
     TYPE_INT, TYPE_FLOAT, TYPE_STRING
 };

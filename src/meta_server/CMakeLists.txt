@@ -59,6 +59,10 @@ set(DYNAMIC_LIB
     dl
     )
 
+# add_library(meta_server STATIC meta_server_rpc.cpp meta_server.cpp)
 add_executable(meta_server_rpc meta_server_rpc.cpp meta_server.cpp ${PROTO_SRC} ${PROTO_HEADER})
 
+add_executable(meta_client meta_client.cpp ${PROTO_SRC} ${PROTO_HEADER})
+
 target_link_libraries(meta_server_rpc ${BRPC_LIB} ${DYNAMIC_LIB})
+target_link_libraries(meta_client ${BRPC_LIB} ${DYNAMIC_LIB})
