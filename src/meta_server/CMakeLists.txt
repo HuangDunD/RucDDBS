@@ -7,6 +7,8 @@ include(FindProtobuf)
 protobuf_generate_cpp(PROTO_SRC PROTO_HEADER meta_server.proto)
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
+include_directories(../meta)
+
 
 find_library(THRIFT_LIB NAMES thrift)
 if (NOT THRIFT_LIB)
@@ -28,6 +30,12 @@ if((NOT BRPC_INCLUDE_PATH) OR (NOT BRPC_LIB))
 endif()
 include_directories(${BRPC_INCLUDE_PATH})
 
+find_path(GFLAGS_INCLUDE_PATH gflags/gflags.h)
+find_library(GFLAGS_LIBRARY NAMES gflags libgflags)
+if((NOT GFLAGS_INCLUDE_PATH) OR (NOT GFLAGS_LIBRARY))
+    message(FATAL_ERROR "Fail to find gflags")
+endif()
+include_directories(${GFLAGS_INCLUDE_PATH})
 
 find_path(LEVELDB_INCLUDE_PATH NAMES leveldb/db.h)
 find_library(LEVELDB_LIB NAMES leveldb)
@@ -41,7 +49,7 @@ include_directories(${OPENSSL_INCLUDE_DIR})
 
 set(DYNAMIC_LIB
     ${CMAKE_THREAD_LIBS_INIT}
-    # ${GFLAGS_LIBRARY}
+    ${GFLAGS_LIBRARY}
     ${PROTOBUF_LIBRARIES}
     ${LEVELDB_LIB}
     ${OPENSSL_CRYPTO_LIBRARY}
@@ -50,4 +58,7 @@ set(DYNAMIC_LIB
     ${THRIFTNB_LIB}
     dl
     )
-    
+
+add_executable(meta_server_rpc meta_server_rpc.cpp meta_server.cpp ${PROTO_SRC} ${PROTO_HEADER})
+
+target_link_libraries(meta_server_rpc ${BRPC_LIB} ${DYNAMIC_LIB})

@@ -9,6 +9,20 @@
 #include <unordered_map>
 #include "local_meta.h"
 
+// template<typename T, typename = typename std::enable_if<std::is_enum<T>::value, T>::type>
+// std::ostream &operator<<(std::ostream &os, const T &enum_val) {
+//     os << static_cast<int>(enum_val);
+//     return os;
+// }
+
+// template<typename T, typename = typename std::enable_if<std::is_enum<T>::value, T>::type>
+// std::istream &operator>>(std::istream &is, T &enum_val) {
+//     int int_val;
+//     is >> int_val;
+//     enum_val = static_cast<T>(int_val);
+//     return is;
+// }
+
 struct TabMetaServer
 {
     table_oid_t oid; //表id
@@ -19,30 +33,44 @@ struct TabMetaServer
     int32_t partition_cnt_; //分区数
     std::vector<ParMeta> partitions; //所有分区的元信息
     PhyTableLocation table_location_; //分区位置
+
+    // friend std::ostream &operator<<(std::ostream &os, const TabMetaServer &tab) {
+    //     // TabMetaServer中有各个基本类型的变量，然后调用重载的这些变量的操作符<<
+    //         os << static_cast<int32_t>(tab.oid) << ' ' << tab.name << ' ' 
+    //               << tab.partition_type << ' ' << tab.partition_key_name << ' ' << tab.partition_cnt_ 
+    //               << ' ' ;
+    // }
+
+    // friend std::istream &operator>>(std::istream &is, ColMeta &col) {
+        
+    // }
 };
 
 class DbMetaServer
 {
 public:
-    DbMetaServer(/* args */);
-    ~DbMetaServer();
+    DbMetaServer(){};
+    ~DbMetaServer(){};
+    DbMetaServer(std::string name,std::unordered_map<std::string, TabMetaServer*> tabs):
+        name_(name), tabs_(std::move(tabs)){};
     
-    inline std::unordered_map<std::string, TabMetaServer>& gettablemap() {return tabs_;}
+    inline std::unordered_map<std::string, TabMetaServer*>& gettablemap() {return tabs_;}
 
 private:
     std::string name_; //数据库名称
-    std::unordered_map<std::string, TabMetaServer> tabs_;  // 数据库内的表名称和表元数据的映射
+    std::unordered_map<std::string, TabMetaServer*> tabs_;  // 数据库内的表名称和表元数据的映射
 
 };
 
 class MetaServer
 {
 private:
-    std::unordered_map<std::string, DbMetaServer> db_map; //数据库名称与数据库元信息的映射
+    std::unordered_map<std::string, DbMetaServer*> db_map_; //数据库名称与数据库元信息的映射
     
 public:
     std::string getPartitionKey(std::string db_name, std::string table_name);
     void Init(){};
     MetaServer(){};
+    MetaServer(std::unordered_map<std::string, DbMetaServer*> db_map):db_map_(std::move(db_map)){};
     ~MetaServer(){};
 };

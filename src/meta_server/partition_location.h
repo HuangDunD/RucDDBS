@@ -20,10 +20,19 @@ class PhyPartitionLocation
 {
 public:
     inline table_oid_t get_table_id() const {return table_oid_;}
+
     inline partition_id_t get_partition_id() const {return p_id_;}
+
     inline int32_t get_replica_cnt() const {return replica_cnt_;}
+
     inline std::vector<ReplicaLocation>& get_replica_location() {return repliaca_location_;}
+    
     PhyPartitionLocation(){};
+
+    PhyPartitionLocation(table_oid_t table_oid, partition_id_t p_id, int32_t replica_cnt, 
+                                        std::vector<ReplicaLocation> repliaca_location)
+                :table_oid_(table_oid), p_id_(p_id), replica_cnt_(replica_cnt),repliaca_location_(std::move(repliaca_location)){};  
+
     ~PhyPartitionLocation(){};
 
 private:

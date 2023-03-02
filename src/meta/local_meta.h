@@ -1,7 +1,8 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
-#include "table_location.h"
+// #include "table_location.h"
+using table_oid_t = int32_t;
 
 enum class ColType {
     TYPE_INT, TYPE_FLOAT, TYPE_STRING
@@ -26,15 +27,15 @@ struct ParMeta {
     std::string name; //分区名
     partition_id_t p_id; //分区id
     //此处应该有一个共用体(Union)存放分区的范围或者Hash的值
-    union partition_val
+    union PARTITION_VAL
     {
-        struct range_partition
+        struct RANGE_PARTITION
         {
             int64_t min_range;
             int64_t max_range;
-        };
+        }range_partition;
         int64_t hash_val;
-    };
+    }partition_val;
     
 };
 
