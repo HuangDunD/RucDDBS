@@ -11,7 +11,7 @@ enum Replica_Role{
 
 struct ReplicaLocation
 {
-    std::string id_addr_;
+    std::string ip_addr_;
     int32_t port_;
     Replica_Role role_;
 };
