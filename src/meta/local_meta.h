@@ -23,6 +23,7 @@ struct ColMeta {
 };
 
 struct ParMeta {
+    std::string name; //分区名
     partition_id_t p_id; //分区id
     //此处应该有一个共用体(Union)存放分区的范围或者Hash的值
     union partition_val

@@ -35,7 +35,8 @@ message PartitionLocationResponse {
         string ip_addr = 1;
         sint32 port = 2;
     };
-    repeated ReplicaLocation partition_location = 2;
+    repeated sint32 p_id = 2;
+    repeated ReplicaLocation partition_location = 3;
 };
 
 service MetaService {
