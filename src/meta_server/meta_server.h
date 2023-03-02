@@ -69,6 +69,7 @@ private:
     
 public:
     std::string getPartitionKey(std::string db_name, std::string table_name);
+    
     void Init(){};
     MetaServer(){};
     MetaServer(std::unordered_map<std::string, DbMetaServer*> db_map):db_map_(std::move(db_map)){};

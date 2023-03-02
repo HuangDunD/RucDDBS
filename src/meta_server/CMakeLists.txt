@@ -4,7 +4,7 @@ project(meta_server)
 
 include(FindThreads)
 include(FindProtobuf)
-protobuf_generate_cpp(PROTO_SRC PROTO_HEADER meta_server.proto)
+protobuf_generate_cpp(PROTO_SRC PROTO_HEADER meta_service.proto)
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(../meta)

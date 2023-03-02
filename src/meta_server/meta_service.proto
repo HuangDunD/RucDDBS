@@ -1,5 +1,5 @@
 syntax="proto3";
-package meta_server;
+package meta_service;
 
 //要实现的是各个节点向meta server发起调用请求来获取所需要分区的id和Location
 

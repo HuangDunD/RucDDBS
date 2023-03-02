@@ -1,17 +1,22 @@
 
 #include <butil/logging.h>
 #include <brpc/server.h>
-#include "meta_server.pb.h"
+#include "meta_service.pb.h"
 #include "meta_server.h"
 
-DEFINE_int32(port, 8001, "TCP Port of this server");
-DEFINE_string(listen_addr, "", "Server listen address, may be IPV4/IPV6/UDS."
-            " If this is set, the flag port will be ignored");
-DEFINE_int32(idle_timeout_s, -1, "Connection will be closed if there is no "
-             "read/write operations during the last `idle_timeout_s'");
+// DEFINE_int32(port, 8001, "TCP Port of this server");
+// DEFINE_string(listen_addr, "", "Server listen address, may be IPV4/IPV6/UDS."
+//             " If this is set, the flag port will be ignored");
+// DEFINE_int32(idle_timeout_s, -1, "Connection will be closed if there is no "
+//              "read/write operations during the last `idle_timeout_s'");
 
-namespace meta_server{
+#define listen_addr ""
+#define port 8001
+
+namespace meta_service{
 class MetaServiceImpl : public MetaService{
+public:
+    MetaServiceImpl(MetaServer *meta_server):meta_server_(meta_server) {};
     MetaServiceImpl() {};
     virtual ~MetaServiceImpl() {};
 
@@ -28,8 +33,12 @@ class MetaServiceImpl : public MetaService{
             << "] from " << cntl->remote_side() 
             << " to " << cntl->local_side()
             << ": db_name: " << request->db_name() << "table name: " << request->tab_name();
-
+        
+        response->set_partition_key_name(meta_server_->getPartitionKey(request->db_name(),request->tab_name()));
     }
+
+private: 
+    MetaServer *meta_server_;
 };
 }
 
@@ -69,5 +78,35 @@ int main(){
 
     MetaServer meta_server(db_map);
 
-    std::cout << meta_server.getPartitionKey("test_db", "test_table");
+    // std::cout << meta_server.getPartitionKey("test_db", "test_table");
+
+    brpc::Server server;
+
+    meta_service::MetaServiceImpl meta_service_impl(&meta_server);
+    
+    if (server.AddService(&meta_service_impl, 
+                          brpc::SERVER_DOESNT_OWN_SERVICE) != 0) {
+        LOG(ERROR) << "Fail to add service";
+        return -1;
+    }
+
+    butil::EndPoint point;
+    if (strcmp(listen_addr,"") != 0) {
+        if (butil::str2endpoint(listen_addr, &point) < 0) {
+            LOG(ERROR) << "Invalid listen address:" << listen_addr;
+            return -1;
+        }
+    } else {
+        point = butil::EndPoint(butil::IP_ANY, port);
+    }
+
+    brpc::ServerOptions options;
+
+    if (server.Start(point,&options) != 0) {
+        LOG(ERROR) << "Fail to start EchoServer";
+        return -1;
+    }
+
+    server.RunUntilAskedToQuit();
+    return 0;
 }
