@@ -15,6 +15,7 @@ struct TabMetaServer
     std::string name; //表name
 
     PartitionType partition_type; //分区表的分区方式
+    std::string partition_key_name; //分区键列名
     int32_t partition_cnt_; //分区数
     std::vector<ParMeta> partitions; //所有分区的元信息
     PhyTableLocation table_location_; //分区位置

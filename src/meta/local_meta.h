@@ -24,10 +24,17 @@ struct ColMeta {
 
 struct ParMeta {
     partition_id_t p_id; //分区id
-    ColMeta partition_key; //分区键
     //此处应该有一个共用体(Union)存放分区的范围或者Hash的值
-    //还没想好怎么写
-
+    union partition_val
+    {
+        struct range_partition
+        {
+            int64_t min_range;
+            int64_t max_range;
+        };
+        int64_t hash_val;
+    };
+    
 };
 
 struct TabMeta {
@@ -36,6 +43,7 @@ struct TabMeta {
     std::vector<ColMeta> cols;
 
     PartitionType partition_type; //分区表的分区方式
+    std::string partition_key_name; //分区键列名
     std::vector<ParMeta> partitions;
 
     //TODO
