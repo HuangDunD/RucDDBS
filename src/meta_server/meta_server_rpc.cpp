@@ -26,7 +26,7 @@ class MetaServiceImpl : public MetaService{
         LOG(INFO) << "Received request[log_id=" << cntl->log_id() 
             << "] from " << cntl->remote_side() 
             << " to " << cntl->local_side()
-            << ": db_name: " << request->db_name() << "table name: " << request->tab_name()
+            << ": db_name: " << request->db_name() << "table name: " << request->tab_name();
 
         
     }

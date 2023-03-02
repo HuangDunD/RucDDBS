@@ -23,20 +23,26 @@ struct TabMetaServer
 
 class DbMetaServer
 {
-private:
-    std::string name_; //数据库名称
-    std::unordered_map<std::string, TabMetaServer> tabs_;  // 数据库内的表名称和表元数据的映射
 public:
     DbMetaServer(/* args */);
     ~DbMetaServer();
+    
+    inline std::unordered_map<std::string, TabMetaServer>& gettablemap() {return tabs_;}
+
+private:
+    std::string name_; //数据库名称
+    std::unordered_map<std::string, TabMetaServer> tabs_;  // 数据库内的表名称和表元数据的映射
+
 };
 
 class MetaServer
 {
 private:
-    DbMetaServer db_;
+    std::unordered_map<std::string, DbMetaServer> db_map; //数据库名称与数据库元信息的映射
     
 public:
+    std::string getPartitionKey(std::string db_name, std::string table_name);
+    void Init(){};
     MetaServer(){};
     ~MetaServer(){};
 };
