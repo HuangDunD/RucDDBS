@@ -5,7 +5,7 @@
 #include "meta_service.pb.h"
 #include "meta_server.h"
 
-#define server "[fe80::93c7:54c8:cdad:267d]:8001"
+#define server "[fd15:4ba5:5a2b:1008:b63e:b3f7:ba07:5d71]:8001"
 
 int main(){
 
