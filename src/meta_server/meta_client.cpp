@@ -5,7 +5,9 @@
 #include "meta_service.pb.h"
 #include "meta_server.h"
 
-#define server "[fd15:4ba5:5a2b:1008:b63e:b3f7:ba07:5d71]:8001"
+// #define server "[2407:c080:801:fffe::7b3c:b07a]:8001"
+
+#define server "[2409:8a15:2044:f4f0:89ae:f70f:a66b:a87a]:8001"
 
 int main(){
 
@@ -48,7 +50,7 @@ int main(){
         } else {
             LOG(WARNING) << cntl.ErrorText();
         }
-        usleep(1000 * 1000L);
+        usleep(5000 * 1000L);
 
     }
 
