@@ -31,14 +31,8 @@ void MetaServiceImpl::GetPartitionLocation(google::protobuf::RpcController* cntl
         std::string tab_name = request->tab_name();
         std::string partition_key_name = request->partition_key_name();
 
-        if(request->partition_val_case() == request->kPartitionRange){
-            int64_t min_range = request->partition_range().min_range();
-            int64_t max_range = request->partition_range().max_range();
-            
-        }
-        else if(request->partition_val_case() == request->kHashVal){
-            int64_t hash_val = request->has_partition_range();
-        }
+        int64_t min_range = request->partition_range().min_range();
+        int64_t max_range = request->partition_range().max_range();
 
     }
 

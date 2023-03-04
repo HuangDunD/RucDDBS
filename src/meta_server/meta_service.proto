@@ -23,10 +23,8 @@ message PartitionLocationRequest {
         int64 min_range = 1;
         int64 max_range = 2;
     }
-    oneof partition_val {
-        Range partition_range = 4;
-        int64 hash_val = 5;
-    };
+    
+    Range partition_range = 4;
 };
 message PartitionLocationResponse {
     sint32 partition_cnt = 1;

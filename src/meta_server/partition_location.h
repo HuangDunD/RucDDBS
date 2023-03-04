@@ -25,8 +25,16 @@ public:
 
     inline int32_t get_replica_cnt() const {return replica_cnt_;}
 
-    inline std::vector<ReplicaLocation>& get_replica_location() {return repliaca_location_;}
+    inline std::vector<ReplicaLocation>& get_replica_location_vec() {return repliaca_location_;}
     
+    inline ReplicaLocation* get_replica_location(Replica_Role role){
+        for(auto &replica_loc: repliaca_location_){
+            if(replica_loc.role_ == role)
+                return &replica_loc;
+        }
+        return nullptr;
+    }
+
     PhyPartitionLocation(){};
 
     PhyPartitionLocation(table_oid_t table_oid, partition_id_t p_id, int32_t replica_cnt, 
