@@ -78,15 +78,17 @@ private:
 public:
     std::string getPartitionKey(std::string db_name, std::string table_name);
 
-    // template <typename T>
     std::unordered_map<partition_id_t,ReplicaLocation> getReplicaLocationList(std::string db_name, std::string table_name, 
             std::string partitionKeyName, int64_t min_range, int64_t max_range);
 
-    // template <typename T>
-    std::unordered_map<partition_id_t,ReplicaLocation> getReplicaLocationListByRange (TabMetaServer *tms, int64_t min_range, int64_t max_range);
+    std::unordered_map<partition_id_t,ReplicaLocation> getReplicaLocationList( std::string db_name, std::string table_name, 
+            std::string partitionKeyName, std::string min_range, std::string max_range);
 
-    // template <typename T>
+    std::unordered_map<partition_id_t,ReplicaLocation> getReplicaLocationListByRange (TabMetaServer *tms, int64_t min_range, int64_t max_range);
+    std::unordered_map<partition_id_t,ReplicaLocation> getReplicaLocationListByRange (TabMetaServer *tms, std::string min_range, std::string max_range);
+
     std::unordered_map<partition_id_t,ReplicaLocation> getReplicaLocationListByHash (TabMetaServer *tms, int64_t min_range, int64_t max_range);
+    std::unordered_map<partition_id_t,ReplicaLocation> getReplicaLocationListByHash (TabMetaServer *tms, std::string min_range, std::string max_range);
 
     void Init(){};
     MetaServer(){};
@@ -99,6 +101,7 @@ enum class MetaServerError {
     NO_TABLE,
     PARTITION_KEY_NOT_TRUE,
     PARTITION_TYPE_NOT_TRUE,
+    NO_PARTITION_OR_REPLICA
 };
 
 class MetaServerErrorException : public std::exception
@@ -118,6 +121,8 @@ public:
             return "request's partitition key is different from Metaserver's";
         case MetaServerError::PARTITION_TYPE_NOT_TRUE:
             return "request's partitition type is different from Metaserver's";
+        case MetaServerError::NO_PARTITION_OR_REPLICA:
+            return "there isn't partition or replica required in MetaServer";
     }
 
     // Todo: Should fail with unreachable.

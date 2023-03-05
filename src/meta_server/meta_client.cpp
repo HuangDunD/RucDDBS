@@ -7,7 +7,7 @@
 
 // #define server "[2407:c080:801:fffe::7b3c:b07a]:8001"
 
-#define server "[2409:8a15:2044:f4f0:89ae:f70f:a66b:a87a]:8001"
+#define server "[::1]:8001"
 
 int main(){
 
@@ -27,8 +27,7 @@ int main(){
     // Send a request and wait for the response every 1 second.
     int log_id = 0;
     while (!brpc::IsAskedToQuit()) {
-        // We will receive response synchronously, safe to put variables
-        // on stack.
+
         meta_service::PartionkeyNameRequest request;
         meta_service::PartionkeyNameResponse response;
         brpc::Controller cntl;
@@ -50,8 +49,35 @@ int main(){
         } else {
             LOG(WARNING) << cntl.ErrorText();
         }
-        usleep(5000 * 1000L);
+        usleep(2000 * 1000L);
 
+        brpc::Controller cntl2;
+        meta_service::PartitionLocationRequest request2;
+        meta_service::PartitionLocationResponse response2;
+        request2.set_db_name("test_db");
+        request2.set_tab_name("test_table");
+        request2.set_partition_key_name(response.partition_key_name());
+        request2.mutable_int_partition_range()->set_min_range(100);
+        request2.mutable_int_partition_range()->set_max_range(600);
+
+        cntl2.set_log_id(log_id ++);  
+        stub.GetPartitionLocation(&cntl2, &request2, &response2, NULL);
+
+        if (!cntl2.Failed()) {
+            LOG(INFO) << "Received response from " << cntl2.remote_side()
+                << " to " << cntl2.local_side()
+                << ": " ;
+            auto res = response2.pid_partition_location();
+            for(auto x : res){
+                LOG(INFO) << "partition id: " << x.first << 
+                    " ip address: "<< x.second.ip_addr() 
+                    << " port: "<< x.second.port();
+            }
+            LOG(INFO) << " latency=" << cntl2.latency_us() << "us";
+        } else {
+            LOG(WARNING) << cntl2.ErrorText();
+        }
+        usleep(2000 * 1000L);
     }
 
     LOG(INFO) << "MetaClient is going to quit";

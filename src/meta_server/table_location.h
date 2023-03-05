@@ -17,10 +17,10 @@ public:
               table_oid_(table_oid), duplicate_type_(duplicate_type), partiton_list_(std::move(partiton_list)){};
 
     ReplicaLocation* getReplicaLocation(partition_id_t p_id){
-      std::vector<PhyPartitionLocation>::iterator iter;
+      std::vector<PhyPartitionLocation>::iterator iter = partiton_list_.begin();
       for(;iter != partiton_list_.end(); iter++){
-        if(iter->get_partition_id() != p_id)
-          continue;
+        if(iter->get_partition_id() == p_id)
+          break;
       }
       if(iter == partiton_list_.end())
         return nullptr;

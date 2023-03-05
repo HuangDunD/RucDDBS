@@ -46,6 +46,16 @@ void MetaServiceImpl::GetPartitionLocation(google::protobuf::RpcController* cntl
         }else if(request->partition_range_case()==request->kStringPartitionRange){
             std::string min_range = request->string_partition_range().min_range();
             std::string max_range = request->string_partition_range().max_range();
+            auto map = response->mutable_pid_partition_location();
+            std::unordered_map<partition_id_t,ReplicaLocation> repli_loc = meta_server_->
+                getReplicaLocationList(db_name, tab_name, partition_key_name, min_range, max_range);
+            for(auto iter : repli_loc){
+                PartitionLocationResponse_ReplicaLocation tmp;
+                tmp.set_ip_addr(iter.second.ip_addr_);
+                tmp.set_port(iter.second.port_);
+                (*map)[iter.first] = tmp;
+            }
+            return;
         }
     }
 
@@ -60,15 +70,15 @@ int main(){
     tab_meta_server.partitions.push_back({"p2", 2, {1001,2000}});
 
     std::vector<ReplicaLocation> t1;
-    t1.push_back({"127.0.0.1", 8000, Replica_Role::INVALID_ROLE});
+    t1.push_back({"127.0.0.1", 8000, Replica_Role::Leader});
     PhyPartitionLocation loc1(1, 0, 1, t1);
 
     std::vector<ReplicaLocation> t2;
-    t2.push_back({"127.0.0.1", 7999, Replica_Role::INVALID_ROLE});
+    t2.push_back({"127.0.0.1", 7999, Replica_Role::Leader});
     PhyPartitionLocation loc2(1, 1, 1, t2);
 
     std::vector<ReplicaLocation> t3;
-    t3.push_back({"127.0.0.1", 7998, Replica_Role::INVALID_ROLE});
+    t3.push_back({"127.0.0.1", 7998, Replica_Role::Leader});
     PhyPartitionLocation loc3(1, 2, 1, t3);
 
     std::vector<PhyPartitionLocation> loc_list;
