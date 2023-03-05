@@ -30,6 +30,7 @@ struct TabMetaServer
 
     PartitionType partition_type; //分区表的分区方式
     std::string partition_key_name; //分区键列名
+    ColType partition_key_type; //分区列属性
     partition_id_t partition_cnt_; //分区数
     std::vector<ParMeta> partitions; //所有分区的元信息
     PhyTableLocation table_location_; //分区位置
@@ -40,7 +41,7 @@ struct TabMetaServer
     partition_id_t HashPartition(std::string val){
         return std::hash<std::string>()(val) % partition_cnt_;
     }
-    
+
     // friend std::ostream &operator<<(std::ostream &os, const TabMetaServer &tab) {
     //     // TabMetaServer中有各个基本类型的变量，然后调用重载的这些变量的操作符<<
     //         os << static_cast<int32_t>(tab.oid) << ' ' << tab.name << ' ' 
@@ -77,11 +78,15 @@ private:
 public:
     std::string getPartitionKey(std::string db_name, std::string table_name);
 
-    std::vector<ReplicaLocation> getReplicaLocationListByRange (std::string db_name, std::string table_name, 
+    // template <typename T>
+    std::unordered_map<partition_id_t,ReplicaLocation> getReplicaLocationList(std::string db_name, std::string table_name, 
             std::string partitionKeyName, int64_t min_range, int64_t max_range);
 
-    std::vector<ReplicaLocation> getReplicaLocationListByHash (std::string db_name, std::string table_name, 
-            std::string partitionKeyName, int64_t min_range, int64_t max_range);
+    // template <typename T>
+    std::unordered_map<partition_id_t,ReplicaLocation> getReplicaLocationListByRange (TabMetaServer *tms, int64_t min_range, int64_t max_range);
+
+    // template <typename T>
+    std::unordered_map<partition_id_t,ReplicaLocation> getReplicaLocationListByHash (TabMetaServer *tms, int64_t min_range, int64_t max_range);
 
     void Init(){};
     MetaServer(){};
