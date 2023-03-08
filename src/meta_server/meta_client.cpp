@@ -26,11 +26,12 @@ int main(){
 
     // Send a request and wait for the response every 1 second.
     int log_id = 0;
+    brpc::Controller cntl;
     while (!brpc::IsAskedToQuit()) {
+        cntl.Reset();
 
         meta_service::PartionkeyNameRequest request;
         meta_service::PartionkeyNameResponse response;
-        brpc::Controller cntl;
 
         request.set_db_name("test_db");
         request.set_tab_name("test_table");
@@ -51,7 +52,8 @@ int main(){
         }
         usleep(2000 * 1000L);
 
-        brpc::Controller cntl2;
+        // brpc::Controller cntl;
+        cntl.Reset();
         meta_service::PartitionLocationRequest request2;
         meta_service::PartitionLocationResponse response2;
         request2.set_db_name("test_db");
@@ -60,12 +62,12 @@ int main(){
         request2.mutable_int_partition_range()->set_min_range(100);
         request2.mutable_int_partition_range()->set_max_range(600);
 
-        cntl2.set_log_id(log_id ++);  
-        stub.GetPartitionLocation(&cntl2, &request2, &response2, NULL);
+        cntl.set_log_id(log_id ++);  
+        stub.GetPartitionLocation(&cntl, &request2, &response2, NULL);
 
-        if (!cntl2.Failed()) {
-            LOG(INFO) << "Received response from " << cntl2.remote_side()
-                << " to " << cntl2.local_side()
+        if (!cntl.Failed()) {
+            LOG(INFO) << "Received response from " << cntl.remote_side()
+                << " to " << cntl.local_side()
                 << ": " ;
             auto res = response2.pid_partition_location();
             for(auto x : res){
@@ -73,9 +75,9 @@ int main(){
                     " ip address: "<< x.second.ip_addr() 
                     << " port: "<< x.second.port();
             }
-            LOG(INFO) << " latency=" << cntl2.latency_us() << "us";
+            LOG(INFO) << " latency=" << cntl.latency_us() << "us";
         } else {
-            LOG(WARNING) << cntl2.ErrorText();
+            LOG(WARNING) << cntl.ErrorText();
         }
         usleep(2000 * 1000L);
     }
