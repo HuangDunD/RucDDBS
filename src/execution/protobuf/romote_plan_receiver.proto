@@ -20,6 +20,7 @@ message ChildPlan {
         UpdatePlan update_plan = 6;
         NestedLoopJoin nestedloop_join_plan = 7;
         ValuePlan value_plan = 8;
+        TableGetPlan table_get_pan = 9;
     }
 }
 
@@ -93,3 +94,11 @@ message NestedLoopJoin {
     ChildPlan leftchild = 2;
     ChildPlan rightchild = 3;
 }
+
+message RemotePlan {
+    ChildPlan child = 1;
+}
+
+service RemotePlanNode {
+    rpc SendRemotePlan(RemotePlan) returns (ValuePlan);
+};
