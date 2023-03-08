@@ -36,6 +36,14 @@ message SeqScanPlan {
     sint32 par_id = 3;
 }
 
+//获取key值
+message TableGetPlan {
+    string db_name = 1;
+    string tab_name = 2;
+    sint32 par_id = 3;
+    string key = 4;
+}
+
 //过滤器
 message FilterPlan {
     repeated Expression expression= 1;
