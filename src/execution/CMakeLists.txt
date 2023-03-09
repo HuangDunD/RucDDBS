@@ -7,6 +7,7 @@ include(FindProtobuf)
 protobuf_generate_cpp(PROTO_SRC PROTO_HEADER distributed_plan_service.proto)
 
 include_directories(./build)
+include_directories(../transaction)
 
 find_library(THRIFT_LIB NAMES thrift)
 if (NOT THRIFT_LIB)

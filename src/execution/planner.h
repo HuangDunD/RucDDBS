@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <vector>
 #include "ast.h"
+#include "Lock_manager.h"
 
 enum value_type{
     integer,
@@ -186,7 +187,7 @@ public:
     std::string db_name;
     std::string tabs;
     int32_t par_id;
-    
+
     std::vector<std::shared_ptr<record>> exec_op(){
         std::vector<std::shared_ptr<record>> res;
 
