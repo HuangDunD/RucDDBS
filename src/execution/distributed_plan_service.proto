@@ -1,5 +1,5 @@
 syntax="proto3";
-package romote_plan_receiver;
+package distributed_plan_service;
 
 option cc_generic_services = true;
 
