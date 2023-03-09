@@ -6,6 +6,8 @@ include(FindThreads)
 include(FindProtobuf)
 protobuf_generate_cpp(PROTO_SRC PROTO_HEADER distributed_plan_service.proto)
 
+include_directories(./build)
+
 find_library(THRIFT_LIB NAMES thrift)
 if (NOT THRIFT_LIB)
     set(THRIFT_LIB "")
@@ -58,6 +60,6 @@ set(DYNAMIC_LIB
     dl
     )
 
-add_executable(execution_rpc execution_rpc.cpp  ${PROTO_SRC} ${PROTO_HEADER})
+add_executable(execution_rpc execution_rpc.cpp execution_rpc.h ${PROTO_SRC} ${PROTO_HEADER})
 
 target_link_libraries(execution_rpc ${BRPC_LIB} ${DYNAMIC_LIB})
