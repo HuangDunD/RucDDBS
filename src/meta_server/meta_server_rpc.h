@@ -56,6 +56,16 @@ public:
                        ::meta_service::CreatePartitonTableResponse* response,
                        ::google::protobuf::Closure* done);
 
+    //节点注册
+    virtual void NodeRegister(::google::protobuf::RpcController* controller,
+                       const ::meta_service::RegisterRequest* request,
+                       ::meta_service::RegisterResponse* response,
+                       ::google::protobuf::Closure* done){
+
+            brpc::Controller* cntl = static_cast<brpc::Controller*>(controller);
+           
+    }
+
 private: 
     MetaServer *meta_server_;
 };

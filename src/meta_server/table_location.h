@@ -5,7 +5,7 @@
 enum class DuplicateType : int64_t
 {
   NOT_DUPLICATE = 0, //非复制表
-  DUPLICATE,         //复制表
+  DUPLICATE         //复制表
 };
 
 class PhyTableLocation {
@@ -29,7 +29,7 @@ public:
 
     inline table_oid_t get_table_id() const {return table_oid_;}
     inline void set_table_id(table_oid_t tab_id) {table_oid_ = tab_id;}
-    
+
     inline DuplicateType get_duplicate_type() const { return duplicate_type_;}
     inline void set_duplicate_type(DuplicateType type) {duplicate_type_ = type;}
 

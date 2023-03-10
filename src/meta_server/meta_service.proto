@@ -100,10 +100,19 @@ message CreatePartitonTableResponse{
     bool success = 2;
 }
 
+message RegisterRequest{
+    bool sayhello = 1;
+}
+
+message RegisterResponse{
+    bool register_ok = 1;
+}
+
 service MetaService {
     rpc GetPartitionKey(PartionkeyNameRequest) returns (PartionkeyNameResponse);
     rpc GetPartitionLocation(PartitionLocationRequest) returns (PartitionLocationResponse);
     rpc CreateDataBase(CreateDatabaseRequest) returns (CreateDatabaseResponse);
     rpc CreateTable(CreateTableRequest) returns (CreateTableResponse);
     rpc CreatePartitionTable(CreatePartitonTableRequest) returns (CreatePartitonTableResponse);
+    rpc NodeRegister(RegisterRequest) returns (RegisterResponse);
 };

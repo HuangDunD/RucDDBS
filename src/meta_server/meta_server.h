@@ -23,6 +23,12 @@
 //     return is;
 // }
 
+struct Node{
+    std::string ip_addr;
+    int32_t port;
+    bool activate;
+};
+
 struct TabMetaServer
 {
     table_oid_t oid; //表id
@@ -77,11 +83,14 @@ class MetaServer
 {
 private:
     std::unordered_map<std::string, DbMetaServer*> db_map_; //数据库名称与数据库元信息的映射
-    
+    std::unordered_map<std::string, Node> ip_node_map_;
 public:
 
     inline const std::unordered_map<std::string, DbMetaServer*>& get_db_map() {return db_map_;}
     inline std::unordered_map<std::string, DbMetaServer*>& mutable_db_map() {return db_map_;}
+    inline const std::unordered_map<std::string, Node*>& get_ip_node_map() {return ip_node_map_;}
+    inline std::unordered_map<std::string, Node*>& mutable_ip_node_map()) {return ip_node_map_;}
+
     std::string getPartitionKey(std::string db_name, std::string table_name);
 
     std::unordered_map<partition_id_t,ReplicaLocation> getReplicaLocationList(std::string db_name, std::string table_name, 

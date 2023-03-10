@@ -136,9 +136,9 @@ void MetaServiceImpl::CreatePartitionTable(::google::protobuf::RpcController* co
                 tmp.string_range.max_range = request->range()[i].max_range();
                 tms->partitions.push_back(tmp);
             }
-
             
-            tms->table_location_;
+            tms->table_location_.set_table_id(tms->oid);
+            //TODO 分配物理节点
 
             response->set_oid(tms->oid);
             response->set_success(true);
