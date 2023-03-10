@@ -30,44 +30,131 @@ void MetaServiceImpl::GetPartitionLocation(google::protobuf::RpcController* cntl
         std::string db_name = request->db_name();
         std::string tab_name = request->tab_name();
         std::string partition_key_name = request->partition_key_name();
-        if(request->partition_range_case()==request->kIntPartitionRange){
-            int64_t min_range = request->int_partition_range().min_range();
-            int64_t max_range = request->int_partition_range().max_range();
-            auto map = response->mutable_pid_partition_location();
-            std::unordered_map<partition_id_t,ReplicaLocation> repli_loc = meta_server_->
-                getReplicaLocationList(db_name, tab_name, partition_key_name, min_range, max_range);
-            for(auto iter : repli_loc){
-                PartitionLocationResponse_ReplicaLocation tmp;
-                tmp.set_ip_addr(iter.second.ip_addr_);
-                tmp.set_port(iter.second.port_);
-                (*map)[iter.first] = tmp;
-            }
-            return;
-        }else if(request->partition_range_case()==request->kStringPartitionRange){
-            std::string min_range = request->string_partition_range().min_range();
-            std::string max_range = request->string_partition_range().max_range();
-            auto map = response->mutable_pid_partition_location();
-            std::unordered_map<partition_id_t,ReplicaLocation> repli_loc = meta_server_->
-                getReplicaLocationList(db_name, tab_name, partition_key_name, min_range, max_range);
-            for(auto iter : repli_loc){
-                PartitionLocationResponse_ReplicaLocation tmp;
-                tmp.set_ip_addr(iter.second.ip_addr_);
-                tmp.set_port(iter.second.port_);
-                (*map)[iter.first] = tmp;
-            }
-            return;
+
+        std::string min_range = request->string_partition_range().min_range();
+        std::string max_range = request->string_partition_range().max_range();
+        auto map = response->mutable_pid_partition_location();
+        std::unordered_map<partition_id_t,ReplicaLocation> repli_loc = meta_server_->
+            getReplicaLocationList(db_name, tab_name, partition_key_name, min_range, max_range);
+        for(auto iter : repli_loc){
+            PartitionLocationResponse_ReplicaLocation tmp;
+            tmp.set_ip_addr(iter.second.ip_addr_);
+            tmp.set_port(iter.second.port_);
+            (*map)[iter.first] = tmp;
         }
+        return;
+
     }
 
+
+
+//创建非分区表函数, 由meta_server分配table_oid, 并将Partition Type设置成None partition
+void MetaServiceImpl::CreateTable(::google::protobuf::RpcController* controller,
+                       const ::meta_service::CreateTableRequest* request,
+                       ::meta_service::CreateTableResponse* response,
+                       ::google::protobuf::Closure* done){
+            if(meta_server_->get_db_map().count(request->db_name())!=1){
+                response->set_success(false);
+                return;
+            }
+            if(meta_server_->mutable_db_map()[request->db_name()]->gettablemap().count(request->tab_name())==1){
+                response->set_success(false);
+                return;
+            }else{
+                auto tms = new TabMetaServer();
+                meta_server_->mutable_db_map()[request->db_name()]->gettablemap()[request->tab_name()] = tms;
+
+                tms->name = request->tab_name();
+                tms->oid = meta_server_->mutable_db_map()[request->db_name()]->get_next_oid();
+                meta_server_->mutable_db_map()[request->db_name()]->set_next_oid(tms->oid + 1);
+                tms->partition_type = PartitionType::NONE_PARTITION;
+
+                response->set_oid(tms->oid);
+                response->set_success(true);
+                return;
+            }
+    }
+
+    //创建分区表
+void MetaServiceImpl::CreatePartitionTable(::google::protobuf::RpcController* controller,
+                       const ::meta_service::CreatePartitonTableRequest* request,
+                       ::meta_service::CreatePartitonTableResponse* response,
+                       ::google::protobuf::Closure* done){
+            if(meta_server_->get_db_map().count(request->db_name())!=1){
+                response->set_success(false);
+                return;
+            }
+            if(meta_server_->mutable_db_map()[request->db_name()]->gettablemap().count(request->tab_name())==1){
+                response->set_success(false);
+                return;
+            }
+            if(request->partition_type() == PartitionType_proto::NONE_PARTITION){
+                response->set_success(false);
+                return;
+            }
+            auto tms = new TabMetaServer();
+            meta_server_->mutable_db_map()[request->db_name()]->gettablemap()[request->tab_name()] = tms;
+            tms->name = request->tab_name();
+            tms->oid = meta_server_->mutable_db_map()[request->db_name()]->get_next_oid();
+            meta_server_->mutable_db_map()[request->db_name()]->set_next_oid(tms->oid + 1);
+
+            tms->partition_key_name = request->partition_key_name();
+            tms->partition_cnt_ = request->partition_cnt();
+
+            switch (request->partition_key_type())
+            {
+            case PartitionType_proto::RANGE_PARTITION:
+                tms->partition_type = PartitionType::RANGE_PARTITION;
+                break;
+            case PartitionType_proto::HASH_PARTITION :
+                tms->partition_type = PartitionType::HASH_PARTITION;
+                break;
+            default:
+                break;
+            }
+            switch (request->partition_key_type())
+            {
+            case ColType_proto::TYPE_INT :
+                tms->partition_key_type = ColType::TYPE_INT;
+                break;
+            case ColType_proto::TYPE_STRING :
+                tms->partition_key_type = ColType::TYPE_STRING;
+                break;
+            case ColType_proto::TYPE_FLOAT :
+                tms->partition_key_type = ColType::TYPE_FLOAT;
+                break;
+            default:
+                break;
+            }
+            
+            for(int i=0; i<tms->partition_cnt_; i++){
+                ParMeta tmp;
+                tmp.name = "p" + std::to_string(i);
+                tmp.p_id = i;
+                
+                tmp.string_range.min_range = request->range()[i].min_range();
+                tmp.string_range.max_range = request->range()[i].max_range();
+                tms->partitions.push_back(tmp);
+            }
+
+            
+            tms->table_location_;
+
+            response->set_oid(tms->oid);
+            response->set_success(true);
+            return;
+    }
 }
+
+
 
 int main(){
     TabMetaServer tab_meta_server{1, "test_table", PartitionType::RANGE_PARTITION, "row1", ColType::TYPE_INT, 3};
     // std::vector<ParMeta> par_meta;
 
-    tab_meta_server.partitions.push_back({"p0", 0, {0,500}});
-    tab_meta_server.partitions.push_back({"p1", 1, {501,1000}});
-    tab_meta_server.partitions.push_back({"p2", 2, {1001,2000}});
+    tab_meta_server.partitions.push_back({"p0", 0, {"0","500"}});
+    tab_meta_server.partitions.push_back({"p1", 1, {"501","1000"}});
+    tab_meta_server.partitions.push_back({"p2", 2, {"1001","2000"}});
 
     std::vector<ReplicaLocation> t1;
     t1.push_back({"127.0.0.1", 8000, Replica_Role::Leader});

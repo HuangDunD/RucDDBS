@@ -65,7 +65,7 @@ public:
     
     inline std::unordered_map<std::string, TabMetaServer*>& gettablemap() {return tabs_;}
     inline table_oid_t get_next_oid() {return next_oid_;}
-    inline table_oid_t set_next_oid(table_oid_t next_oid) { next_oid_ = next_oid;}
+    inline void set_next_oid(table_oid_t next_oid) { next_oid_ = next_oid;}
 private:
     table_oid_t next_oid_; //分配表oid
     std::string name_; //数据库名称

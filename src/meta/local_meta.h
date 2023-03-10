@@ -28,10 +28,10 @@ struct ParMeta {
     partition_id_t p_id; //分区id
     //此处应该有一个共用体(Union)存放分区的范围 
 
-    struct {
-        int64_t min_range;
-        int64_t max_range;
-    }int_range;
+    // struct {
+    //     int64_t min_range;
+    //     int64_t max_range;
+    // }int_range;
 
     struct {
         std::string min_range;

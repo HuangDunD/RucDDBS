@@ -59,8 +59,8 @@ int main(){
         request2.set_db_name("test_db");
         request2.set_tab_name("test_table");
         request2.set_partition_key_name(response.partition_key_name());
-        request2.mutable_int_partition_range()->set_min_range(100);
-        request2.mutable_int_partition_range()->set_max_range(600);
+        request2.mutable_string_partition_range()->set_min_range("100");
+        request2.mutable_string_partition_range()->set_max_range("600");
 
         cntl.set_log_id(log_id ++);  
         stub.GetPartitionLocation(&cntl, &request2, &response2, NULL);

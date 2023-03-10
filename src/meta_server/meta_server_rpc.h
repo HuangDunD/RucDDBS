@@ -44,32 +44,18 @@ public:
             }
     };
 
+    //创建非分区表函数, 由meta_server分配table_oid, 并将Partition Type设置成None partition
     virtual void CreateTable(::google::protobuf::RpcController* controller,
                        const ::meta_service::CreateTableRequest* request,
                        ::meta_service::CreateTableResponse* response,
-                       ::google::protobuf::Closure* done){
-            if(meta_server_->get_db_map().count(request->db_name())!=1){
-                response->set_success(false);
-                return;
-            }
-            if(meta_server_->mutable_db_map()[request->db_name()]->gettablemap().count(request->tab_name())==1){
-                response->set_success(false);
-                return;
-            }else{
-                auto tms = new TabMetaServer();
-                meta_server_->mutable_db_map()[request->db_name()]->gettablemap()[request->tab_name()] = tms;
-
-                tms->name = request->tab_name();
-                tms->oid = meta_server_->mutable_db_map()[request->db_name()]->get_next_oid();
-                meta_server_->mutable_db_map()[request->db_name()]->set_next_oid(tms->oid + 1);
-
-                response->set_oid(tms->oid);
-                response->set_success(true);
-                return;
-            }
-    }
-
+                       ::google::protobuf::Closure* done);
     
+    //创建分区表
+    virtual void CreatePartitionTable(::google::protobuf::RpcController* controller,
+                       const ::meta_service::CreatePartitonTableRequest* request,
+                       ::meta_service::CreatePartitonTableResponse* response,
+                       ::google::protobuf::Closure* done);
+
 private: 
     MetaServer *meta_server_;
 };
