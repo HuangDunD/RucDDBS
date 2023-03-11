@@ -102,16 +102,11 @@ public:
 
     std::string getPartitionKey(std::string db_name, std::string table_name);
 
-    std::unordered_map<partition_id_t,ReplicaLocation> getReplicaLocationList(std::string db_name, std::string table_name, 
-            std::string partitionKeyName, int64_t min_range, int64_t max_range);
-
     std::unordered_map<partition_id_t,ReplicaLocation> getReplicaLocationList( std::string db_name, std::string table_name, 
             std::string partitionKeyName, std::string min_range, std::string max_range);
 
-    std::unordered_map<partition_id_t,ReplicaLocation> getReplicaLocationListByRange (TabMetaServer *tms, int64_t min_range, int64_t max_range);
     std::unordered_map<partition_id_t,ReplicaLocation> getReplicaLocationListByRange (TabMetaServer *tms, std::string min_range, std::string max_range);
 
-    std::unordered_map<partition_id_t,ReplicaLocation> getReplicaLocationListByHash (TabMetaServer *tms, int64_t min_range, int64_t max_range);
     std::unordered_map<partition_id_t,ReplicaLocation> getReplicaLocationListByHash (TabMetaServer *tms, std::string min_range, std::string max_range);
 
     void Init(){};
