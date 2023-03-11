@@ -27,6 +27,15 @@ struct Node{
     std::string ip_addr;
     int32_t port;
     bool activate;
+    int32_t leader_par_cnt;
+    int32_t follower_par_cnt;
+    Node(std::string _ip_addr, int32_t _port, bool _activate){
+        ip_addr = _ip_addr;
+        port = _port;
+        activate = _activate;
+        leader_par_cnt = 0;
+        follower_par_cnt = 0;
+    }
 };
 
 struct TabMetaServer
@@ -83,13 +92,13 @@ class MetaServer
 {
 private:
     std::unordered_map<std::string, DbMetaServer*> db_map_; //数据库名称与数据库元信息的映射
-    std::unordered_map<std::string, Node> ip_node_map_;
+    std::unordered_map<std::string, Node*> ip_node_map_;
 public:
 
     inline const std::unordered_map<std::string, DbMetaServer*>& get_db_map() {return db_map_;}
     inline std::unordered_map<std::string, DbMetaServer*>& mutable_db_map() {return db_map_;}
     inline const std::unordered_map<std::string, Node*>& get_ip_node_map() {return ip_node_map_;}
-    inline std::unordered_map<std::string, Node*>& mutable_ip_node_map()) {return ip_node_map_;}
+    inline std::unordered_map<std::string, Node*>& mutable_ip_node_map() {return ip_node_map_;}
 
     std::string getPartitionKey(std::string db_name, std::string table_name);
 

@@ -93,6 +93,9 @@ message CreatePartitonTableRequest{
         string max_range = 2;
     }
     repeated Range range = 7; //存放分区的范围 Range分区需要 Hash分区无须填写
+
+    bool has_replica = 8;
+    sint32 replica_cnt = 9;
 }
 
 message CreatePartitonTableResponse{

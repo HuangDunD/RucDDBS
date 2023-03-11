@@ -35,6 +35,9 @@ public:
                        const ::meta_service::CreateDatabaseRequest* request,
                        ::meta_service::CreateDatabaseResponse* response,
                        ::google::protobuf::Closure* done){
+                        
+            brpc::ClosureGuard done_guard(done);
+
             if(meta_server_->get_db_map().count(request->db_name())==1){
                 //db已经存在
                 response->set_success(false);
@@ -62,8 +65,17 @@ public:
                        ::meta_service::RegisterResponse* response,
                        ::google::protobuf::Closure* done){
 
+            brpc::ClosureGuard done_guard(done);
+
             brpc::Controller* cntl = static_cast<brpc::Controller*>(controller);
-           
+            if(meta_server_->mutable_ip_node_map().count(butil::ip2str(cntl->remote_side().ip).c_str())>0){
+                meta_server_->mutable_ip_node_map()[butil::ip2str(cntl->remote_side().ip).c_str()]->port = cntl->remote_side().port;
+                meta_server_->mutable_ip_node_map()[butil::ip2str(cntl->remote_side().ip).c_str()]->activate = true;
+            }
+            else{
+                meta_server_->mutable_ip_node_map()[butil::ip2str(cntl->remote_side().ip).c_str()] = new Node(
+                    butil::ip2str(cntl->remote_side().ip).c_str(), cntl->remote_side().port, true);
+            }
     }
 
 private: 

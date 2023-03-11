@@ -53,6 +53,9 @@ void MetaServiceImpl::CreateTable(::google::protobuf::RpcController* controller,
                        const ::meta_service::CreateTableRequest* request,
                        ::meta_service::CreateTableResponse* response,
                        ::google::protobuf::Closure* done){
+
+            brpc::ClosureGuard done_guard(done);
+
             if(meta_server_->get_db_map().count(request->db_name())!=1){
                 response->set_success(false);
                 return;
@@ -80,6 +83,9 @@ void MetaServiceImpl::CreatePartitionTable(::google::protobuf::RpcController* co
                        const ::meta_service::CreatePartitonTableRequest* request,
                        ::meta_service::CreatePartitonTableResponse* response,
                        ::google::protobuf::Closure* done){
+
+            brpc::ClosureGuard done_guard(done);
+
             if(meta_server_->get_db_map().count(request->db_name())!=1){
                 response->set_success(false);
                 return;
@@ -89,6 +95,11 @@ void MetaServiceImpl::CreatePartitionTable(::google::protobuf::RpcController* co
                 return;
             }
             if(request->partition_type() == PartitionType_proto::NONE_PARTITION){
+                response->set_success(false);
+                return;
+            }
+            if(request->replica_cnt() < meta_server_->get_ip_node_map().size()){
+                //副本数不能超过注册节点数
                 response->set_success(false);
                 return;
             }
@@ -138,8 +149,44 @@ void MetaServiceImpl::CreatePartitionTable(::google::protobuf::RpcController* co
             }
             
             tms->table_location_.set_table_id(tms->oid);
-            //TODO 分配物理节点
-
+            if(request->has_replica()==true){
+                tms->table_location_.set_duplicate_type(DuplicateType::DUPLICATE);
+            }else{
+                tms->table_location_.set_duplicate_type(DuplicateType::NOT_DUPLICATE);
+            }
+            
+            //分配物理节点
+            for(int i = 0; i<tms->partitions.size(); i++){
+                std::vector<ReplicaLocation> replic_loc;
+                int min_cnt = INT32_MAX;
+                std::unordered_set<std::string> s;
+                Node* min_leader_node;
+                for(auto &node: meta_server_->get_ip_node_map()){
+                    if(node.second->activate==true && node.second->leader_par_cnt<min_cnt){
+                        min_cnt = node.second->leader_par_cnt;
+                        min_leader_node = node.second;
+                    }
+                }
+                replic_loc.push_back({min_leader_node->ip_addr,min_leader_node->port, Replica_Role::Leader});
+                min_leader_node->leader_par_cnt++;
+                s.emplace(min_leader_node->ip_addr);
+                for(int j=0; j<request->replica_cnt()-1; j++){
+                    Node* min_follower_node;
+                    int min_cnt = INT32_MAX;
+                    for(auto &node: meta_server_->get_ip_node_map()){
+                        if(node.second->activate==true && s.count(node.second->ip_addr)==0 &&node.second->follower_par_cnt<min_cnt){
+                            min_cnt = node.second->follower_par_cnt;
+                            min_follower_node = node.second;
+                        }
+                    }
+                    replic_loc.push_back({min_follower_node->ip_addr, min_follower_node->port, Replica_Role::Follower});
+                    min_follower_node->follower_par_cnt++;
+                    s.emplace(min_follower_node->ip_addr);
+                }
+                PhyPartitionLocation loc(tms->oid,tms->partitions[i].p_id,request->replica_cnt(),replic_loc);
+                tms->table_location_.mutable_partition_list().push_back(loc);
+            }
+            
             response->set_oid(tms->oid);
             response->set_success(true);
             return;

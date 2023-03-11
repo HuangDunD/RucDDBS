@@ -33,8 +33,8 @@ public:
     inline DuplicateType get_duplicate_type() const { return duplicate_type_;}
     inline void set_duplicate_type(DuplicateType type) {duplicate_type_ = type;}
 
-    inline const std::vector<PhyPartitionLocation>& get_partition_list() const {return partiton_list_;}
-
+    inline const std::vector<PhyPartitionLocation>& get_partition_list() {return partiton_list_;}
+    inline std::vector<PhyPartitionLocation>& mutable_partition_list() {return partiton_list_;}
 private:
 
     table_oid_t table_oid_; //表id
