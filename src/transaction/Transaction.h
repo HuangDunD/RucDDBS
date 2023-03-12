@@ -71,23 +71,6 @@ class TransactionAbortException : public std::exception {
   }
 };
 
-struct pair_hash
-{
-    size_t operator() (const Lock_data_id& lock_data, const LockMode& lock_mode) const noexcept
-    {
-        return std::hash<size_t>() (lock_data.Get()) ^ std::hash<size_t>()(static_cast<std::size_t>(lock_mode));
-    }
-}; 
-
-
-struct pair_equal
-{
-    bool operator()(const std::pair<Lock_data_id, LockMode> &com1, const std::pair<Lock_data_id, LockMode> &com2) const noexcept
-    {
-      return com1.first == com2.first && com1.second == com2.second;
-    }
-};
-
 class Transaction
 {
 private:
