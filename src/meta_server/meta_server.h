@@ -9,32 +9,31 @@
 #include <unordered_map>
 #include "local_meta.h"
 
-// template<typename T, typename = typename std::enable_if<std::is_enum<T>::value, T>::type>
-// std::ostream &operator<<(std::ostream &os, const T &enum_val) {
-//     os << static_cast<int>(enum_val);
-//     return os;
-// }
-
-// template<typename T, typename = typename std::enable_if<std::is_enum<T>::value, T>::type>
-// std::istream &operator>>(std::istream &is, T &enum_val) {
-//     int int_val;
-//     is >> int_val;
-//     enum_val = static_cast<T>(int_val);
-//     return is;
-// }
-
 struct Node{
     std::string ip_addr;
     int32_t port;
     bool activate;
     int32_t leader_par_cnt;
     int32_t follower_par_cnt;
+    Node(){}
     Node(std::string _ip_addr, int32_t _port, bool _activate){
         ip_addr = _ip_addr;
         port = _port;
         activate = _activate;
         leader_par_cnt = 0;
         follower_par_cnt = 0;
+    }
+    // 重载操作符 <<
+    friend std::ostream &operator<<(std::ostream &os, const Node &node) {
+        os << node.ip_addr << " " << node.port << " " << node.activate << " " << node.leader_par_cnt <<
+            " " << node.follower_par_cnt << '\n';
+        return os;
+    }
+    // 重载操作符 >>
+    friend std::istream &operator>>(std::istream &is, Node &node) {
+        is >> node.ip_addr >> node.port >> node.activate >> node.leader_par_cnt 
+            >> node.follower_par_cnt;
+        return is;
     }
 };
 
@@ -57,16 +56,30 @@ struct TabMetaServer
         return std::hash<std::string>()(val) % partition_cnt_;
     }
 
-    // friend std::ostream &operator<<(std::ostream &os, const TabMetaServer &tab) {
-    //     // TabMetaServer中有各个基本类型的变量，然后调用重载的这些变量的操作符<<
-    //         os << static_cast<int32_t>(tab.oid) << ' ' << tab.name << ' ' 
-    //               << tab.partition_type << ' ' << tab.partition_key_name << ' ' << tab.partition_cnt_ 
-    //               << ' ' ;
-    // }
+    friend std::ostream &operator<<(std::ostream &os, const TabMetaServer &tab) {
+        // TabMetaServer中有各个基本类型的变量，然后调用重载的这些变量的操作符<<
+        os << tab.oid << ' ' << tab.name << ' ' << tab.partition_type << ' ' 
+            << tab.partition_key_name << ' ' << tab.partition_key_type << ' ' << tab.partition_cnt_  << ' ' << 
+            tab.partitions.size() << '\n';
+        for (auto &entry : tab.partitions){
+            os << entry;
+        }
+        os << tab.table_location_;
+        return os;
+    }
 
-    // friend std::istream &operator>>(std::istream &is, ColMeta &col) {
-        
-    // }
+    friend std::istream &operator>>(std::istream &is, TabMetaServer &tab) {
+        size_t n;
+        is >> tab.oid >> tab.name >> tab.partition_type >> tab.partition_key_name 
+            >> tab.partition_key_type >> tab.partition_cnt_  >> n;
+        for(int i=0; i<n; i++){
+            ParMeta pm;
+            is >> pm;
+            tab.partitions.push_back(pm);
+        }
+        is >> tab.table_location_;
+        return is;
+    }
 };
 
 class DbMetaServer
@@ -79,8 +92,29 @@ public:
         name_(name), tabs_(std::move(tabs)){next_oid_ = 0;};
     
     inline std::unordered_map<std::string, TabMetaServer*>& gettablemap() {return tabs_;}
+    inline std::string get_db_name() {return name_; }
     inline table_oid_t get_next_oid() {return next_oid_;}
     inline void set_next_oid(table_oid_t next_oid) { next_oid_ = next_oid;}
+    // 重载操作符 <<
+    friend std::ostream &operator<<(std::ostream &os, const DbMetaServer &db_meta_server) {
+        os << db_meta_server.next_oid_ << " " << db_meta_server.name_ << " " << db_meta_server.tabs_.size() << '\n' ;
+        for (auto &entry : db_meta_server.tabs_) {
+            os << *entry.second << '\n'; //entry.second是TabMetaServer, 然后调用重载的TableMetaServer的操作符<<
+        }
+        return os;
+    }
+    // 重载操作符 >>
+    friend std::istream &operator>>(std::istream &is, DbMetaServer &db_meta_server) {
+        is >> db_meta_server.next_oid_ >> db_meta_server.name_;
+        size_t n;
+        is >> n;
+        for(int i=0; i<n; i++){
+            auto tms = new TabMetaServer();
+            is >> *tms;
+            db_meta_server.tabs_[tms->name] = tms;
+        }
+        return is;
+    }
 private:
     table_oid_t next_oid_; //分配表oid
     std::string name_; //数据库名称
@@ -109,6 +143,35 @@ public:
 
     std::unordered_map<partition_id_t,ReplicaLocation> getReplicaLocationListByHash (TabMetaServer *tms, std::string min_range, std::string max_range);
 
+    // 重载操作符 <<
+    friend std::ostream &operator<<(std::ostream &os, const MetaServer &meta_server) {
+        os << meta_server.db_map_.size() << '\n';
+        for (auto &entry : meta_server.db_map_) {
+            os << *entry.second << '\n';  // entry.second是DbMetaServer类型，然后调用重载的DbMetaServer的操作符<<
+        }
+        os << meta_server.ip_node_map_.size() << '\n';
+        for (auto &entry : meta_server.ip_node_map_) {
+            os << *entry.second << '\n';  // entry.second是Node类型，然后调用重载的Node的操作符<<
+        }
+        return os;
+    }
+    // 重载操作符 >>
+    friend std::istream &operator>>(std::istream &is, MetaServer &meta_server) {
+        size_t n;
+        is >> n;
+        for (size_t i = 0; i < n; i++) {
+            auto db_meta_server = new DbMetaServer();
+            is >> *db_meta_server;
+            meta_server.db_map_[db_meta_server->get_db_name()] = db_meta_server;
+        }
+        is >> n;
+        for (size_t i = 0; i < n; i++) {
+            auto node = new Node();
+            is >> *node;
+            meta_server.ip_node_map_[node->ip_addr] = node;
+        }
+        return is;
+    }
     void Init(){};
     MetaServer(){};
     MetaServer(std::unordered_map<std::string, DbMetaServer*> db_map):db_map_(std::move(db_map)){};
@@ -147,6 +210,6 @@ public:
     // Todo: Should fail with unreachable.
     return "";
   }
-    ~MetaServerErrorException();
+    ~MetaServerErrorException(){};
 };
 

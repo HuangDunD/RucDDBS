@@ -38,6 +38,15 @@ struct ParMeta {
         std::string max_range;
     }string_range;
 
+    friend std::ostream &operator<<(std::ostream &os, const ParMeta &pm) {
+        os << pm.name << ' ' << pm.p_id << ' ' << pm.string_range.min_range << ' ' << pm.string_range.max_range << '\n';
+        return os;
+    }
+
+    friend std::istream &operator>>(std::istream &is, ParMeta &pm) {
+        is >> pm.name >> pm.p_id >> pm.string_range.min_range >> pm.string_range.max_range;
+        return is;
+    }
 };
 
 struct TabMeta {

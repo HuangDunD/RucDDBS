@@ -35,6 +35,26 @@ public:
 
     inline const std::vector<PhyPartitionLocation>& get_partition_list() {return partiton_list_;}
     inline std::vector<PhyPartitionLocation>& mutable_partition_list() {return partiton_list_;}
+
+    friend std::ostream &operator<<(std::ostream &os, const PhyTableLocation &phytabloc) {
+        os << phytabloc.table_oid_ << ' ' << phytabloc.duplicate_type_ << ' ' << phytabloc.partiton_list_.size() << '\n';
+        for (auto &entry : phytabloc.partiton_list_){
+            os << entry;
+        }
+        return os;
+    }
+
+    friend std::istream &operator>>(std::istream &is, PhyTableLocation &phytabloc) {
+        size_t n;
+        is >> phytabloc.table_oid_ >> phytabloc.duplicate_type_ >> n;
+        for(int i=0; i<n; i++){
+            PhyPartitionLocation phyparloc;
+            is >> phyparloc;
+            phytabloc.partiton_list_.push_back(phyparloc);
+        }
+        return is;
+    }
+
 private:
 
     table_oid_t table_oid_; //表id
