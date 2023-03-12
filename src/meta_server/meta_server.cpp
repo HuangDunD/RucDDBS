@@ -2,13 +2,41 @@
 #include <iostream>
 #include <type_traits>
 
+void MetaServer::open_meta_server(const std::string &meta_name){
+    struct stat st; 
+    if( !is_dir(meta_name) ){
+        throw MetaServerErrorException(MetaServerError::NO_META_DIR);
+    }
+    if (chdir(meta_name.c_str()) < 0) {
+        throw MetaServerErrorException(MetaServerError::UnixError);
+    }
+    // Load meta
+    // 打开一个名为DB_META_NAME的文件
+    std::ifstream ifs (META_SERVER_FILE_NAME);
+    // 将ofs打开的DB_META_NAME文件中的信息，按照定义好的operator>>操作符，读出到db_中
+    ifs >> *this;  // 注意：此处重载了操作符>>
+}
+
+void MetaServer::close_meta_server(const std::string &meta_name){
+    struct stat st; 
+    if( !is_dir(meta_name) ){
+        throw MetaServerErrorException(MetaServerError::NO_META_DIR);
+    }
+    if (chdir(meta_name.c_str()) < 0) {
+        throw MetaServerErrorException(MetaServerError::UnixError);
+    }
+    //Save Meta
+    std::ofstream ofs (META_SERVER_FILE_NAME);
+    ofs << *this;
+}
+
 std::string MetaServer::getPartitionKey(std::string db_name, std::string table_name){
     DbMetaServer *dms = db_map_[db_name];
     if(dms == nullptr) 
-        throw MetaServerError::NO_DATABASE;
+        throw MetaServerErrorException(MetaServerError::NO_DATABASE);
     TabMetaServer *tms = dms->gettablemap()[table_name];
     if(tms == nullptr)
-        throw MetaServerError::NO_TABLE;
+        throw MetaServerErrorException(MetaServerError::NO_TABLE);
     return tms->partition_key_name;
 }
 
@@ -17,12 +45,12 @@ std::unordered_map<partition_id_t,ReplicaLocation> MetaServer::getReplicaLocatio
 
     DbMetaServer *dms = db_map_[db_name];
     if(dms == nullptr) 
-        throw MetaServerError::NO_DATABASE;
+        throw MetaServerErrorException(MetaServerError::NO_DATABASE);
     TabMetaServer *tms = dms->gettablemap()[table_name];
     if(tms == nullptr)
-        throw MetaServerError::NO_TABLE;
+        throw MetaServerErrorException(MetaServerError::NO_TABLE);
     if(partitionKeyName != tms->partition_key_name)
-        throw MetaServerError::PARTITION_KEY_NOT_TRUE;
+        throw MetaServerErrorException(MetaServerError::PARTITION_KEY_NOT_TRUE);
     
     if(tms->partition_type == PartitionType::RANGE_PARTITION){
         return getReplicaLocationListByRange(tms, min_range, max_range);
@@ -35,7 +63,7 @@ std::unordered_map<partition_id_t,ReplicaLocation> MetaServer::getReplicaLocatio
         for(auto par : tms->partitions){
             auto rep_ptr = tms->table_location_.getReplicaLocation(par.p_id);
             if(rep_ptr == nullptr)
-                throw MetaServerError::NO_PARTITION_OR_REPLICA;
+                throw MetaServerErrorException(MetaServerError::NO_PARTITION_OR_REPLICA);
             res[par.p_id] = *rep_ptr;
         }
         return res;
@@ -53,7 +81,7 @@ std::unordered_map<partition_id_t,ReplicaLocation> MetaServer::getReplicaLocatio
 
                 auto rep_ptr = tms->table_location_.getReplicaLocation(par.p_id);
                 if(rep_ptr == nullptr)
-                    throw MetaServerError::NO_PARTITION_OR_REPLICA;
+                    throw MetaServerErrorException(MetaServerError::NO_PARTITION_OR_REPLICA);
                 res[par.p_id] = *rep_ptr;
             }
         }
@@ -65,7 +93,7 @@ std::unordered_map<partition_id_t,ReplicaLocation> MetaServer::getReplicaLocatio
 
                 auto rep_ptr = tms->table_location_.getReplicaLocation(par.p_id);
                 if(rep_ptr == nullptr)
-                    throw MetaServerError::NO_PARTITION_OR_REPLICA;
+                    throw MetaServerErrorException(MetaServerError::NO_PARTITION_OR_REPLICA);
                 res[par.p_id] = *rep_ptr;
             }
         }
@@ -90,14 +118,14 @@ std::unordered_map<partition_id_t,ReplicaLocation>  MetaServer::getReplicaLocati
             partition_id_t p_id = tms->HashPartition(int_min_range);
             auto rep_ptr = tms->table_location_.getReplicaLocation(p_id);
             if(rep_ptr == nullptr)
-                throw MetaServerError::NO_PARTITION_OR_REPLICA;
+                throw MetaServerErrorException(MetaServerError::NO_PARTITION_OR_REPLICA);
             res[p_id] = *rep_ptr;
         }else{
             //范围查询
             for(auto par : tms->partitions){
                 auto rep_ptr = tms->table_location_.getReplicaLocation(par.p_id);
                 if(rep_ptr == nullptr)
-                    throw MetaServerError::NO_PARTITION_OR_REPLICA;
+                    throw MetaServerErrorException(MetaServerError::NO_PARTITION_OR_REPLICA);
                 res[par.p_id] = *rep_ptr;
             }
         }
@@ -109,14 +137,14 @@ std::unordered_map<partition_id_t,ReplicaLocation>  MetaServer::getReplicaLocati
             partition_id_t p_id = tms->HashPartition(min_range);
             auto rep_ptr = tms->table_location_.getReplicaLocation(p_id);
             if(rep_ptr == nullptr)
-                throw MetaServerError::NO_PARTITION_OR_REPLICA;
+                throw MetaServerErrorException(MetaServerError::NO_PARTITION_OR_REPLICA);
             res[p_id] = *rep_ptr;
         }else{
             //范围查询
             for(auto par : tms->partitions){
                 auto rep_ptr = tms->table_location_.getReplicaLocation(par.p_id);
                 if(rep_ptr == nullptr)
-                    throw MetaServerError::NO_PARTITION_OR_REPLICA;
+                    throw MetaServerErrorException(MetaServerError::NO_PARTITION_OR_REPLICA);
                 res[par.p_id] = *rep_ptr;
             }
         }

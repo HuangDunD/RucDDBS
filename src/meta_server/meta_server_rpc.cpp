@@ -260,6 +260,19 @@ int main(){
         return -1;
     }
 
-    server.RunUntilAskedToQuit();
+    // server.RunUntilAskedToQuit();
+    try{
+        meta_server.close_meta_server("/home/t500ttt/RucDDBS/data/");
+    }
+    catch(MetaServerErrorException& e)
+    {
+        std::cerr << e.GetInfo() << '\n';
+    }
+
+    auto new_meta_server = new MetaServer();
+    new_meta_server->open_meta_server("/home/t500ttt/RucDDBS/data/");
+    
+    new_meta_server->close_meta_server("/home/t500ttt/RucDDBS/data/");
+
     return 0;
 }

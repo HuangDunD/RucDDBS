@@ -13,6 +13,46 @@
 #include <unordered_map>
 
 static const std::string META_SERVER_FILE_NAME = "META_SERVER.meta";
+enum class MetaServerError {
+    NO_DATABASE,
+    NO_TABLE,
+    PARTITION_KEY_NOT_TRUE,
+    PARTITION_TYPE_NOT_TRUE,
+    NO_PARTITION_OR_REPLICA,
+    NO_META_DIR,
+    UnixError,
+};
+
+class MetaServerErrorException : public std::exception
+{
+private:
+    MetaServerError err_;
+public:
+    explicit MetaServerErrorException(MetaServerError err):err_(err){}
+    MetaServerError getMetaServerError(){return err_;}
+    std::string GetInfo() {
+    switch (err_) {
+        case MetaServerError::NO_DATABASE:
+            return "there isn't this database in MetaServer";
+        case MetaServerError::NO_TABLE:
+            return "there isn't this table in MetaServer";
+        case MetaServerError::PARTITION_KEY_NOT_TRUE:
+            return "request's partitition key is different from Metaserver's";
+        case MetaServerError::PARTITION_TYPE_NOT_TRUE:
+            return "request's partitition type is different from Metaserver's";
+        case MetaServerError::NO_PARTITION_OR_REPLICA:
+            return "there isn't partition or replica required in MetaServer";
+        case MetaServerError::NO_META_DIR:
+            return "no meta server dir found";
+        case MetaServerError::UnixError: 
+            return "cd meta server dir error";
+    }
+
+    // Todo: Should fail with unreachable.
+    return "";
+  }
+    ~MetaServerErrorException(){};
+};
 
 struct Node{
     std::string ip_addr;
@@ -148,48 +188,14 @@ public:
 
     std::unordered_map<partition_id_t,ReplicaLocation> getReplicaLocationListByHash (TabMetaServer *tms, std::string min_range, std::string max_range);
 
-    void open_meta_server(const std::string &meta_name){
-        struct stat st; 
-        if( !(stat(meta_name.c_str(), &st) == 0 && S_ISDIR(st.st_mode)) ){
-            throw MetaServerError::NO_META_DIR;
-        }
-        if (chdir(meta_name.c_str()) < 0) {
-            throw MetaServerError::UnixError;
-        }
-        // Load meta
-        // 打开一个名为DB_META_NAME的文件
-        std::ifstream ifs (META_SERVER_FILE_NAME);
-        // 将ofs打开的DB_META_NAME文件中的信息，按照定义好的operator>>操作符，读出到db_中
-        ifs >> *this;  // 注意：此处重载了操作符>>
+    bool is_dir(const std::string &meta_name) {
+        struct stat st;
+        return stat(meta_name.c_str(), &st) == 0 && S_ISDIR(st.st_mode);
     }
 
-    void open_meta_server(const std::string &meta_name){
-        struct stat st; 
-        if( !(stat(meta_name.c_str(), &st) == 0 && S_ISDIR(st.st_mode)) ){
-            throw MetaServerError::NO_META_DIR;
-        }
-        if (chdir(meta_name.c_str()) < 0) {
-            throw MetaServerError::UnixError;
-        }
-        // Load meta
-        // 打开一个名为DB_META_NAME的文件
-        std::ifstream ifs (META_SERVER_FILE_NAME);
-        // 将ofs打开的DB_META_NAME文件中的信息，按照定义好的operator>>操作符，读出到db_中
-        ifs >> *this;  // 注意：此处重载了操作符>>
-    }
+    void open_meta_server(const std::string &meta_name);
 
-    void close_meta_server(const std::string &meta_name){
-        struct stat st; 
-        if( !(stat(meta_name.c_str(), &st) == 0 && S_ISDIR(st.st_mode)) ){
-            throw MetaServerError::NO_META_DIR;
-        }
-        if (chdir(meta_name.c_str()) < 0) {
-            throw MetaServerError::UnixError;
-        }
-        //Save Meta
-        std::ofstream ofs (META_SERVER_FILE_NAME);
-        ofs << *this;
-    }
+    void close_meta_server(const std::string &meta_name);
     
     // 重载操作符 <<
     friend std::ostream &operator<<(std::ostream &os, const MetaServer &meta_server) {
@@ -226,44 +232,5 @@ public:
     ~MetaServer(){};
 };
 
-enum class MetaServerError {
-    NO_DATABASE,
-    NO_TABLE,
-    PARTITION_KEY_NOT_TRUE,
-    PARTITION_TYPE_NOT_TRUE,
-    NO_PARTITION_OR_REPLICA,
-    NO_META_DIR,
-    UnixError,
-};
 
-class MetaServerErrorException : public std::exception
-{
-private:
-    MetaServerError err_;
-public:
-    explicit MetaServerErrorException(MetaServerError err):err_(err){}
-    MetaServerError getMetaServerError(){return err_;}
-    std::string GetInfo() {
-    switch (err_) {
-        case MetaServerError::NO_DATABASE:
-            return "there isn't this database in MetaServer";
-        case MetaServerError::NO_TABLE:
-            return "there isn't this table in MetaServer";
-        case MetaServerError::PARTITION_KEY_NOT_TRUE:
-            return "request's partitition key is different from Metaserver's";
-        case MetaServerError::PARTITION_TYPE_NOT_TRUE:
-            return "request's partitition type is different from Metaserver's";
-        case MetaServerError::NO_PARTITION_OR_REPLICA:
-            return "there isn't partition or replica required in MetaServer";
-        case MetaServerError::NO_META_DIR:
-            return "no meta server dir found";
-        case MetaServerError::UnixError: 
-            return "cd meta server dir error";
-    }
-
-    // Todo: Should fail with unreachable.
-    return "";
-  }
-    ~MetaServerErrorException(){};
-};
 
