@@ -111,6 +111,16 @@ message RegisterResponse{
     bool register_ok = 1;
 }
 
+message UpdateLeaderRequest{
+    string db_name = 1;
+    string tab_name = 2;
+    sint32 par_id = 3;
+}
+
+message UpdateLeaderResponse{
+    bool update_leader_ok = 1; 
+}
+
 service MetaService {
     rpc GetPartitionKey(PartionkeyNameRequest) returns (PartionkeyNameResponse);
     rpc GetPartitionLocation(PartitionLocationRequest) returns (PartitionLocationResponse);
@@ -118,4 +128,5 @@ service MetaService {
     rpc CreateTable(CreateTableRequest) returns (CreateTableResponse);
     rpc CreatePartitionTable(CreatePartitonTableRequest) returns (CreatePartitonTableResponse);
     rpc NodeRegister(RegisterRequest) returns (RegisterResponse);
+    rpc UpdateLeader(UpdateLeaderRequest) returns (UpdateLeaderResponse);
 };

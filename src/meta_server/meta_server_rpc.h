@@ -78,6 +78,20 @@ public:
             }
     }
 
+    //分片换主
+    virtual void UpdateLeader(::google::protobuf::RpcController* controller,
+                    const ::meta_service::UpdateLeaderRequest* request,
+                    ::meta_service::UpdateLeaderResponse* response,
+                    ::google::protobuf::Closure* done){
+            brpc::ClosureGuard done_guard(done);
+            brpc::Controller* cntl = static_cast<brpc::Controller*>(controller);
+            std::string db_name = request->db_name();
+            std::string tab_name = request->tab_name();
+            int32_t par_id = request->par_id();
+            std::string ip_addr = butil::ip2str(cntl->remote_side().ip).c_str();
+            meta_server_->UpdatePartitionLeader(db_name, tab_name, par_id, ip_addr);
+    }
+
 private: 
     MetaServer *meta_server_;
 };

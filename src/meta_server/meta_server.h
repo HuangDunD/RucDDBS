@@ -188,6 +188,8 @@ public:
 
     std::unordered_map<partition_id_t,ReplicaLocation> getReplicaLocationListByHash (TabMetaServer *tms, std::string min_range, std::string max_range);
 
+    bool UpdatePartitionLeader(std::string db_name, std::string tab_name, partition_id_t p_id, std::string ip_addr);
+
     bool is_dir(const std::string &meta_name) {
         struct stat st;
         return stat(meta_name.c_str(), &st) == 0 && S_ISDIR(st.st_mode);

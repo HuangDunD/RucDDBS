@@ -154,3 +154,27 @@ std::unordered_map<partition_id_t,ReplicaLocation>  MetaServer::getReplicaLocati
 
     return res;
 }
+
+bool MetaServer::UpdatePartitionLeader(std::string db_name, std::string tab_name, partition_id_t p_id, std::string ip_addr){
+    auto tab_loc = db_map_[db_name]->gettablemap()[tab_name]->table_location_;
+    if(tab_loc.get_duplicate_type() != DuplicateType::DUPLICATE){
+        return false;
+    }
+    int i = 0;
+    for(; i < tab_loc.get_partition_list().size(); i++){
+        if(tab_loc.get_partition_list()[i].get_partition_id() == p_id)
+            break;
+    }
+    if(i >= tab_loc.get_partition_list().size()){
+        return false;
+    }
+    for(auto &repli_loc : tab_loc.mutable_partition_list()[i].get_replica_location_vec()){
+        if(repli_loc.ip_addr_ == ip_addr){
+            repli_loc.role_ = Replica_Role::Leader;
+        }
+        else{
+            repli_loc.role_ = Replica_Role::Follower;
+        }
+    }
+    return true;
+}
