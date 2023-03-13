@@ -13,8 +13,8 @@ public:
     TransactionManager(){};
     ~TransactionManager(){};
 
-    explicit TransactionManager(Lock_manager *lock_manager, SmManager *sm_manager,
-                                ConcurrencyMode concurrency_mode = ConcurrencyMode::TWO_PHASE_LOCKING) {
+    explicit TransactionManager(Lock_manager *lock_manager, 
+            ConcurrencyMode concurrency_mode = ConcurrencyMode::TWO_PHASE_LOCKING) {
         
     }
 };
