@@ -182,6 +182,7 @@ bool MetaServer::UpdatePartitionLeader(std::string db_name, std::string tab_name
     TabMetaServer *tms = dms->gettablemap()[tab_name];
     if(tms == nullptr)
         throw MetaServerErrorException(MetaServerError::NO_TABLE);
+    //上写锁
     std::unique_lock<std::shared_mutex> tms_latch(tms->mutex_);
     dms_latch.unlock();
 
