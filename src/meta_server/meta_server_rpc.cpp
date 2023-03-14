@@ -55,11 +55,14 @@ void MetaServiceImpl::CreateTable(::google::protobuf::RpcController* controller,
                        ::google::protobuf::Closure* done){
 
             brpc::ClosureGuard done_guard(done);
-
+            std::shared_lock<std::shared_mutex> ms_latch(meta_server_->get_mutex());
             if(meta_server_->get_db_map().count(request->db_name())!=1){
                 response->set_success(false);
                 return;
             }
+            std::unique_lock<std::shared_mutex> dms_latch(meta_server_->mutable_db_map()[request->db_name()]->get_mutex());
+            ms_latch.unlock();
+
             if(meta_server_->mutable_db_map()[request->db_name()]->gettablemap().count(request->tab_name())==1){
                 response->set_success(false);
                 return;
@@ -85,11 +88,15 @@ void MetaServiceImpl::CreatePartitionTable(::google::protobuf::RpcController* co
                        ::google::protobuf::Closure* done){
 
             brpc::ClosureGuard done_guard(done);
+            std::shared_lock<std::shared_mutex> ms_latch(meta_server_->get_mutex());
 
             if(meta_server_->get_db_map().count(request->db_name())!=1){
                 response->set_success(false);
                 return;
             }
+            std::unique_lock<std::shared_mutex> dms_latch(meta_server_->mutable_db_map()[request->db_name()]->get_mutex());
+            ms_latch.unlock();
+
             if(meta_server_->mutable_db_map()[request->db_name()]->gettablemap().count(request->tab_name())==1){
                 response->set_success(false);
                 return;
@@ -260,7 +267,7 @@ int main(){
         return -1;
     }
 
-    // server.RunUntilAskedToQuit();
+    server.RunUntilAskedToQuit();
     try{
         meta_server.close_meta_server("/home/t500ttt/RucDDBS/data/");
     }

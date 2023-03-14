@@ -27,28 +27,43 @@ void MetaServer::close_meta_server(const std::string &meta_name){
     }
     //Save Meta
     std::ofstream ofs (META_SERVER_FILE_NAME);
-    ofs << *this;
+    ofs << *this; 
 }
 
 std::string MetaServer::getPartitionKey(std::string db_name, std::string table_name){
+    std::shared_lock<std::shared_mutex> ms_latch(mutex_); 
     DbMetaServer *dms = db_map_[db_name];
     if(dms == nullptr) 
         throw MetaServerErrorException(MetaServerError::NO_DATABASE);
+    std::shared_lock<std::shared_mutex> dms_latch(dms->get_mutex());
+    ms_latch.unlock();
+    
     TabMetaServer *tms = dms->gettablemap()[table_name];
     if(tms == nullptr)
         throw MetaServerErrorException(MetaServerError::NO_TABLE);
-    return tms->partition_key_name;
+    std::shared_lock<std::shared_mutex> tms_latch(tms->mutex_);
+    dms_latch.unlock();
+    
+    std::string res = tms->partition_key_name;
+    return res;
 }
 
 std::unordered_map<partition_id_t,ReplicaLocation> MetaServer::getReplicaLocationList
             (std::string db_name, std::string table_name, std::string partitionKeyName, std::string min_range, std::string max_range){
-
+    
+    std::shared_lock<std::shared_mutex> ms_latch(mutex_); 
     DbMetaServer *dms = db_map_[db_name];
     if(dms == nullptr) 
         throw MetaServerErrorException(MetaServerError::NO_DATABASE);
+    std::shared_lock<std::shared_mutex> dms_latch(dms->get_mutex());
+    ms_latch.unlock();
+    
     TabMetaServer *tms = dms->gettablemap()[table_name];
     if(tms == nullptr)
         throw MetaServerErrorException(MetaServerError::NO_TABLE);
+    std::shared_lock<std::shared_mutex> tms_latch(tms->mutex_);
+    dms_latch.unlock();
+
     if(partitionKeyName != tms->partition_key_name)
         throw MetaServerErrorException(MetaServerError::PARTITION_KEY_NOT_TRUE);
     
@@ -156,7 +171,21 @@ std::unordered_map<partition_id_t,ReplicaLocation>  MetaServer::getReplicaLocati
 }
 
 bool MetaServer::UpdatePartitionLeader(std::string db_name, std::string tab_name, partition_id_t p_id, std::string ip_addr){
-    auto tab_loc = db_map_[db_name]->gettablemap()[tab_name]->table_location_;
+
+    std::shared_lock<std::shared_mutex> ms_latch(mutex_); 
+    DbMetaServer *dms = db_map_[db_name];
+    if(dms == nullptr) 
+        throw MetaServerErrorException(MetaServerError::NO_DATABASE);
+    std::shared_lock<std::shared_mutex> dms_latch(dms->get_mutex());
+    ms_latch.unlock();
+    
+    TabMetaServer *tms = dms->gettablemap()[tab_name];
+    if(tms == nullptr)
+        throw MetaServerErrorException(MetaServerError::NO_TABLE);
+    std::unique_lock<std::shared_mutex> tms_latch(tms->mutex_);
+    dms_latch.unlock();
+
+    auto tab_loc = (*tms).table_location_;
     if(tab_loc.get_duplicate_type() != DuplicateType::DUPLICATE){
         return false;
     }

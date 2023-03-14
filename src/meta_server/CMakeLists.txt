@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.2)
 
 project(meta_server)
 
+set(CMAKE_CXX_STANDARD 17)
+# set(CMAKE_CXX_FLAGS "-Wall")
+
 include(FindThreads)
 include(FindProtobuf)
 protobuf_generate_cpp(PROTO_SRC PROTO_HEADER meta_service.proto)

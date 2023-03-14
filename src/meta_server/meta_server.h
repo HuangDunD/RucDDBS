@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <fstream>
 #include <unordered_map>
+#include <shared_mutex>
 
 static const std::string META_SERVER_FILE_NAME = "META_SERVER.meta";
 enum class MetaServerError {
@@ -93,7 +94,7 @@ struct TabMetaServer
     partition_id_t partition_cnt_; //分区数
     std::vector<ParMeta> partitions; //所有分区的元信息
     PhyTableLocation table_location_; //分区位置
-
+    std::shared_mutex mutex_; 
     partition_id_t HashPartition(int64_t val){
         return std::hash<int64_t>()(val) % partition_cnt_;
     }
@@ -160,11 +161,12 @@ public:
         }
         return is;
     }
+    inline std::shared_mutex& get_mutex(){return mutex_;}
 private:
     table_oid_t next_oid_; //分配表oid
     std::string name_; //数据库名称
     std::unordered_map<std::string, TabMetaServer*> tabs_;  // 数据库内的表名称和表元数据的映射
-
+    std::shared_mutex mutex_; 
 };
 
 class MetaServer
@@ -172,8 +174,10 @@ class MetaServer
 private:
     std::unordered_map<std::string, DbMetaServer*> db_map_; //数据库名称与数据库元信息的映射
     std::unordered_map<std::string, Node*> ip_node_map_;
-public:
+    std::shared_mutex mutex_; 
 
+public:
+    inline std::shared_mutex& get_mutex(){return mutex_;}
     inline const std::unordered_map<std::string, DbMetaServer*>& get_db_map() {return db_map_;}
     inline std::unordered_map<std::string, DbMetaServer*>& mutable_db_map() {return db_map_;}
     inline const std::unordered_map<std::string, Node*>& get_ip_node_map() {return ip_node_map_;}
