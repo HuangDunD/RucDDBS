@@ -5,6 +5,7 @@
 #include <fstream>
 #include <atomic>
 #include <thread>
+#include <mutex>
 #include "meta_server.h"
 
 const int physicalShiftBits = 18; 
@@ -23,7 +24,7 @@ private:
     // std::atomic<uint64_t> current_;
     struct timestamp
     {
-        std::shared_mutex mutex_;
+        std::mutex mutex_;
         uint64_t physiacl;
         uint64_t logical;
     };
@@ -70,7 +71,7 @@ public:
         uint64_t save = next + saveTimestampInterval;
         saveTimeStampToPath(save);
         std::cout << "sync and save timestamp" << std::endl;
-        std::unique_lock<std::shared_mutex> latch_(current_.mutex_);
+        std::unique_lock<std::mutex> latch_(current_.mutex_);
         current_.physiacl = next;
         current_.logical = 0;
         // current_.store({next, 0} , std::memory_order_relaxed);
@@ -79,14 +80,33 @@ public:
     }
 
     void updateTimestamp(){
+        std::unique_lock<std::mutex> latch_(current_.mutex_);
+        uint64_t physical = current_.physiacl;
+        uint64_t logic = current_.logical;
         
+        auto now = GetPhysical();
+        uint64_t jetLag = now - physical;
+        uint64_t next;
+        if(jetLag > updateTimestampGuard){
+            next = now;
+        }else if(logic > maxLogical/2){
+            next = physical+1;
+        }else{return;}
+
+        if(lastTS-next<=updateTimestampGuard){
+            uint64_t save = next + saveTimestampInterval;
+            saveTimeStampToPath(save);
+        }
+        current_.physiacl = next;
+        current_.logical = 0;
+        return;
     }
 
     uint64_t getTimeStamp(){
         uint64_t res;
         // auto current = current_.load(std::memory_order_acquire);
         for(int i=0; i < maxRetryCount; i++){
-            std::unique_lock<std::shared_mutex> latch_(current_.mutex_);
+            std::unique_lock<std::mutex> latch_(current_.mutex_);
             uint64_t physical = current_.physiacl;
             uint64_t logic = ++current_.logical;
             latch_.unlock();
