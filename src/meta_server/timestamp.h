@@ -20,7 +20,7 @@ const std::string TIMESTAMP_FILE_NAME = "last_timestamp";
 class Oracle
 {
 private:
-    uint64_t lastTS;
+    int64_t lastTS;
     // std::atomic<uint64_t> current_;
     struct timestamp
     {
@@ -34,6 +34,16 @@ private:
 public:
     Oracle(){};
     ~Oracle(){};
+    void start(){
+        syncTimestamp();
+        std::thread update([&]{
+            while(1){
+                updateTimestamp();
+                std::this_thread::sleep_for(std::chrono::milliseconds(updateTimestampStep));
+            }
+        });
+        update.join();
+    }
 
     void getTimestampFromPath(){
         struct stat st; 
@@ -63,7 +73,7 @@ public:
 
     void syncTimestamp(){
         getTimestampFromPath();
-        uint64_t next = GetPhysical();
+        auto next = GetPhysical();
         if( next-lastTS < updateTimestampGuard){
             std::cout << "system time may be incorrect" << std::endl;
             next = lastTS + updateTimestampGuard;
@@ -86,14 +96,14 @@ public:
         
         auto now = GetPhysical();
         uint64_t jetLag = now - physical;
-        uint64_t next;
+        int64_t next;
         if(jetLag > updateTimestampGuard){
             next = now;
         }else if(logic > maxLogical/2){
             next = physical+1;
         }else{return;}
-
-        if(lastTS-next<=updateTimestampGuard){
+        auto x = lastTS-next;
+        if(lastTS-next<=(signed)updateTimestampGuard){
             uint64_t save = next + saveTimestampInterval;
             saveTimeStampToPath(save);
         }
@@ -117,7 +127,7 @@ public:
             }
             if(logic > maxLogical){
                 std::cout << "logical part outside of max logical interval" << std::endl;
-                sleep(updateTimestampStep);
+                std::this_thread::sleep_for(std::chrono::milliseconds(updateTimestampStep));
                 continue;
             }
             return ComposeTS(physical, logic);
@@ -133,7 +143,7 @@ public:
         return int64_t(ts >> physicalShiftBits); 
     }
 
-    uint64_t GetPhysical() { 
+    int64_t GetPhysical() { 
         auto ms = std::chrono::duration_cast<std::chrono::milliseconds>
             (std::chrono::system_clock::now().time_since_epoch());
         return ms.count();

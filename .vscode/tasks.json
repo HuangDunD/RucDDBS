@@ -13,7 +13,10 @@
         },
         {
             "label": "make",
-            "command": "make"
+            "command": "make",
+            "args": [
+                "--jobs=4"
+            ]
         },
         {
             "label": "CMake Build",
