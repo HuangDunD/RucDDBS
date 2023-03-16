@@ -236,7 +236,10 @@ int main(){
     std::unordered_map<std::string, DbMetaServer*> db_map;
     db_map["test_db"] = &db_meta;
 
+    //构造meta_server 并启动oracle
     MetaServer meta_server(db_map);
+    std::thread oracle([&]{
+        meta_server.oracle_start();});
 
     // std::cout << meta_server.getPartitionKey("test_db", "test_table");
 

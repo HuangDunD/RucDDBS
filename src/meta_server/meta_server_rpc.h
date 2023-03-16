@@ -92,6 +92,18 @@ public:
             meta_server_->UpdatePartitionLeader(db_name, tab_name, par_id, ip_addr);
     }
 
+    virtual void GetTimeStamp(::google::protobuf::RpcController* controller,
+                       const ::meta_service::getTimeStampRequest* request,
+                       ::meta_service::getTimeStampResponse* response,
+                       ::google::protobuf::Closure* done){
+            //注意 brpc::ClosureGuard done_guard(done) 这一行, 极易忘记!!!
+            brpc::ClosureGuard done_guard(done);
+            
+            auto now = meta_server_->get_oracle().getTimeStamp();
+            response->set_timestamp(now);
+    }
+
+
 private: 
     MetaServer *meta_server_;
 };

@@ -27,6 +27,33 @@ int main(){
     // Send a request and wait for the response every 1 second.
     int log_id = 0;
     brpc::Controller cntl;
+
+    std::thread test_oracle([&]{
+        int log_id = 0;
+        brpc::Controller cntl_oracle;
+        
+
+        meta_service::getTimeStampRequest request;
+        meta_service::getTimeStampResponse response;
+        while (!brpc::IsAskedToQuit())
+        {
+            cntl_oracle.Reset();
+
+            cntl_oracle.set_log_id(log_id++);
+            stub.GetTimeStamp(&cntl_oracle, &request, &response, NULL);
+            if (!cntl_oracle.Failed()) {
+                LOG(INFO) << "Received response from " << cntl.remote_side()
+                    << " to " << cntl.local_side()
+                    << ": TIMESTAMP" << response.timestamp() 
+                    << " latency=" << cntl.latency_us() << "us";
+            } else {
+                LOG(WARNING) << cntl.ErrorText();
+            }
+            usleep(20 * 2000L);
+        }
+        
+    });
+
     while (!brpc::IsAskedToQuit()) {
         cntl.Reset();
 
@@ -80,6 +107,25 @@ int main(){
             LOG(WARNING) << cntl.ErrorText();
         }
         usleep(2000 * 1000L);
+
+        cntl.Reset();
+        meta_service::getTimeStampRequest request3;
+        meta_service::getTimeStampResponse response3;
+        cntl.set_log_id(log_id ++);  
+        stub.GetTimeStamp(&cntl, &request3, &response3, NULL);
+
+        if (!cntl.Failed()) {
+            LOG(INFO) << "Received response from " << cntl.remote_side()
+                << " to " << cntl.local_side()
+                << ": " ;
+            auto res = response3.timestamp();
+            LOG(INFO) << res;
+            LOG(INFO) << " latency=" << cntl.latency_us() << "us";
+        } else {
+            LOG(WARNING) << cntl.ErrorText();
+        }
+        usleep(2000 * 1000L);
+
     }
 
     LOG(INFO) << "MetaClient is going to quit";

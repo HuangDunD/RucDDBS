@@ -1,4 +1,6 @@
 #pragma once
+#include "defs.h"
+
 #include <chrono>
 #include <string>
 #include <sys/stat.h>
@@ -6,7 +8,8 @@
 #include <atomic>
 #include <thread>
 #include <mutex>
-#include "meta_server.h"
+#include <unistd.h>
+#include <iostream>
 
 const int physicalShiftBits = 18; 
 const int maxRetryCount = 100;
@@ -34,13 +37,10 @@ public:
     ~Oracle(){};
     void start(){
         syncTimestamp();
-        std::thread update([&]{
-            while(1){
-                updateTimestamp();
-                std::this_thread::sleep_for(std::chrono::milliseconds(updateTimestampStep));
-            }
-        });
-        update.join();
+        while(1){
+            updateTimestamp();
+            std::this_thread::sleep_for(std::chrono::milliseconds(updateTimestampStep));
+        }
     }
 
     void getTimestampFromPath(){

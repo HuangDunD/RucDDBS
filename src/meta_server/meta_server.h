@@ -6,6 +6,9 @@
 
 #include "table_location.h"
 #include "local_meta.h"
+#include "defs.h"
+#include "timestamp.h"
+
 #include <string>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -14,46 +17,6 @@
 #include <shared_mutex>
 
 static const std::string META_SERVER_FILE_NAME = "META_SERVER.meta";
-enum class MetaServerError {
-    NO_DATABASE,
-    NO_TABLE,
-    PARTITION_KEY_NOT_TRUE,
-    PARTITION_TYPE_NOT_TRUE,
-    NO_PARTITION_OR_REPLICA,
-    NO_META_DIR,
-    UnixError,
-};
-
-class MetaServerErrorException : public std::exception
-{
-private:
-    MetaServerError err_;
-public:
-    explicit MetaServerErrorException(MetaServerError err):err_(err){}
-    MetaServerError getMetaServerError(){return err_;}
-    std::string GetInfo() {
-    switch (err_) {
-        case MetaServerError::NO_DATABASE:
-            return "there isn't this database in MetaServer";
-        case MetaServerError::NO_TABLE:
-            return "there isn't this table in MetaServer";
-        case MetaServerError::PARTITION_KEY_NOT_TRUE:
-            return "request's partitition key is different from Metaserver's";
-        case MetaServerError::PARTITION_TYPE_NOT_TRUE:
-            return "request's partitition type is different from Metaserver's";
-        case MetaServerError::NO_PARTITION_OR_REPLICA:
-            return "there isn't partition or replica required in MetaServer";
-        case MetaServerError::NO_META_DIR:
-            return "no meta server dir found";
-        case MetaServerError::UnixError: 
-            return "cd meta server dir error";
-    }
-
-    // Todo: Should fail with unreachable.
-    return "";
-  }
-    ~MetaServerErrorException(){};
-};
 
 struct Node{
     std::string ip_addr;
@@ -174,6 +137,7 @@ class MetaServer
 private:
     std::unordered_map<std::string, DbMetaServer*> db_map_; //数据库名称与数据库元信息的映射
     std::unordered_map<std::string, Node*> ip_node_map_;
+    Oracle timestamp_oracle;
     std::shared_mutex mutex_; 
 
 public:
@@ -182,6 +146,9 @@ public:
     inline std::unordered_map<std::string, DbMetaServer*>& mutable_db_map() {return db_map_;}
     inline const std::unordered_map<std::string, Node*>& get_ip_node_map() {return ip_node_map_;}
     inline std::unordered_map<std::string, Node*>& mutable_ip_node_map() {return ip_node_map_;}
+    inline Oracle& get_oracle(){return timestamp_oracle;}
+    
+    void oracle_start(){timestamp_oracle.start();}
 
     std::string getPartitionKey(std::string db_name, std::string table_name);
 
