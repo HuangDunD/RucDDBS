@@ -20,7 +20,7 @@ const std::string TIMESTAMP_FILE_NAME = "last_timestamp";
 class Oracle
 {
 private:
-    int64_t lastTS;
+    uint64_t lastTS;
     // std::atomic<uint64_t> current_;
     struct timestamp
     {
@@ -32,7 +32,7 @@ private:
     timestamp current_;
     
 public:
-    Oracle(){};
+    Oracle(){ lastTS = 0; };
     ~Oracle(){};
     void start(){
         syncTimestamp();
@@ -95,15 +95,14 @@ public:
         uint64_t logic = current_.logical;
         
         auto now = GetPhysical();
-        uint64_t jetLag = now - physical;
-        int64_t next;
-        if(jetLag > updateTimestampGuard){
+        int64_t jetLag = now - physical;
+        uint64_t next;
+        if(jetLag > signed(updateTimestampGuard)){
             next = now;
         }else if(logic > maxLogical/2){
             next = physical+1;
         }else{return;}
-        auto x = lastTS-next;
-        if(lastTS-next<=(signed)updateTimestampGuard){
+        if(signed(lastTS-next)<= signed(updateTimestampGuard)){
             uint64_t save = next + saveTimestampInterval;
             saveTimeStampToPath(save);
         }
@@ -113,8 +112,6 @@ public:
     }
 
     uint64_t getTimeStamp(){
-        uint64_t res;
-        // auto current = current_.load(std::memory_order_acquire);
         for(int i=0; i < maxRetryCount; i++){
             std::unique_lock<std::mutex> latch_(current_.mutex_);
             uint64_t physical = current_.physiacl;
@@ -135,15 +132,15 @@ public:
         return 0;
     }
 
-    uint64_t ComposeTS(int64_t physical, int64_t logical){
-        return (physical << physicalShiftBits + logical);
+    uint64_t ComposeTS(uint64_t physical, uint64_t logical){
+        return uint64_t((physical << physicalShiftBits)+ logical);
     }
 
     uint64_t ExtractPhysical(uint64_t ts) {
-        return int64_t(ts >> physicalShiftBits); 
+        return uint64_t(ts >> physicalShiftBits); 
     }
 
-    int64_t GetPhysical() { 
+    uint64_t GetPhysical() { 
         auto ms = std::chrono::duration_cast<std::chrono::milliseconds>
             (std::chrono::system_clock::now().time_since_epoch());
         return ms.count();
