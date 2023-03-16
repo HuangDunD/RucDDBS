@@ -28,9 +28,18 @@ Transaction* TransactionManager::Begin(Transaction* txn, LogManager *log_manager
     // 2. 如果为空指针，创建新事务
     // 3. 把开始事务加入到全局事务表中
     // 4. 返回当前事务指针
+    global_txn_latch_.lock_shared();
+
     if (txn == nullptr) {
-        txn = new Transaction(getTimestampFromServer(), IsolationLevel::SERIALIZABLE));
+        txn = new Transaction(getTimestampFromServer(), IsolationLevel::SERIALIZABLE); 
     }
+
+    //TODO logging
+
+
+    std::unique_lock<std::shared_mutex> l(txn_map_mutex);
+    txn_map[txn->get_txn_id()] = txn;
+    return txn;
 }
 
 void TransactionManager::Abort(Transaction * txn, LogManager *log_manager){
@@ -38,15 +47,5 @@ void TransactionManager::Abort(Transaction * txn, LogManager *log_manager){
 }
 
 void TransactionManager::Commit(Transaction * txn, LogManager *log_manager){
-
-}
-
-/** Prevents all transactions from performing operations, used for checkpointing. */
-void TransactionManager::BlockAllTransactions(){
-
-}
-
-/** Resumes all transactions, used for checkpointing. */
-void TransactionManager::ResumeTransactions(){
-
+    
 }

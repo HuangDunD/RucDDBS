@@ -132,8 +132,7 @@ auto Lock_manager::checkSameTxnLockRequest(Transaction *txn, LockRequestQueue *r
                         throw TransactionAbortException (txn->get_txn_id(), AbortReason::DEAD_LOCK_PREVENT_NO_WAIT) ;
                     request_queue->upgrading_ = false;
                     iter->granted_ = true;
-                    // //TODO, 加入锁集
-                    // txn->add_lock_set(Lock_data_type::TABLE, target_lock_mode, l_id); 
+                    
                     return true;
                 } 
             }
@@ -218,7 +217,7 @@ auto Lock_manager::LockTable(Transaction *txn, LockMode lock_mode, const table_o
             throw TransactionAbortException (txn->get_txn_id(), AbortReason::DEAD_LOCK_PREVENT_NO_WAIT) ;
 
         lock_request->granted_ = true;
-        //TODO, 加入锁集
+
         txn->add_lock_set(target_lock_mode, l_id); 
 
         return true;

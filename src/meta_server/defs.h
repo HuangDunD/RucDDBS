@@ -36,8 +36,6 @@ public:
         case MetaServerError::UnixError: 
             return "cd meta server dir error";
     }
-
-    // Todo: Should fail with unreachable.
     return "";
   }
     ~MetaServerErrorException(){};

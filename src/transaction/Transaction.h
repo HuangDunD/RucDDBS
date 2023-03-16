@@ -66,7 +66,6 @@ class TransactionAbortException : public std::exception {
       case AbortReason::DEAD_LOCK_PREVENT_NO_WAIT:
         return "Transaction " + std::to_string(txn_id_) + " aborted because attempted to lock but need to wait(deadlock prevent) ";
     }
-    // Todo: Should fail with unreachable.
     return "";
   }
 };
@@ -78,8 +77,6 @@ private:
     TransactionState state_;
     IsolationLevel isolation_ ;
     std::thread::id thread_id_;
-
-    // std::shared_ptr<std::unordered_set<std::pair<Lock_data_id, LockMode>>> all_lock_set_;
 
     std::shared_ptr<std::unordered_set<Lock_data_id>> table_S_lock_set_;
     std::shared_ptr<std::unordered_set<Lock_data_id>> table_X_lock_set_;  

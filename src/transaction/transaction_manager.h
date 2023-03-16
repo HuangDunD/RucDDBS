@@ -21,6 +21,9 @@ private:
     LogManager *log_manager_;
     ConcurrencyMode concurrency_mode_;
 
+    /** The global transaction latch is used for checkpointing. */
+    std::shared_mutex global_txn_latch_;
+
 public:
     TransactionManager(){};
     ~TransactionManager() = default;
@@ -50,7 +53,7 @@ public:
     }
 
     uint64_t getTimestampFromServer();
-    
+
     Transaction* Begin(Transaction* txn, LogManager *log_manager);
 
     void Abort(Transaction * txn, LogManager *log_manager);
@@ -58,8 +61,9 @@ public:
     void Commit(Transaction * txn, LogManager *log_manager);
 
     /** Prevents all transactions from performing operations, used for checkpointing. */
-    void BlockAllTransactions();
+    void BlockAllTransactions(){global_txn_latch_.lock();}
 
     /** Resumes all transactions, used for checkpointing. */
-    void ResumeTransactions();
+    void ResumeTransactions(){global_txn_latch_.unlock();}
+    
 };
