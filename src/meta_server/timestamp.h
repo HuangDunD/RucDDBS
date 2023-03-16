@@ -21,14 +21,12 @@ class Oracle
 {
 private:
     uint64_t lastTS;
-    // std::atomic<uint64_t> current_;
     struct timestamp
     {
         std::mutex mutex_;
         uint64_t physiacl;
         uint64_t logical;
     };
-    // std::atomic<timestamp> current_;
     timestamp current_;
     
 public:
@@ -84,8 +82,6 @@ public:
         std::unique_lock<std::mutex> latch_(current_.mutex_);
         current_.physiacl = next;
         current_.logical = 0;
-        // current_.store({next, 0} , std::memory_order_relaxed);
-        // current_.store(ComposeTS(next, 0), std::memory_order_relaxed);
         return ;
     }
 

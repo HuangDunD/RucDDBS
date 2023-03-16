@@ -121,6 +121,12 @@ message UpdateLeaderResponse{
     bool update_leader_ok = 1; 
 }
 
+message getTimeStampRequest{}
+
+message getTimeStampResponse{
+    uint64 timestamp = 1;
+}
+
 service MetaService {
     rpc GetPartitionKey(PartionkeyNameRequest) returns (PartionkeyNameResponse);
     rpc GetPartitionLocation(PartitionLocationRequest) returns (PartitionLocationResponse);
@@ -129,4 +135,5 @@ service MetaService {
     rpc CreatePartitionTable(CreatePartitonTableRequest) returns (CreatePartitonTableResponse);
     rpc NodeRegister(RegisterRequest) returns (RegisterResponse);
     rpc UpdateLeader(UpdateLeaderRequest) returns (UpdateLeaderResponse);
+    rpc GetTimeStamp(getTimeStampRequest) returns (getTimeStampResponse);
 };
