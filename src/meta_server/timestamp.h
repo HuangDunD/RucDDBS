@@ -73,7 +73,7 @@ public:
         getTimestampFromPath();
         auto next = GetPhysical();
         if( next-lastTS < updateTimestampGuard){
-            std::cout << "system time may be incorrect" << std::endl;
+            std::cerr << "system time may be incorrect" << std::endl;
             next = lastTS + updateTimestampGuard;
         }
         uint64_t save = next + saveTimestampInterval;
