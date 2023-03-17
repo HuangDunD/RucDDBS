@@ -3,7 +3,8 @@
 //timestamp test
 int main(){
     Oracle o;
-    std::thread update([&]{o.start();});
+    std::atomic<bool> oracle_background_running = true;
+    std::thread update([&]{o.start(std::ref(oracle_background_running));});
     auto last = o.getTimeStamp();
     long long count = 0;
     while (1)

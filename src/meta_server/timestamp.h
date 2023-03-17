@@ -35,9 +35,9 @@ private:
 public:
     Oracle(){ lastTS = 0; };
     ~Oracle(){};
-    void start(){
+    void start(std::atomic<bool> &oracle_background_running){
         syncTimestamp();
-        while(1){
+        while(oracle_background_running){
             updateTimestamp();
             std::this_thread::sleep_for(std::chrono::milliseconds(updateTimestampStep));
         }

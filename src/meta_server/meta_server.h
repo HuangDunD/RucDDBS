@@ -148,7 +148,7 @@ public:
     inline std::unordered_map<std::string, Node*>& mutable_ip_node_map() {return ip_node_map_;}
     inline Oracle& get_oracle(){return timestamp_oracle;}
     
-    void oracle_start(){timestamp_oracle.start();}
+    void oracle_start(std::atomic<bool> &oracle_background_running){timestamp_oracle.start(oracle_background_running);}
 
     std::string getPartitionKey(std::string db_name, std::string table_name);
 

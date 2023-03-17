@@ -238,8 +238,11 @@ int main(){
 
     //构造meta_server 并启动oracle
     MetaServer meta_server(db_map);
+    std::atomic<bool> oracle_background_running = true;
     std::thread oracle([&]{
-        meta_server.oracle_start();});
+        meta_server.oracle_start(std::ref(oracle_background_running));
+        });
+    oracle.detach();
 
     // std::cout << meta_server.getPartitionKey("test_db", "test_table");
 
@@ -271,6 +274,8 @@ int main(){
     }
 
     server.RunUntilAskedToQuit();
+    oracle_background_running = false;
+
     try{
         meta_server.close_meta_server("/home/t500ttt/RucDDBS/data/");
     }
