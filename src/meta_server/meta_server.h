@@ -81,7 +81,7 @@ struct TabMetaServer
         size_t n;
         is >> tab.oid >> tab.name >> tab.partition_type >> tab.partition_key_name 
             >> tab.partition_key_type >> tab.partition_cnt_  >> n;
-        for(int i=0; i<n; i++){
+        for(size_t i=0; i<n; i++){
             ParMeta pm;
             is >> pm;
             tab.partitions.push_back(pm);
@@ -117,7 +117,7 @@ public:
         is >> db_meta_server.next_oid_ >> db_meta_server.name_;
         size_t n;
         is >> n;
-        for(int i=0; i<n; i++){
+        for(size_t i=0; i<n; i++){
             auto tms = new TabMetaServer();
             is >> *tms;
             db_meta_server.tabs_[tms->name] = tms;

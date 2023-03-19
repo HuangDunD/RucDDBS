@@ -47,7 +47,7 @@ public:
     friend std::istream &operator>>(std::istream &is, PhyTableLocation &phytabloc) {
         size_t n;
         is >> phytabloc.table_oid_ >> phytabloc.duplicate_type_ >> n;
-        for(int i=0; i<n; i++){
+        for(size_t i=0; i<n; i++){
             PhyPartitionLocation phyparloc;
             is >> phyparloc;
             phytabloc.partiton_list_.push_back(phyparloc);

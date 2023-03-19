@@ -72,7 +72,7 @@ public:
     friend std::istream &operator>>(std::istream &is, PhyPartitionLocation &phyparloc) {
         size_t n;
         is >> phyparloc.table_oid_ >> phyparloc.p_id_ >> phyparloc.replica_cnt_ >> n;
-        for(int i=0; i<n; i++){
+        for(size_t i=0; i<n; i++){
             ReplicaLocation repli_loc;
             is >> repli_loc;
             phyparloc.repliaca_location_.push_back(repli_loc);

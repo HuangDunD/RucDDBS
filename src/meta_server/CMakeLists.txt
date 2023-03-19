@@ -5,13 +5,15 @@ project(meta_server)
 set(CMAKE_CXX_STANDARD 17)
 # set(CMAKE_CXX_FLAGS "-Wall")
 
+set(SOURCES meta_server_rpc.cpp meta_server.cpp)
+add_library(meta_server STATIC ${SOURCES})
+
 include(FindThreads)
 include(FindProtobuf)
 protobuf_generate_cpp(PROTO_SRC PROTO_HEADER meta_service.proto)
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(../meta)
-
 
 find_library(THRIFT_LIB NAMES thrift)
 if (NOT THRIFT_LIB)
