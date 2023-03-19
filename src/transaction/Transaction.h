@@ -1,16 +1,25 @@
 #pragma once
 
 #include "txn.h"
+#include "recovery/log_record.h"
+#include "recovery/log_manager.h"
 #include <cstdint>
 #include <unordered_set>
 #include <memory>
 #include <utility> 
 #include <thread>
+#include <deque>
+#include <vector>
 
 enum class TransactionState { DEFAULT, GROWING, SHRINKING, COMMITTED, ABORTED };
 enum class IsolationLevel { READ_UNCOMMITTED, REPEATABLE_READ, READ_COMMITTED, SERIALIZABLE };
 
-using txn_id_t = int32_t;
+class IP_Port{
+    std::string ip_addr;
+    int32_t port;
+};
+
+using txn_id_t = uint64_t;
 
 /**
  * Reason to a transaction abortion
@@ -73,10 +82,16 @@ class TransactionAbortException : public std::exception {
 class Transaction
 {
 private:
-    txn_id_t txn_id_;
-    TransactionState state_;
+    txn_id_t txn_id_;  //从metaserver中获取的全局唯一严格递增的混合逻辑时间戳
+    TransactionState state_; 
     IsolationLevel isolation_ ;
     std::thread::id thread_id_;
+
+    lsn_t prev_lsn_; //// 当前事务执行的最后一条操作对应的lsn
+    std::shared_ptr<std::deque<WriteRecord>> write_set_;  // 事务包含的所有写操作
+
+    bool is_distributed; //是否是分布式事务
+    std::shared_ptr<std::vector<IP_Port>> distributed_plan_excution_node_; //分布式执行计划涉及节点
 
     std::shared_ptr<std::unordered_set<Lock_data_id>> table_S_lock_set_;
     std::shared_ptr<std::unordered_set<Lock_data_id>> table_X_lock_set_;  
@@ -105,6 +120,14 @@ public:
     }
 
     inline IsolationLevel get_isolation() const {return isolation_;}
+
+    inline lsn_t get_prev_lsn() const {return prev_lsn_; }
+    inline void set_prev_lsn(lsn_t prev_lsn) { prev_lsn_ = prev_lsn; }
+
+    inline std::shared_ptr<std::deque<WriteRecord>> get_write_set() {return write_set_;}
+
+    inline bool get_is_distributed(){ return is_distributed; }
+    inline std::shared_ptr<std::vector<IP_Port>> get_distributed_node_set() {return distributed_plan_excution_node_;} 
 
     inline std::shared_ptr<std::unordered_set<Lock_data_id>> get_table_S_lock_set() {return table_S_lock_set_;} 
     inline std::shared_ptr<std::unordered_set<Lock_data_id>> get_table_X_lock_set() {return table_X_lock_set_;} 
@@ -259,7 +282,13 @@ public:
         row_S_lock_set_ = std::make_shared<std::unordered_set<Lock_data_id>>();
         row_X_lock_set_ = std::make_shared<std::unordered_set<Lock_data_id>>();
 
+        distributed_plan_excution_node_ = std::make_shared<std::vector<IP_Port>>(); 
+        write_set_ = std::make_shared<std::deque<WriteRecord>>();
+
+        is_distributed = false;
+        prev_lsn_ = INVALID_LSN;
         thread_id_ = std::this_thread::get_id();
+        
     };
 
     ~Transaction(){};

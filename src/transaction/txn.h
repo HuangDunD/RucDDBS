@@ -8,6 +8,56 @@ using table_oid_t = int32_t;
 using row_id_t = int32_t;
 using partition_id_t = int32_t;
 
+enum class WType { INSERT_TUPLE = 0, DELETE_TUPLE, UPDATE_TUPLE};
+
+class WriteRecord {
+   public:
+    WriteRecord() = default;
+    //for delete and insert record
+    WriteRecord(char* key, int32_t key_size, char* value, int32_t value_size, WType type){
+        wtype_ = type;
+        key_ = new char[key_size];
+        key_size_ = key_size;
+        value_ = new char[value_size];
+        value_size_ = value_size;
+    }
+    WriteRecord(char* key, int32_t key_size, char* value, int32_t value_size,
+            char* old_value, int32_t old_value_size, WType type){
+        wtype_ = type;
+        key_ = new char[key_size];
+        key_size_ = key_size;
+        value_ = new char[value_size];
+        value_size_ = value_size;
+        old_value_ = new char[old_value_size];
+        old_value_size_ = old_value_size;
+    }
+    ~WriteRecord(){
+        delete[] key_;
+        delete[] value_;
+        delete[] old_value_;
+        key_ = nullptr;
+        value_ = nullptr;
+        old_value_ = nullptr;
+    }
+    WType getWType() const{return wtype_;}
+    int32_t getKeySize() const {return key_size_;}
+    char* getKey() const {return key_;}
+    int32_t getValueSize() const {return value_size_;}
+    char* getValue() const {return value_;}
+    int32_t getOldValueSize() const {return old_value_size_;}
+    char* getOldValue() const {return old_value_;}
+   private:
+    WType wtype_;
+    char* key_;
+    int32_t key_size_;
+
+    char* value_;
+    int32_t value_size_;
+
+    char* old_value_;
+    int32_t old_value_size_;
+};
+
 enum class Lock_data_type {TABLE, PARTITION, ROW};
 enum class LockMode { SHARED, EXLUCSIVE, INTENTION_SHARED, INTENTION_EXCLUSIVE, S_IX };
 
