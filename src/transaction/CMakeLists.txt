@@ -18,6 +18,7 @@ include(FindProtobuf)
 protobuf_generate_cpp(PROTO_SRC PROTO_HEADER transaction_manager.proto)
 
 # include_directories(${CMAKE_CURRENT_BINARY_DIR})
+include_directories(build)
 include_directories(../)
 include_directories(../meta)
 include_directories(../meta_server/build)

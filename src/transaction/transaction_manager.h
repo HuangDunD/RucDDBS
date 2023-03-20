@@ -5,8 +5,7 @@
 #include "meta_service.pb.h"
 
 #include <shared_mutex>
-#include <brpc/channel.h>
-#include <butil/logging.h>
+
 
 #define server "[::1]:8001"
 
@@ -55,9 +54,11 @@ public:
 
     Transaction* Begin(Transaction* txn, IsolationLevel isolation_level );
 
-    void Abort(Transaction * txn);
+    bool Abort(Transaction * txn);
 
-    void Commit(Transaction * txn);
+    bool Commit(Transaction * txn);
+
+    bool PrepareCommit(Transaction * txn);
 
     /** Prevents all transactions from performing operations, used for checkpointing. */
     void BlockAllTransactions(){global_txn_latch_.lock();}

@@ -11,11 +11,11 @@ static constexpr int INVALID_LSN = -1;                                        //
 
 enum class LogRecordType { INVALID = 0, CREATE_TABLE, MARK_DROP_TABLE, APPLY_DROP_TABLE, 
                             CREATE_INDEX, MARK_DROP_INDEX, APPLY_DROP_INDEX,
-                            INSERT, UPDATE, DELETE, BEGIN, COMMIT, ABORT};
+                            INSERT, UPDATE, DELETE, BEGIN, COMMIT, ABORT, PREPARED};
 
 static std::string log_record_type[15] = {"INVALID", "CREATE_TABLE", "MARK_DROP_TABLE","APPLY_DROP_TABLE",
                                    "CREATE_INDEX", "MARK_DROP_INDEX", "APPLY_DROP_INDEX",
-                                   "INSERT", "UPDATE", "DELETE", "BEGIN", "COMMIT", "ABORT"};
+                                   "INSERT", "UPDATE", "DELETE", "BEGIN", "COMMIT", "ABORT", "PREPARED"};
 
 class LogRecord {
 
@@ -25,7 +25,7 @@ public:
     // constructor for transaction_operation (begin/commit/abort)
     LogRecord(txn_id_t txn_id, lsn_t prev_lsn, LogRecordType log_type)
         : size_(HEADER_SIZE), txn_id_(txn_id), prev_lsn_(prev_lsn), log_type_(log_type) {
-            assert(log_type == LogRecordType::BEGIN || log_type == LogRecordType::COMMIT || log_type == LogRecordType::ABORT);
+            assert(log_type == LogRecordType::BEGIN || log_type == LogRecordType::COMMIT || log_type == LogRecordType::ABORT || log_type == LogRecordType::PREPARED);
         }
 
     static constexpr int HEADER_SIZE = 20;

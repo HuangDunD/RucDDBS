@@ -12,6 +12,13 @@ message AbortResponse {
     bool ok = 1;
 }
 
+message PrepareRequest {
+    uint64 txn_id = 1;
+};
+message PrepareResponse {
+    bool ok = 1;
+}
+
 message CommitRequest {
     uint64 txn_id = 1;
 };
@@ -21,5 +28,6 @@ message CommitResponse {
 
 service TransactionManagerService {
     rpc AbortTransaction(AbortRequest) returns (AbortResponse);
+    rpc PrepareTransaction(PrepareRequest) returns (PrepareResponse);
     rpc CommitTransaction(CommitRequest) returns(CommitResponse);
 };

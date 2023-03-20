@@ -1,4 +1,10 @@
+#include <brpc/channel.h>
+#include <butil/logging.h>
+#include <future>
+#include <functional>
+
 #include "transaction_manager.h"
+#include "transaction_manager.pb.h"
 
 std::atomic<bool> enable_logging(true);
 
@@ -98,9 +104,9 @@ Transaction* TransactionManager::Begin(Transaction* txn, IsolationLevel isolatio
     }
 
     if (enable_logging) {
-        LogRecord record(txn->get_txn_id(), txn->get_prev_lsn(), LogRecordType::BEGIN);
-        //TODO 注意此处可能存在record生命周期结束析构的情况
-        lsn_t lsn = log_manager_->AppendLogRecord(&record);
+        auto record = new LogRecord(txn->get_txn_id(), txn->get_prev_lsn(), LogRecordType::BEGIN);
+        //TODO record在log_manager应该在合适处delete
+        lsn_t lsn = log_manager_->AppendLogRecord(record);
         txn->set_prev_lsn(lsn);
     }
 
@@ -109,7 +115,7 @@ Transaction* TransactionManager::Begin(Transaction* txn, IsolationLevel isolatio
     return txn;
 }
 
-void TransactionManager::Abort(Transaction * txn){
+bool TransactionManager::Abort(Transaction * txn){
     txn->set_transaction_state(TransactionState::ABORTED);
     if(txn->get_is_distributed() == false){
         auto write_set = txn->get_write_set();
@@ -125,25 +131,161 @@ void TransactionManager::Abort(Transaction * txn){
             write_set->pop_back();
         }
         write_set->clear();
-        //写Abort日志
-        LogRecord* record = new LogRecord(txn->get_txn_id(),
-            txn->get_prev_lsn(), LogRecordType::ABORT);
-        log_manager_->AppendLogRecord(record);
-
+        if(enable_logging){
+            //写Abort日志
+            LogRecord* record = new LogRecord(txn->get_txn_id(),
+                txn->get_prev_lsn(), LogRecordType::ABORT);
+            auto lsn = log_manager_->AppendLogRecord(record);
+            txn->set_prev_lsn(lsn);
+        }
         // Release all the locks.
         ReleaseLocks(txn);
+        // Remove txn from txn_map
+        std::unique_lock<std::shared_mutex> l(txn_map_mutex);
+        txn_map.erase(txn->get_txn_id() );
         // Release the global transaction latch.
         global_txn_latch_.unlock_shared();
     }
     else{
-        auto node_set = txn->get_distributed_node_set();
+        brpc::ChannelOptions options;
+        options.timeout_ms = 100;
+        options.max_retry = 3;
+        // 创建一个存储std::future对象的vector，用于搜集所有匿名函数的返回值
+        std::vector<std::future<bool>> futures;
 
-
+        for(auto node: *txn->get_distributed_node_set()){
+            futures.push_back(std::async(std::launch::async, [&txn, &node, &options]()->bool{
+                brpc::Channel channel;
+                if (channel.Init(node.ip_addr.c_str(), node.port , &options) != 0) {
+                    LOG(ERROR) << "Fail to initialize channel";
+                    return false;
+                }
+                transaction_manager::TransactionManagerService_Stub stub(&channel);
+                brpc::Controller cntl;
+                transaction_manager::AbortRequest request;
+                transaction_manager::AbortResponse response;
+                request.set_txn_id(txn->get_txn_id());
+                stub.AbortTransaction(&cntl, &request, &response, NULL);
+                if(cntl.Failed()) {
+                    LOG(WARNING) << cntl.ErrorText();
+                }
+                return response.ok();
+            }) );
+        }
+        for(size_t i=0; i<(*txn->get_distributed_node_set()).size(); i++){
+            if(futures[i].get() == false){
+                return false;
+            }
+        }
     }
+    return true;
 }
 
-void TransactionManager::Commit(Transaction * txn){
-    
+bool TransactionManager::Commit(Transaction * txn){
+    if(txn->get_is_distributed() == false){
+        txn->set_transaction_state(TransactionState::COMMITTED);
+
+        if(enable_logging){
+            //写Commit日志
+            LogRecord* record = new LogRecord(txn->get_txn_id(),
+                txn->get_prev_lsn(), LogRecordType::COMMIT);
+            auto lsn = log_manager_->AppendLogRecord(record);
+            txn->set_prev_lsn(lsn);
+        }
+
+        // Release all locks
+        ReleaseLocks(txn);
+        // Remove txn from txn_map
+        std::unique_lock<std::shared_mutex> l(txn_map_mutex);
+        txn_map.erase(txn->get_txn_id() );
+        // Release the global transaction latch.
+        global_txn_latch_.unlock_shared();
+    }
+    else {
+        //分布式事务, 2PC两阶段提交
+        brpc::ChannelOptions options;
+        options.timeout_ms = 100;
+        options.max_retry = 3;
+        // 创建一个存储std::future对象的vector，用于搜集所有匿名函数的返回值
+        std::vector<std::future<bool>> futures_prepare;
+
+        //准备阶段
+        for(auto node: *txn->get_distributed_node_set()){
+            futures_prepare.push_back(std::async(std::launch::async, [&txn, &node, &options]()->bool{
+                brpc::Channel channel;
+                if (channel.Init(node.ip_addr.c_str(), node.port , &options) != 0) {
+                    LOG(ERROR) << "Fail to initialize channel";
+                    return false;
+                }
+                transaction_manager::TransactionManagerService_Stub stub(&channel);
+                brpc::Controller cntl;
+                transaction_manager::PrepareRequest request;
+                transaction_manager::PrepareResponse response;
+                request.set_txn_id(txn->get_txn_id());
+                stub.PrepareTransaction(&cntl, &request, &response, NULL);
+                if(cntl.Failed()) {
+                    LOG(WARNING) << cntl.ErrorText();
+                }
+                return response.ok();
+            }) );
+        }
+        //检查各个参与者准备结果
+        bool commit_flag = true;
+        for(size_t i=0; i<(*txn->get_distributed_node_set()).size(); i++){
+            if(futures_prepare[i].get() == false){
+                commit_flag = false;
+                break;
+            }
+        }
+        //TODO: write Coordinator backup
+        //提交阶段
+        if(commit_flag == false){
+            //abort all
+            Abort(txn);
+        }
+        else{
+            //commit all
+            std::vector<std::future<void>> futures_commit;
+            for(auto node: *txn->get_distributed_node_set()){
+                futures_commit.push_back(std::async(std::launch::async, [&txn, &node, &options](){
+                    brpc::Channel channel;
+                    if (channel.Init(node.ip_addr.c_str(), node.port , &options) != 0) {
+                        LOG(ERROR) << "Fail to initialize channel";
+                        // return false;
+                    }
+                    transaction_manager::TransactionManagerService_Stub stub(&channel);
+                    brpc::Controller cntl;
+                    transaction_manager::CommitRequest request;
+                    transaction_manager::CommitResponse response;
+                    request.set_txn_id(txn->get_txn_id());
+                    stub.CommitTransaction(&cntl, &request, &response, NULL);
+                    if(cntl.Failed()) {
+                        LOG(WARNING) << cntl.ErrorText();
+                    }
+                    // return response.ok();
+                }) );
+            }
+        }
+    }
+    return true;
+}
+
+bool TransactionManager::PrepareCommit(Transaction * txn){
+    if(txn->get_state() == TransactionState::ABORTED){
+        return false;
+    }
+    if(enable_logging){
+        //写Prepared日志
+        LogRecord* record = new LogRecord(txn->get_txn_id(),
+            txn->get_prev_lsn(), LogRecordType::PREPARED);
+        //TODO: 此处在kv层写redo log, raft返回同步结果
+
+        auto lsn = log_manager_->AppendLogRecord(record);
+        if(lsn == INVALID_LSN) return false;
+        txn->set_prev_lsn(lsn);
+    }
+    txn->set_transaction_state(TransactionState::PREPARED);
+    return true;
 }
 
 int main(){

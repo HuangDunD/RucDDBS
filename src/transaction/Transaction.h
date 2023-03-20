@@ -11,10 +11,10 @@
 #include <deque>
 #include <vector>
 
-enum class TransactionState { DEFAULT, GROWING, SHRINKING, COMMITTED, ABORTED };
+enum class TransactionState { DEFAULT, GROWING, SHRINKING, COMMITTED, ABORTED, PREPARED };
 enum class IsolationLevel { READ_UNCOMMITTED, REPEATABLE_READ, READ_COMMITTED, SERIALIZABLE };
 
-class IP_Port{
+struct IP_Port{
     std::string ip_addr;
     int32_t port;
 };
