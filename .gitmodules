@@ -4,3 +4,6 @@
 [submodule "deps/brpc"]
 	path = deps/brpc
 	url = git@github.com:apache/brpc.git
+[submodule "deps/snappy"]
+	path = deps/snappy
+	url = git@github.com:google/snappy.git
