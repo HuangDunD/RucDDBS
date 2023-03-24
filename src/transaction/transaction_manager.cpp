@@ -6,10 +6,11 @@
 #include "transaction_manager.h"
 #include "transaction_manager.pb.h"
 
-std::atomic<bool> enable_logging(true);
-
 //-------------------------------------
 // TODO 与存储层的接口
+
+std::atomic<bool> enable_logging(true);
+
 class KV{
 public:
     void RollbackDelete(char* key, int32_t key_size, char* value, int32_t value_size, Transaction* txn){};

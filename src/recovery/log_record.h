@@ -49,6 +49,17 @@ public:
         // calculate log record size
         size_ = HEADER_SIZE + sizeof(key) /*+ sizeof(int32_t) */ + sizeof(value) + sizeof(old_value);
     }
+    
+    inline lsn_t GetLsn() { return lsn_; }
+    inline void SetLsn(lsn_t lsn) { lsn_ = lsn; }
+    inline lsn_t GetPrevLsn() { return prev_lsn_; }
+    inline txn_id_t GetTxnId() { return txn_id_; }
+    inline int32_t GetSize() { return size_; }
+    inline LogRecordType GetLogRecordType() { return log_type_; }
+    
+    inline std::string &GetKey()  { return key_; }
+    inline std::string &GetValue()  { return value_; }
+    inline std::string &GetOldValue()  { return old_value_; }
 
 private:
     int32_t size_{0};
