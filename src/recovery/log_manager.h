@@ -9,7 +9,7 @@
 
 class DiskManager{
     public:
-    void WriteLog(char* flush_buffer, uint32_t flush_size);
+    void WriteLog(char* flush_buffer, uint32_t flush_size){};
 };
 
 static constexpr int BUFFER_POOL_SIZE = 10;                                          // size of buffer pool
@@ -21,7 +21,7 @@ class LogManager
 {
 public:
     explicit LogManager(DiskManager *disk_manager)
-      :  enable_flushing_(true), next_lsn_(0), persistent_lsn_(INVALID_LSN), flush_lsn_(INVALID_LSN), disk_manager_(disk_manager) {
+      :  enable_flushing_(true), needFlush_(false), next_lsn_(0), persistent_lsn_(INVALID_LSN), flush_lsn_(INVALID_LSN), disk_manager_(disk_manager) {
         log_buffer_ = new char[LOG_BUFFER_SIZE];
         flush_buffer_ = new char[LOG_BUFFER_SIZE];
     }
@@ -58,6 +58,7 @@ private:
     char *flush_buffer_; // 用来暂时存储需要刷新到磁盘中的日志; flush the logs in flush_buffer into disk file
 
     std::atomic<bool> enable_flushing_; //是否允许刷新
+    std::atomic<bool> needFlush_; //是否需要刷盘
     std::atomic<lsn_t> next_lsn_; // 用于分发日志序列号; next lsn in the system
     std::atomic<lsn_t> persistent_lsn_; // 已经刷新到磁盘中的最后一条日志的日志序列号; the last persistent lsn
     lsn_t flush_lsn_; // flush_buffer_中最后一条日志的日志记录号; the last lsn in the flush_buffer

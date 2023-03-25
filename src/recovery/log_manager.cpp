@@ -4,6 +4,7 @@
 lsn_t LogManager::AppendLogRecord(LogRecord *log_record) {
     std::unique_lock<std::mutex> l(latch_);
     if (log_buffer_write_offset_ + log_record->GetSize() >= LOG_BUFFER_SIZE) {
+        needFlush_ = true;
         cv_.notify_one(); //let RunFlushThread wake up.
         operation_cv_.wait(l, [&] {return log_buffer_write_offset_ + log_record->GetSize()< LOG_BUFFER_SIZE;});
     }
@@ -35,19 +36,22 @@ void LogManager::RunFlushThread(){
         while (enable_flushing_) {
             std::unique_lock<std::mutex> l(latch_);
             //每隔LOG_TIMEOUT刷新一次或者buffer已满或者强制刷盘
-            cv_.wait_for(l, LOG_TIMEOUT);
-            // swap buffer
-            SwapBuffer();
+            cv_.wait_for(l, LOG_TIMEOUT, [&] {return needFlush_.load();});
 
-            lsn_t lsn = next_lsn_ - 1;
-            uint32_t flush_size = flush_buffer_write_offset_;
-            l.unlock();
-            // resume the append log record operation 
-            operation_cv_.notify_all();
-            
-            //flush log
-            disk_manager_->WriteLog(flush_buffer_, flush_size);
-            persistent_lsn_.store(lsn);
+            if(flush_buffer_write_offset_ > 0){
+                // swap buffer
+                SwapBuffer();
+
+                lsn_t lsn = next_lsn_ - 1;
+                l.unlock();
+                // resume the append log record operation 
+                operation_cv_.notify_all();
+                
+                //flush log
+                disk_manager_->WriteLog(flush_buffer_, flush_buffer_write_offset_);
+                persistent_lsn_.store(lsn);
+                needFlush_.store(false);
+            }
         }
     });
 }
@@ -61,6 +65,7 @@ void LogManager::SwapBuffer() {
 
 void LogManager::Flush(lsn_t lsn, bool force) {
     if (force) {
+        needFlush_ = true;
         // notify flush thread to start flushing the log
         cv_.notify_one();
     }
