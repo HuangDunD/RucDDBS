@@ -31,7 +31,17 @@ std::string KVStore::get(uint64_t key) {
 
 // TODO design delete
 bool KVStore::del(uint64_t key) {
-    return false;
+    if(memtable_.contains(key)){
+        memtable_.del(key);
+        return true;
+    }
+    auto result = diskstorage_.search(key);
+    if(result.first){
+        memtable_.put(key, "");
+        return true;
+    }else{
+        return false;
+    }
 }
 
 void KVStore::reset() {
