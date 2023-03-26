@@ -10,7 +10,7 @@ IF(NOT CMAKE_BUILD_TYPE)
   SET(CMAKE_BUILD_TYPE Release)
 ENDIF()
 
-
+add_subdirectory(${PROJECT_SOURCE_DIR}/deps/googletest)
 add_subdirectory(${PROJECT_SOURCE_DIR}/deps/snappy)
                              
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/storage)
