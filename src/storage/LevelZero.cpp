@@ -28,7 +28,7 @@ table_cache_(table_cache), block_cache_(block_cache)
 }
 
 void LevelZero::add(const SkipList &memtable, uint64_t &no) {
-    ssts_.emplace_back(memtable, SSTableId(dir_, no++), table_cache_, block_cache_);
+    ssts_.emplace_back(memtable, SSTableId(dir_, no), table_cache_, block_cache_);
     ++size_;
     num_bytes_ += memtable.space();
     num_entries_ += memtable.size();

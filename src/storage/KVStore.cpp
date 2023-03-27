@@ -8,9 +8,7 @@ KVStore::KVStore(const std::string &dir) : diskstorage_(dir){
 }
 
 KVStore::~KVStore() {
-	if(!memtable_.empty()){
-        diskstorage_.add(memtable_);
-    }
+	flush();
 }
 
 void KVStore::put(uint64_t key, const std::string &value) {
@@ -45,6 +43,14 @@ bool KVStore::del(uint64_t key) {
 }
 
 void KVStore::reset() {
+    memtable_.clear();
     // memtable_.clear();
     // diskstorage_.clear();
+}
+
+void KVStore::flush() {
+    if(!memtable_.empty()){
+        diskstorage_.add(memtable_);
+    }
+        
 }
