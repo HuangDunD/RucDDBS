@@ -1,0 +1,1 @@
+/usr/bin/c++   -O0 -Wall -g2 -ggdb   CMakeFiles/demo.dir/engine.cpp.o CMakeFiles/demo.dir/head.cpp.o  -o demo  parser/libparser.a record/librecord.a KV/libkv.a node/libnode.a 

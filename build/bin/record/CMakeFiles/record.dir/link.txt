@@ -1,0 +1,2 @@
+/usr/bin/ar qc librecord.a  CMakeFiles/record.dir/record.cpp.o
+/usr/bin/ranlib librecord.a

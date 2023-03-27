@@ -1,0 +1,1 @@
+select tab1col0, tab2col1 from tab1, tab2 where tab1.tab1col0 = tab2.tab2col0 and tab1.tab1col0 = 0 and tab2.tab2col0 = 0;

@@ -1,0 +1,41 @@
+node1
+0 1 
+1 2 
+node2
+0 1 
+1 2 
+select tab1col0, tab2col1 from tab1, tab2 where tab1.tab1col0 = tab2.tab2col0 and tab1.tab1col0 = 0 and tab2.tab2col0 = 0;SELECT
+  LIST
+    COL
+      
+      tab1col0
+    COL
+      
+      tab2col1
+  LIST
+    tab1
+    tab2
+  LIST
+    BINARY_EXPR
+      COL
+        tab1
+        tab1col0
+      ==
+      COL
+        tab2
+        tab2col0
+    BINARY_EXPR
+      COL
+        tab1
+        tab1col0
+      ==
+      INT_LIT
+        0
+    BINARY_EXPR
+      COL
+        tab2
+        tab2col0
+      ==
+      INT_LIT
+        0
+0 1 

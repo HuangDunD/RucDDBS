@@ -1,0 +1,17 @@
+/home/xhc/code/DistDB/build/CMakeFiles/rebuild_cache.dir
+/home/xhc/code/DistDB/build/CMakeFiles/edit_cache.dir
+/home/xhc/code/DistDB/build/bin/CMakeFiles/rebuild_cache.dir
+/home/xhc/code/DistDB/build/bin/CMakeFiles/edit_cache.dir
+/home/xhc/code/DistDB/build/bin/CMakeFiles/demo.dir
+/home/xhc/code/DistDB/build/bin/parser/CMakeFiles/edit_cache.dir
+/home/xhc/code/DistDB/build/bin/parser/CMakeFiles/rebuild_cache.dir
+/home/xhc/code/DistDB/build/bin/parser/CMakeFiles/parser.dir
+/home/xhc/code/DistDB/build/bin/record/CMakeFiles/rebuild_cache.dir
+/home/xhc/code/DistDB/build/bin/record/CMakeFiles/edit_cache.dir
+/home/xhc/code/DistDB/build/bin/record/CMakeFiles/record.dir
+/home/xhc/code/DistDB/build/bin/KV/CMakeFiles/rebuild_cache.dir
+/home/xhc/code/DistDB/build/bin/KV/CMakeFiles/edit_cache.dir
+/home/xhc/code/DistDB/build/bin/KV/CMakeFiles/kv.dir
+/home/xhc/code/DistDB/build/bin/node/CMakeFiles/rebuild_cache.dir
+/home/xhc/code/DistDB/build/bin/node/CMakeFiles/edit_cache.dir
+/home/xhc/code/DistDB/build/bin/node/CMakeFiles/node.dir
