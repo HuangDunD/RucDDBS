@@ -5,8 +5,12 @@ project(recovery)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "-Wall")
 
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../include)
+find_package(GTest REQUIRED)
 find_package(Threads REQUIRED)
 
-add_executable(recovery log_manager.cpp)
+include_directories(${GTEST_INCLUDE_DIRS})
 
-target_link_libraries(recovery ${CMAKE_THREAD_LIBS_INIT})
+add_executable(log_manager_test log_manager_test.cpp log_manager.cpp)
+
+target_link_libraries(log_manager_test ${CMAKE_THREAD_LIBS_INIT} ${GTEST_BOTH_LIBRARIES})

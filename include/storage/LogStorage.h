@@ -4,8 +4,9 @@
 #include <iostream>
 #include <cstring>
 #include <sys/stat.h>
+#include <unistd.h>
 
-static const std::string LOG_FILE_NAME = "db.log";
+static const std::string path = "/home/t500ttt/RucDDBS/data/";
 
 class LogStorage
 {
@@ -15,10 +16,18 @@ private:
     // file stream for log file
     std::fstream log_file_;
 public:
-    LogStorage(std::string db_name_){
+    LogStorage(std::string db_name){
 
-        auto n = db_name_.rfind('.');
-        log_name_ = db_name_.substr(0, n) + ".log";
+        // struct stat st; 
+        // if( ! (stat(path.c_str(), &st) == 0 && S_ISDIR(st.st_mode)) ){
+        //     std::cerr << "No log directory" << std::endl;
+        // }
+        // if (chdir(path.c_str()) < 0) {
+        //     std::cerr << "Log UnixError" << std::endl;
+        // }
+
+        auto n = db_name.rfind('.');
+        log_name_ = path + db_name.substr(0, n) + ".log";
 
         // open log file stream
         log_file_.open(log_name_, std::ios::binary | std::ios::in | std::ios::app | std::ios::out);
@@ -32,11 +41,15 @@ public:
             // reopen it with original mode
             log_file_.open(log_name_, std::ios::binary | std::ios::in | std::ios::app | std::ios::out);
             if (!log_file_.is_open()) {
-                std::cerr << ("failed to open log file, filename: %s", log_name_.c_str());
+                std::cerr << "failed to open log file, filename: " << log_name_.c_str();
             }
         }
     };
-    ~LogStorage();
+    ~LogStorage(){
+        if (log_file_.is_open()) {
+            log_file_.close();
+        }
+    };
 
     int GetFileSize(const std::string &filename) {
         struct stat stat_buf;

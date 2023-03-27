@@ -1,5 +1,6 @@
 #pragma once
 #include "log_record.h"
+#include "storage/LogStorage.h"
 #include <chrono>
 #include <string.h>
 #include <atomic>
@@ -7,10 +8,10 @@
 #include <condition_variable>
 #include <thread>
 
-class DiskManager{
-    public:
-    void WriteLog(char* flush_buffer, uint32_t flush_size){};
-};
+// class DiskManager{
+//     public:
+//     void WriteLog(char* flush_buffer, uint32_t flush_size){};
+// };
 
 static constexpr int BUFFER_POOL_SIZE = 10;                                          // size of buffer pool
 static constexpr int PAGE_SIZE = 4096;                                        // size of a data page in byte
@@ -20,13 +21,15 @@ static constexpr auto LOG_TIMEOUT = std::chrono::milliseconds(30);
 class LogManager
 {
 public:
-    explicit LogManager(DiskManager *disk_manager)
-      :  enable_flushing_(true), needFlush_(false), next_lsn_(0), persistent_lsn_(INVALID_LSN), flush_lsn_(INVALID_LSN), disk_manager_(disk_manager) {
+    explicit LogManager(LogStorage *log_storage)
+      :  enable_flushing_(true), needFlush_(false), next_lsn_(0), persistent_lsn_(INVALID_LSN), flush_lsn_(INVALID_LSN), log_storage_(log_storage) {
         log_buffer_ = new char[LOG_BUFFER_SIZE];
         flush_buffer_ = new char[LOG_BUFFER_SIZE];
+        RunFlushThread();
     }
 
     ~LogManager() {
+        StopFlushThread();
         delete[] log_buffer_;
         delete[] flush_buffer_;
         log_buffer_ = nullptr;
@@ -74,5 +77,5 @@ private:
     
     std::condition_variable operation_cv_;
 
-    DiskManager *disk_manager_;
+    LogStorage *log_storage_;
 };
