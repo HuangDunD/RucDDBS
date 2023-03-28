@@ -3,6 +3,7 @@
 #include "Transaction.h"
 #include "Lock_manager.h"
 #include "meta_service.pb.h"
+#include "storage/KVStore.h"
 
 #include <shared_mutex>
 
@@ -16,6 +17,7 @@ class TransactionManager
 private:
     Lock_manager *lock_manager_;
     LogManager *log_manager_;
+    KVStore *kv_;
     ConcurrencyMode concurrency_mode_;
 
     /** The global transaction latch is used for checkpointing. */
