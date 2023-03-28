@@ -8,11 +8,7 @@
 #include <condition_variable>
 #include <thread>
 
-// class DiskManager{
-//     public:
-//     void WriteLog(char* flush_buffer, uint32_t flush_size){};
-// };
-
+std::atomic<bool> enable_logging(true);
 static constexpr int BUFFER_POOL_SIZE = 10;                                          // size of buffer pool
 static constexpr int PAGE_SIZE = 4096;                                        // size of a data page in byte
 static constexpr int LOG_BUFFER_SIZE = ((BUFFER_POOL_SIZE + 1) * PAGE_SIZE);  // size of a log buffer in byte
@@ -46,7 +42,7 @@ public:
     
     void Flush(lsn_t lsn, bool force);
 
-    lsn_t AppendLogRecord(LogRecord *log_record);
+    lsn_t AppendLogRecord(LogRecord &log_record);
 
     void SwapBuffer();
 

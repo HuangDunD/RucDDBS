@@ -1,47 +1,47 @@
 #include "log_manager.h"
 #include <iostream>
 
-lsn_t LogManager::AppendLogRecord(LogRecord *log_record) {
+lsn_t LogManager::AppendLogRecord(LogRecord &log_record) {
     std::unique_lock<std::mutex> l(latch_);
-    if (log_buffer_write_offset_ + log_record->GetSize() >= LOG_BUFFER_SIZE) {
+    if (log_buffer_write_offset_ + log_record.GetSize() >= LOG_BUFFER_SIZE) {
         needFlush_ = true;
         cv_.notify_one(); //let RunFlushThread wake up.
-        operation_cv_.wait(l, [&] {return log_buffer_write_offset_ + log_record->GetSize()< LOG_BUFFER_SIZE;});
+        operation_cv_.wait(l, [&] {return log_buffer_write_offset_ + log_record.GetSize()< LOG_BUFFER_SIZE;});
     }
     memcpy(log_buffer_ + log_buffer_write_offset_, &log_record, LogRecord::HEADER_SIZE);
     int pos = log_buffer_write_offset_ + LogRecord::HEADER_SIZE;
 
-    if(log_record->GetLogRecordType() == LogRecordType::INSERT ||
-            log_record->GetLogRecordType() == LogRecordType::DELETE ){
-        memcpy(log_buffer_ + pos, &log_record->GetKeySize(), sizeof(uint32_t));
+    if(log_record.GetLogRecordType() == LogRecordType::INSERT ||
+            log_record.GetLogRecordType() == LogRecordType::DELETE ){
+        memcpy(log_buffer_ + pos, &log_record.GetKeySize(), sizeof(uint32_t));
         pos += sizeof(uint32_t);
-        memcpy(log_buffer_ + pos, log_record->GetKey(), log_record->GetKeySize());
-        pos += log_record->GetKeySize();
+        memcpy(log_buffer_ + pos, log_record.GetKey(), log_record.GetKeySize());
+        pos += log_record.GetKeySize();
 
-        memcpy(log_buffer_ + pos, &log_record->GetValueSize(), sizeof(uint32_t));
+        memcpy(log_buffer_ + pos, &log_record.GetValueSize(), sizeof(uint32_t));
         pos += sizeof(uint32_t);
-        memcpy(log_buffer_ + pos, log_record->GetValue(), log_record->GetValueSize());
-        pos += log_record->GetValueSize();
+        memcpy(log_buffer_ + pos, log_record.GetValue(), log_record.GetValueSize());
+        pos += log_record.GetValueSize();
     }
-    else if(log_record->GetLogRecordType() == LogRecordType::UPDATE){
-        memcpy(log_buffer_ + pos, &log_record->GetKeySize(), sizeof(uint32_t));
-        pos += sizeof(uint32_t);
-        memcpy(log_buffer_ + pos, log_record->GetKey(), log_record->GetKeySize());
-        pos += log_record->GetKeySize();
+    // else if(log_record.GetLogRecordType() == LogRecordType::UPDATE){
+    //     memcpy(log_buffer_ + pos, &log_record.GetKeySize(), sizeof(uint32_t));
+    //     pos += sizeof(uint32_t);
+    //     memcpy(log_buffer_ + pos, log_record.GetKey(), log_record.GetKeySize());
+    //     pos += log_record.GetKeySize();
 
-        memcpy(log_buffer_ + pos, &log_record->GetValueSize(), sizeof(uint32_t));
-        pos += sizeof(uint32_t);
-        memcpy(log_buffer_ + pos, log_record->GetValue(), log_record->GetValueSize());
-        pos += log_record->GetValueSize();
+    //     memcpy(log_buffer_ + pos, &log_record.GetValueSize(), sizeof(uint32_t));
+    //     pos += sizeof(uint32_t);
+    //     memcpy(log_buffer_ + pos, log_record.GetValue(), log_record.GetValueSize());
+    //     pos += log_record.GetValueSize();
 
-        memcpy(log_buffer_ + pos, &log_record->GetOldValueSize(), sizeof(uint32_t));
-        pos += sizeof(uint32_t);
-        memcpy(log_buffer_ + pos, log_record->GetOldValue(), log_record->GetOldValueSize());
-        pos += log_record->GetOldValueSize();
-    }
+    //     memcpy(log_buffer_ + pos, &log_record.GetOldValueSize(), sizeof(uint32_t));
+    //     pos += sizeof(uint32_t);
+    //     memcpy(log_buffer_ + pos, log_record.GetOldValue(), log_record.GetOldValueSize());
+    //     pos += log_record.GetOldValueSize();
+    // }
     log_buffer_write_offset_ = pos;
-    log_record->SetLsn(next_lsn_++);
-    return log_record->GetLsn();
+    log_record.SetLsn(next_lsn_++);
+    return log_record.GetLsn();
 };
 
 void LogManager::RunFlushThread(){

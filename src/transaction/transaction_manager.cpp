@@ -6,23 +6,6 @@
 #include "transaction_manager.h"
 #include "transaction_manager.pb.h"
 
-//-------------------------------------
-// TODO 与存储层的接口
-
-std::atomic<bool> enable_logging(true);
-
-class KV{
-public:
-    void RollbackDelete(char* key, int32_t key_size, char* value, int32_t value_size, Transaction* txn){};
-    void ApplyDelete(char* key, int32_t key_size, char* value, int32_t value_size, Transaction* txn){};
-    void UpdateKV(char* key, int32_t key_size, char* old_value, int32_t old_value_size, Transaction* txn){};
-
-};
-
-KV kv;
-
-//-------------------------------------
-
 std::unordered_map<txn_id_t, Transaction *> TransactionManager::txn_map = {};
 std::shared_mutex TransactionManager::txn_map_mutex = {};
    
@@ -105,7 +88,7 @@ Transaction* TransactionManager::Begin(Transaction* txn, IsolationLevel isolatio
     }
 
     if (enable_logging) {
-        auto record = new LogRecord(txn->get_txn_id(), txn->get_prev_lsn(), LogRecordType::BEGIN);
+        LogRecord record(txn->get_txn_id(), txn->get_prev_lsn(), LogRecordType::BEGIN);
         //TODO record在log_manager应该在合适处delete
         lsn_t lsn = log_manager_->AppendLogRecord(record);
         txn->set_prev_lsn(lsn);
@@ -123,19 +106,19 @@ bool TransactionManager::Abort(Transaction * txn){
         while (!write_set->empty()) {
             auto &item = write_set->back();
             if(item.getWType() == WType::DELETE_TUPLE){
-                kv.RollbackDelete(item.getKey(), item.getKeySize(), item.getValue(), item.getValueSize(), txn);
+                kv_->put(std::string(item.getKey(),item.getKeySize()), std::string(item.getValue(),item.getValueSize()), txn);
             }else if(item.getWType() == WType::INSERT_TUPLE){
-                kv.ApplyDelete(item.getKey(), item.getKeySize(), item.getValue(), item.getValueSize(), txn);
+                kv_->del(std::string(item.getKey(), item.getKeySize()),txn);
             }else if (item.getWType() == WType::UPDATE_TUPLE){
-                kv.UpdateKV(item.getKey(), item.getKeySize(), item.getOldValue(), item.getOldValueSize(), txn);
+                kv_->del(std::string(item.getKey(),item.getKeySize()), txn);
+                kv_->put(std::string(item.getKey(), item.getKeySize()), std::string(item.getOldValue(), item.getOldValueSize()), txn);
             }
             write_set->pop_back();
         }
         write_set->clear();
         if(enable_logging){
             //写Abort日志
-            LogRecord* record = new LogRecord(txn->get_txn_id(),
-                txn->get_prev_lsn(), LogRecordType::ABORT);
+            LogRecord record(txn->get_txn_id(), txn->get_prev_lsn(), LogRecordType::ABORT);
             auto lsn = log_manager_->AppendLogRecord(record);
             txn->set_prev_lsn(lsn);
         }
@@ -188,8 +171,7 @@ bool TransactionManager::Commit(Transaction * txn){
 
         if(enable_logging){
             //写Commit日志
-            LogRecord* record = new LogRecord(txn->get_txn_id(),
-                txn->get_prev_lsn(), LogRecordType::COMMIT);
+            LogRecord record(txn->get_txn_id(), txn->get_prev_lsn(), LogRecordType::COMMIT);
             auto lsn = log_manager_->AppendLogRecord(record);
             txn->set_prev_lsn(lsn);
         }
@@ -277,9 +259,8 @@ bool TransactionManager::PrepareCommit(Transaction * txn){
     }
     if(enable_logging){
         //写Prepared日志
-        LogRecord* record = new LogRecord(txn->get_txn_id(),
-            txn->get_prev_lsn(), LogRecordType::PREPARED);
-        //TODO: 此处在kv层写redo log, raft返回同步结果
+        LogRecord record(txn->get_txn_id(), txn->get_prev_lsn(), LogRecordType::PREPARED);
+        //TODO: 此处在kv层写redo/undo log, raft返回同步结果
 
         auto lsn = log_manager_->AppendLogRecord(record);
         if(lsn == INVALID_LSN) return false;
