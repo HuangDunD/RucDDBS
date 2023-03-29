@@ -68,7 +68,6 @@ void LogManager::RunFlushThread(){
             }
         }
     });
-    // flush_thread_->detach();
 }
 
 void LogManager::SwapBuffer() {

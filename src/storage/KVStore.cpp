@@ -37,33 +37,33 @@ std::string KVStore::get(const std::string & key, Transaction *txn){
 }
 
 // del(key)
-bool KVStore::del(const std::string & key, Transaction *txn){
-    if(memtable_.contains(key)){
-        if(enable_logging){
-            //写Put日志
-            LogRecord record (txn->get_txn_id(), txn->get_prev_lsn(), LogRecordType::DELETE,
-                        key.size(), key.c_str() ,memtable_.get(key).size(), memtable_.get(key).c_str());
-            auto lsn = log_manager_->AppendLogRecord(record);
-            txn->set_prev_lsn(lsn);
-        }
-        memtable_.del(key);
-        return true;
-    }
-    auto result = diskstorage_.search(key);
-    if(result.first){
-        if(enable_logging){
-            //写Put日志
-            LogRecord record (txn->get_txn_id(), txn->get_prev_lsn(), LogRecordType::DELETE,
-                        key.size(), key.c_str() ,result.second.size(), result.second.c_str());
-            auto lsn = log_manager_->AppendLogRecord(record);
-            txn->set_prev_lsn(lsn);
-        }
-        memtable_.put(key, "");
-        return true;
-    }else{
-        return false;
-    }
-}
+// bool KVStore::del(const std::string & key, Transaction *txn){
+//     if(memtable_.contains(key)){
+//         if(enable_logging){
+//             //写Put日志
+//             LogRecord record (txn->get_txn_id(), txn->get_prev_lsn(), LogRecordType::DELETE,
+//                         key.size(), key.c_str() ,memtable_.get(key).size(), memtable_.get(key).c_str());
+//             auto lsn = log_manager_->AppendLogRecord(record);
+//             txn->set_prev_lsn(lsn);
+//         }
+//         memtable_.del(key);
+//         return true;
+//     }
+//     auto result = diskstorage_.search(key);
+//     if(result.first){
+//         if(enable_logging){
+//             //写Put日志
+//             LogRecord record (txn->get_txn_id(), txn->get_prev_lsn(), LogRecordType::DELETE,
+//                         key.size(), key.c_str() ,result.second.size(), result.second.c_str());
+//             auto lsn = log_manager_->AppendLogRecord(record);
+//             txn->set_prev_lsn(lsn);
+//         }
+//         memtable_.put(key, "");
+//         return true;
+//     }else{
+//         return false;
+//     }
+// }
 
 void KVStore::put(uint64_t key, const std::string &value, Transaction *txn) {
     memtable_.put(key, value);

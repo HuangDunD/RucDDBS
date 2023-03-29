@@ -30,8 +30,8 @@ public:
                     response->set_ok(false);
                     return;
                 }
-                if(!transaction_manager_->Abort(txn)){
-                    response->set_ok(false);
+                if(!transaction_manager_->AbortSingle(txn)){
+                    response->set_ok(false); 
                     return;
                 }
                 response->set_ok(true);
@@ -70,7 +70,7 @@ public:
                     response->set_ok(false);
                     return;
                 }
-                if(!transaction_manager_->Commit(txn)){
+                if(!transaction_manager_->CommitSingle(txn)){
                     response->set_ok(false);
                     return;
                 }

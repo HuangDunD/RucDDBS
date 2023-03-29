@@ -89,7 +89,6 @@ Transaction* TransactionManager::Begin(Transaction* txn, IsolationLevel isolatio
 
     if (enable_logging) {
         LogRecord record(txn->get_txn_id(), txn->get_prev_lsn(), LogRecordType::BEGIN);
-        //TODO record在log_manager应该在合适处delete
         lsn_t lsn = log_manager_->AppendLogRecord(record);
         txn->set_prev_lsn(lsn);
     }
@@ -99,36 +98,62 @@ Transaction* TransactionManager::Begin(Transaction* txn, IsolationLevel isolatio
     return txn;
 }
 
+bool TransactionManager::AbortSingle(Transaction * txn){
+    auto write_set = txn->get_write_set();
+    while (!write_set->empty()) {
+        auto &item = write_set->back();
+        if(item.getWType() == WType::DELETE_TUPLE){
+            kv_->put(std::string(item.getKey(),item.getKeySize()), std::string(item.getValue(),item.getValueSize()), txn);
+        }else if(item.getWType() == WType::INSERT_TUPLE){
+            kv_->del(std::string(item.getKey(), item.getKeySize()),txn);
+        }else if (item.getWType() == WType::UPDATE_TUPLE){
+            kv_->del(std::string(item.getKey(),item.getKeySize()), txn);
+            kv_->put(std::string(item.getKey(), item.getKeySize()), std::string(item.getOldValue(), item.getOldValueSize()), txn);
+        }
+        write_set->pop_back();
+    }
+    write_set->clear();
+    if(enable_logging){
+        //写Abort日志
+        LogRecord record(txn->get_txn_id(), txn->get_prev_lsn(), LogRecordType::ABORT);
+        auto lsn = log_manager_->AppendLogRecord(record);
+        txn->set_prev_lsn(lsn);
+    }
+    // Release all the locks.
+    ReleaseLocks(txn);
+    // Remove txn from txn_map
+    std::unique_lock<std::shared_mutex> l(txn_map_mutex);
+    txn_map.erase(txn->get_txn_id() );
+    // Release the global transaction latch.
+    global_txn_latch_.unlock_shared();
+    return true;
+}
+
+bool TransactionManager::CommitSingle(Transaction * txn){
+    if(txn->get_state() == TransactionState::ABORTED){
+        return false;
+    }
+    txn->set_transaction_state(TransactionState::COMMITTED);
+    if(enable_logging){
+        //写Commit日志
+        LogRecord record(txn->get_txn_id(), txn->get_prev_lsn(), LogRecordType::COMMIT);
+        auto lsn = log_manager_->AppendLogRecord(record);
+        txn->set_prev_lsn(lsn);
+    }
+
+    // Release all locks
+    ReleaseLocks(txn);
+    // Remove txn from txn_map
+    std::unique_lock<std::shared_mutex> l(txn_map_mutex);
+    txn_map.erase(txn->get_txn_id() );
+    // Release the global transaction latch.
+    global_txn_latch_.unlock_shared();
+}
+
 bool TransactionManager::Abort(Transaction * txn){
     txn->set_transaction_state(TransactionState::ABORTED);
     if(txn->get_is_distributed() == false){
-        auto write_set = txn->get_write_set();
-        while (!write_set->empty()) {
-            auto &item = write_set->back();
-            if(item.getWType() == WType::DELETE_TUPLE){
-                kv_->put(std::string(item.getKey(),item.getKeySize()), std::string(item.getValue(),item.getValueSize()), txn);
-            }else if(item.getWType() == WType::INSERT_TUPLE){
-                kv_->del(std::string(item.getKey(), item.getKeySize()),txn);
-            }else if (item.getWType() == WType::UPDATE_TUPLE){
-                kv_->del(std::string(item.getKey(),item.getKeySize()), txn);
-                kv_->put(std::string(item.getKey(), item.getKeySize()), std::string(item.getOldValue(), item.getOldValueSize()), txn);
-            }
-            write_set->pop_back();
-        }
-        write_set->clear();
-        if(enable_logging){
-            //写Abort日志
-            LogRecord record(txn->get_txn_id(), txn->get_prev_lsn(), LogRecordType::ABORT);
-            auto lsn = log_manager_->AppendLogRecord(record);
-            txn->set_prev_lsn(lsn);
-        }
-        // Release all the locks.
-        ReleaseLocks(txn);
-        // Remove txn from txn_map
-        std::unique_lock<std::shared_mutex> l(txn_map_mutex);
-        txn_map.erase(txn->get_txn_id() );
-        // Release the global transaction latch.
-        global_txn_latch_.unlock_shared();
+        AbortSingle(txn);
     }
     else{
         brpc::ChannelOptions options;
@@ -167,22 +192,7 @@ bool TransactionManager::Abort(Transaction * txn){
 
 bool TransactionManager::Commit(Transaction * txn){
     if(txn->get_is_distributed() == false){
-        txn->set_transaction_state(TransactionState::COMMITTED);
-
-        if(enable_logging){
-            //写Commit日志
-            LogRecord record(txn->get_txn_id(), txn->get_prev_lsn(), LogRecordType::COMMIT);
-            auto lsn = log_manager_->AppendLogRecord(record);
-            txn->set_prev_lsn(lsn);
-        }
-
-        // Release all locks
-        ReleaseLocks(txn);
-        // Remove txn from txn_map
-        std::unique_lock<std::shared_mutex> l(txn_map_mutex);
-        txn_map.erase(txn->get_txn_id() );
-        // Release the global transaction latch.
-        global_txn_latch_.unlock_shared();
+        return CommitSingle(txn);
     }
     else {
         //分布式事务, 2PC两阶段提交
