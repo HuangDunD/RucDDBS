@@ -4,7 +4,7 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "${workspaceFolder}/src/meta_server/build"
+                "${workspaceFolder}/meta_server/build"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/clang-12",

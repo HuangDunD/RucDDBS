@@ -5,8 +5,7 @@
 #include <cstring>
 #include <sys/stat.h>
 #include <unistd.h>
-
-static const std::string path = "/home/t500ttt/RucDDBS/data/";
+#include "dbconfig.h"
 
 class LogStorage
 {
@@ -27,7 +26,7 @@ public:
         // }
 
         auto n = db_name.rfind('.');
-        log_name_ = path + db_name.substr(0, n) + ".log";
+        log_name_ = log_path + db_name.substr(0, n) + ".log";
 
         // open log file stream
         log_file_.open(log_name_, std::ios::binary | std::ios::in | std::ios::app | std::ios::out);

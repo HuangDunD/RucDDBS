@@ -6,8 +6,6 @@
 #include "meta_service.pb.h"
 // #include "meta_server.h"
 
-// #define server "[2407:c080:801:fffe::7b3c:b07a]:8001"
-
 #define server "[::1]:8001"
 
 int main(){

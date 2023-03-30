@@ -1,6 +1,7 @@
 #pragma once
 #include <exception>
 #include <string>
+#include "dbconfig.h"
 
 enum class MetaServerError {
     NO_DATABASE,
