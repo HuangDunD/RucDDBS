@@ -8,9 +8,7 @@ KVStore::KVStore(const std::string &dir) : diskstorage_(dir){
 }
 
 KVStore::~KVStore() {
-	if(!memtable_.empty()){
-        diskstorage_.add(memtable_);
-    }
+	flush();
 }
 
 // put(key, value)
@@ -83,11 +81,29 @@ std::string KVStore::get(uint64_t key, Transaction *txn) {
 }
 
 // TODO design delete
-bool KVStore::del(uint64_t key, Transaction *txn) {
-    return false;
+bool KVStore::del(uint64_t key) {
+    if(memtable_.contains(key)){
+        memtable_.del(key);
+        return true;
+    }
+    auto result = diskstorage_.search(key);
+    if(result.first){
+        memtable_.put(key, "");
+        return true;
+    }else{
+        return false;
+    }
 }
 
 void KVStore::reset() {
+    memtable_.clear();
     // memtable_.clear();
     // diskstorage_.clear();
+}
+
+void KVStore::flush() {
+    if(!memtable_.empty()){
+        diskstorage_.add(memtable_);
+    }
+        
 }

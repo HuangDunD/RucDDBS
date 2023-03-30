@@ -10,17 +10,10 @@ IF(NOT CMAKE_BUILD_TYPE)
   SET(CMAKE_BUILD_TYPE Release)
 ENDIF()
 
-aux_source_directory(${PROJECT_SOURCE_DIR}/src/storage STORAGE_SRC)
-set(STORAGE_DIR ${PROJECT_SOURCE_DIR}/include/storage)
-
+add_subdirectory(${PROJECT_SOURCE_DIR}/deps/googletest)
 add_subdirectory(${PROJECT_SOURCE_DIR}/deps/snappy)
-
-add_executable(correctness ./test/storage/correctness.cpp ${STORAGE_SRC})
-
-target_include_directories(correctness PUBLIC
-                              ${STORAGE_DIR})
-
-target_link_libraries(correctness snappy)                              
-
+                             
+add_subdirectory(${PROJECT_SOURCE_DIR}/src/storage)
+add_subdirectory(${PROJECT_SOURCE_DIR}/test/storage)
 
 

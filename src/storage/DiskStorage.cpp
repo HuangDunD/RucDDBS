@@ -14,6 +14,7 @@ DiskStorage::DiskStorage(const std::string &dir) : dir_(dir), level0_(dir_ + "/"
 
 void DiskStorage::add(const SkipList &memtable){
     level0_.add(memtable, no_);
+    no_++;
     // if level0 overflows, call merger
     save_meta();
 }

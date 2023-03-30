@@ -29,6 +29,8 @@ class KVStore{
     
     // clear memtable and disk
     void reset();
+    // flush memtable to disk 
+    void flush();
  private:
     SkipList memtable_;
     DiskStorage diskstorage_;
