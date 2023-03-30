@@ -247,7 +247,7 @@ int main(){
         while(true){
             meta_server.get_mutex().lock();
             try{
-                meta_server.close_meta_server(data_dir);
+                meta_server.close_meta_server(DATA_DIR); 
             }catch(MetaServerErrorException& e){
                 std::cerr << e.GetInfo() << '\n';
             }
