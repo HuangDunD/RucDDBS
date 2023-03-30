@@ -24,8 +24,8 @@ void MetaServiceImpl::GetPartitionLocation(google::protobuf::RpcController* cntl
                       PartitionLocationResponse* response,
                       google::protobuf::Closure* done){
                         
-        brpc::ClosureGuard done_guard(done);
-        brpc::Controller* cntl = static_cast<brpc::Controller*>(cntl_base);
+        brpc::ClosureGuard done_guard(done); 
+        // brpc::Controller* cntl = static_cast<brpc::Controller*>(cntl_base);
         
         std::string db_name = request->db_name();
         std::string tab_name = request->tab_name();
@@ -105,7 +105,7 @@ void MetaServiceImpl::CreatePartitionTable(::google::protobuf::RpcController* co
                 response->set_success(false);
                 return;
             }
-            if(request->replica_cnt() < meta_server_->get_ip_node_map().size()){
+            if(size_t(request->replica_cnt()) < meta_server_->get_ip_node_map().size()){
                 //副本数不能超过注册节点数
                 response->set_success(false);
                 return;
@@ -163,7 +163,7 @@ void MetaServiceImpl::CreatePartitionTable(::google::protobuf::RpcController* co
             }
             
             //分配物理节点
-            for(int i = 0; i<tms->partitions.size(); i++){
+            for(size_t i = 0; i<tms->partitions.size(); i++){
                 std::vector<ReplicaLocation> replic_loc;
                 int min_cnt = INT32_MAX;
                 std::unordered_set<std::string> s;
@@ -199,8 +199,6 @@ void MetaServiceImpl::CreatePartitionTable(::google::protobuf::RpcController* co
             return;
     }
 }
-
-
 
 int main(){
     TabMetaServer tab_meta_server{1, "test_table", PartitionType::RANGE_PARTITION, "row1", ColType::TYPE_INT, 3};
@@ -244,7 +242,20 @@ int main(){
         });
     oracle.detach();
 
-    // std::cout << meta_server.getPartitionKey("test_db", "test_table");
+    //后台开启线程每隔一段时间, 持久化一次meta
+    std::thread save_meta([&]{
+        while(true){
+            meta_server.get_mutex().lock();
+            try{
+                meta_server.close_meta_server(DATA_DIR); 
+            }catch(MetaServerErrorException& e){
+                std::cerr << e.GetInfo() << '\n';
+            }
+            meta_server.get_mutex().unlock();
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+        }
+        });
+    save_meta.detach();
 
     brpc::Server server;
 
@@ -257,13 +268,13 @@ int main(){
     }
 
     butil::EndPoint point;
-    if (!FLAGS_listen_addr.empty()) {
-        if (butil::str2endpoint(FLAGS_listen_addr.c_str() ,&point) < 0) {
-            LOG(ERROR) << "Invalid listen address:" << FLAGS_listen_addr;
+    if (!META_SERVER_LISTEN_ADDR.empty()) {
+        if (butil::str2endpoint(META_SERVER_LISTEN_ADDR.c_str() ,&point) < 0) {
+            LOG(ERROR) << "Invalid listen address:" << META_SERVER_LISTEN_ADDR;
             return -1;
         }
     } else {
-        point = butil::EndPoint(butil::IP_ANY, FLAGS_port);
+        point = butil::EndPoint(butil::IP_ANY, META_SERVER_PORT);
     }
 
     brpc::ServerOptions options;
@@ -273,21 +284,19 @@ int main(){
         return -1;
     }
 
+    // std::signal(SIGINT, [&oracle_background_running, &meta_server](int signal){
+    //     oracle_background_running = false;
+    //     try{
+    //         meta_server.close_meta_server("/home/t500ttt/RucDDBS/data/");
+    //     }
+    //     catch(MetaServerErrorException& e)
+    //     {
+    //         std::cerr << e.GetInfo() << '\n';
+    //     }
+    //     std::exit(signal);
+    // });
+
     server.RunUntilAskedToQuit();
-    oracle_background_running = false;
-
-    try{
-        meta_server.close_meta_server("/home/t500ttt/RucDDBS/data/");
-    }
-    catch(MetaServerErrorException& e)
-    {
-        std::cerr << e.GetInfo() << '\n';
-    }
-
-    auto new_meta_server = new MetaServer();
-    new_meta_server->open_meta_server("/home/t500ttt/RucDDBS/data/");
     
-    new_meta_server->close_meta_server("/home/t500ttt/RucDDBS/data/");
-
     return 0;
 }

@@ -1,9 +1,7 @@
 #include "meta_server.h"
-#include <iostream>
-#include <type_traits>
 
 void MetaServer::open_meta_server(const std::string &meta_name){
-    struct stat st; 
+    // struct stat st; 
     if( !is_dir(meta_name) ){
         throw MetaServerErrorException(MetaServerError::NO_META_DIR);
     }
@@ -18,7 +16,7 @@ void MetaServer::open_meta_server(const std::string &meta_name){
 }
 
 void MetaServer::close_meta_server(const std::string &meta_name){
-    struct stat st; 
+    // struct stat st; 
     if( !is_dir(meta_name) ){
         throw MetaServerErrorException(MetaServerError::NO_META_DIR);
     }
@@ -190,7 +188,7 @@ bool MetaServer::UpdatePartitionLeader(std::string db_name, std::string tab_name
     if(tab_loc.get_duplicate_type() != DuplicateType::DUPLICATE){
         return false;
     }
-    int i = 0;
+    size_t i = 0;
     for(; i < tab_loc.get_partition_list().size(); i++){
         if(tab_loc.get_partition_list()[i].get_partition_id() == p_id)
             break;

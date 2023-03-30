@@ -3,9 +3,8 @@
 
 //本地节点存放本地数据库,表,列的信息 见meta/local_meta.h
 //meta server存放所有数据库,表,列的信息, 同时存放所有分区实时所在位置
-
+#pragma once
 #include "table_location.h"
-#include "local_meta.h"
 #include "defs.h"
 #include "timestamp.h"
 
@@ -15,8 +14,38 @@
 #include <fstream>
 #include <unordered_map>
 #include <shared_mutex>
+#include <iostream>
+#include <type_traits>
 
-static const std::string META_SERVER_FILE_NAME = "META_SERVER.meta";
+enum class ColType {
+    TYPE_INT, TYPE_FLOAT, TYPE_STRING
+};
+
+enum class PartitionType{
+    NONE_PARTITION, //非分区表
+    RANGE_PARTITION, //RANGE分区
+    HASH_PARTITION  //HASH分区
+};
+
+struct ParMeta {
+    std::string name; //分区名
+    partition_id_t p_id; //分区id, 也是
+
+    struct {
+        std::string min_range;
+        std::string max_range;
+    }string_range;
+
+    friend std::ostream &operator<<(std::ostream &os, const ParMeta &pm) {
+        os << pm.name << ' ' << pm.p_id << ' ' << pm.string_range.min_range << ' ' << pm.string_range.max_range << '\n';
+        return os;
+    }
+
+    friend std::istream &operator>>(std::istream &is, ParMeta &pm) {
+        is >> pm.name >> pm.p_id >> pm.string_range.min_range >> pm.string_range.max_range;
+        return is;
+    }
+};
 
 struct Node{
     std::string ip_addr;

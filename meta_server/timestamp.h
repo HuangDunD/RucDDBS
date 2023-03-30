@@ -17,7 +17,6 @@ const uint64_t updateTimestampStep = 30;
 const uint64_t saveTimestampInterval = 1;
 const uint64_t updateTimestampGuard = 1;
 const int64_t maxLogical = int64_t(1 << physicalShiftBits);
-const std::string path = "/home/t500ttt/RucDDBS/data/";
 const std::string TIMESTAMP_FILE_NAME = "last_timestamp";
 
 class Oracle
@@ -45,10 +44,10 @@ public:
 
     void getTimestampFromPath(){
         struct stat st; 
-        if( ! (stat(path.c_str(), &st) == 0 && S_ISDIR(st.st_mode)) ){
+        if( ! (stat(DATA_DIR.c_str(), &st) == 0 && S_ISDIR(st.st_mode)) ){
             throw MetaServerErrorException(MetaServerError::NO_META_DIR);
         }
-        if (chdir(path.c_str()) < 0) {
+        if (chdir(DATA_DIR.c_str()) < 0) {
             throw MetaServerErrorException(MetaServerError::UnixError);
         }
         //get TimeStamp
@@ -58,10 +57,10 @@ public:
 
     void saveTimeStampToPath(uint64_t ts){
         struct stat st; 
-        if( ! (stat(path.c_str(), &st) == 0 && S_ISDIR(st.st_mode)) ){
+        if( ! (stat(DATA_DIR.c_str(), &st) == 0 && S_ISDIR(st.st_mode)) ){
             throw MetaServerErrorException(MetaServerError::NO_META_DIR);
         }
-        if (chdir(path.c_str()) < 0) {
+        if (chdir(DATA_DIR.c_str()) < 0) {
             throw MetaServerErrorException(MetaServerError::UnixError);
         }
         //save TimeStamp

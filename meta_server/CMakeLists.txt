@@ -3,17 +3,17 @@ cmake_minimum_required(VERSION 3.2)
 project(meta_server)
 
 set(CMAKE_CXX_STANDARD 17)
-# set(CMAKE_CXX_FLAGS "-Wall")
+set(CMAKE_CXX_FLAGS "-Wall")
 
-set(SOURCES meta_server_rpc.cpp meta_server.cpp)
-add_library(meta_server STATIC ${SOURCES})
+# set(SOURCES meta_server_rpc.cpp meta_server.cpp)
+# add_library(meta_server STATIC ${SOURCES})
 
 include(FindThreads)
 include(FindProtobuf)
 protobuf_generate_cpp(PROTO_SRC PROTO_HEADER meta_service.proto)
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
-include_directories(../meta)
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/../../)
 
 find_library(THRIFT_LIB NAMES thrift)
 if (NOT THRIFT_LIB)
@@ -68,10 +68,10 @@ set(DYNAMIC_LIB
     )
 
 # add_library(meta_server STATIC meta_server_rpc.cpp meta_server.cpp)
-add_executable(meta_server_rpc meta_server_rpc.cpp meta_server.cpp ${PROTO_SRC} ${PROTO_HEADER})
-add_executable(meta_client meta_client.cpp ${PROTO_SRC} ${PROTO_HEADER})
-add_executable(timestamp_test timestamp_test.cpp )
+add_executable(meta_server meta_server_rpc.cpp meta_server.cpp ${PROTO_SRC} ${PROTO_HEADER} ${CONFIG})
+# add_executable(meta_client meta_client.cpp ${PROTO_SRC} ${PROTO_HEADER})
+# add_executable(timestamp_test timestamp_test.cpp )
 
-target_link_libraries(meta_server_rpc ${BRPC_LIB} ${DYNAMIC_LIB})
-target_link_libraries(meta_client ${BRPC_LIB} ${DYNAMIC_LIB})
-target_link_libraries(timestamp_test ${BRPC_LIB} ${DYNAMIC_LIB})
+target_link_libraries(meta_server ${BRPC_LIB} ${DYNAMIC_LIB})
+# target_link_libraries(meta_client ${BRPC_LIB} ${DYNAMIC_LIB})
+# target_link_libraries(timestamp_test ${BRPC_LIB} ${DYNAMIC_LIB})
