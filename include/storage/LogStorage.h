@@ -56,10 +56,8 @@ public:
         return rc == 0 ? static_cast<int> (stat_buf.st_size) : -1;
     }
 
-    bool ReadLog(char *log_data, int size, int offset) {
+    bool ReadLog(char *log_data, int size, size_t offset) {
 
-        // this is stupid. we should cache the log size then read it till end
-        // since log file won't change while performing recovery protocol.
         if (offset >= GetFileSize(log_name_)) {
             return false;
         }

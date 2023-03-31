@@ -46,10 +46,11 @@ public:
 
     void SwapBuffer();
 
-    inline lsn_t GetNextLsn() { return next_lsn_; }
-    inline lsn_t GetFlushLsn() { return flush_lsn_; }
-    inline char * GetLogBuffer() { return log_buffer_; }
-    inline lsn_t GetPersistentLsn() { return persistent_lsn_; }
+    inline lsn_t GetNextLsn() const { return next_lsn_; }
+    inline void SetNextLsn(lsn_t next_lsn) {next_lsn_ = next_lsn;}
+    inline lsn_t GetFlushLsn() const { return flush_lsn_; }
+    inline char * GetLogBuffer() const { return log_buffer_; }
+    inline lsn_t GetPersistentLsn() const { return persistent_lsn_; }
 
 private:
 
