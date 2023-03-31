@@ -12,6 +12,17 @@ KVStore::~KVStore() {
 }
 
 // put(key, value)
+void KVStore::put(const std::string & key, const std::string &value){
+
+    // TODO
+    // memtable_.put(key, value);
+    // if(memtable_.space() > Option::SSTABLE_SPACE){
+    //     diskstorage_.add(memtable_);
+    //     memtable_.clear();
+    // }
+}
+
+// put(key, value)
 void KVStore::put(const std::string & key, const std::string &value, Transaction *txn){
     if(enable_logging){
         //写Put日志

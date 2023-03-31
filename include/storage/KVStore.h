@@ -7,7 +7,7 @@
 #include "SkipList.h"
 #include "DiskStorage.h"
 #include "Transaction.h"
-#include "log_manager.h"
+// #include "log_manager.h"
  
 class KVStore{
  public:
@@ -21,10 +21,12 @@ class KVStore{
     bool del(uint64_t key, Transaction *txn);
 
     // put(key, value)
+    void put(const std::string & key, const std::string &value);
     void put(const std::string & key, const std::string &value, Transaction *txn);
     // value = get(key)
     std::string get(const std::string & key, Transaction *txn);
     // del(key)
+    bool del(const std::string & key);
     bool del(const std::string & key, Transaction *txn);
     
     // clear memtable and disk
@@ -34,7 +36,7 @@ class KVStore{
  private:
     SkipList memtable_;
     DiskStorage diskstorage_;
-    LogManager* log_manager_;
+   //  LogManager* log_manager_;
 };
 
 #endif
