@@ -1,6 +1,7 @@
 option(STORAGE_TEST OFF)
 option(SKIPLIST_TEST "SKIPLIST_TEST" ON)
-option(BLOCKBUILDER_TEST "sstable's test" ON)
+option(BLOCKBUILDER_TEST "block builder's test" ON)
+option(TABLEBUILDER_TEST "table builder's test" ON)
 
 if(STORAGE_TEST)
     # storage test
@@ -33,3 +34,15 @@ if(BLOCKBUILDER_TEST)
     target_link_libraries(blockbuilder_gtest gmock_main gtest)
 endif()
 
+# table builder test
+if(TABLEBUILDER_TEST)
+    message("table builder test")
+    add_executable(tablebuilder_gtest
+                        ${PROJECT_SOURCE_DIR}/test/storage/tablebuilder_gtest.cpp
+                        ${PROJECT_SOURCE_DIR}/src/storage/TableBuilder.cpp
+                        ${PROJECT_SOURCE_DIR}/src/storage/BlockBuilder.cpp
+                        ${PROJECT_SOURCE_DIR}/src/storage/Option.cpp
+                        )
+    target_include_directories(tablebuilder_gtest PRIVATE ${STORAGE_DIR})
+    target_link_libraries(tablebuilder_gtest gmock_main gtest snappy)
+endif()

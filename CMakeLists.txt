@@ -16,6 +16,8 @@ ENDIF()
 set(STORAGE_DIR ${PROJECT_SOURCE_DIR}/include/storage/)
 aux_source_directory(${PROJECT_SOURCE_DIR}/src/storage STORAGE_SRC)
 
+add_subdirectory(${PROJECT_SOURCE_DIR}/deps/snappy)
+
 IF(RUCDDBS_TEST)
   # add_subdirectory(${PROJECT_SOURCE_DIR}/deps/googletest)
   # add_executable(skiplist_gtest 
@@ -30,7 +32,6 @@ IF(RUCDDBS_TEST)
 endif()
 
 if(RUCDDBS_STORAGE)
-  add_subdirectory(${PROJECT_SOURCE_DIR}/deps/snappy)
   add_subdirectory(${PROJECT_SOURCE_DIR}/src/storage)
 endif()
 

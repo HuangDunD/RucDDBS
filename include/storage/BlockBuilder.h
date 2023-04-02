@@ -26,7 +26,7 @@ public:
 private:
     std::string buffer_;
     std::string last_key_;
-    std::vector<uint32_t> restarts_;
+    std::vector<uint64_t> restarts_;
     uint64_t counter_;
     bool finished_;
 
