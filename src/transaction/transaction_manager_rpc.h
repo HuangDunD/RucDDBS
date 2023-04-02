@@ -5,12 +5,6 @@
 #include "transaction_manager.pb.h"
 #include "transaction_manager.h"
 
-DEFINE_int32(port, 8001, "TCP Port of this server");
-DEFINE_string(listen_addr, "[::0]:8001", "Server listen address, may be IPV4/IPV6/UDS."
-            " If this is set, the flag port will be ignored");
-DEFINE_int32(idle_timeout_s, -1, "Connection will be closed if there is no "
-             "read/write operations during the last `idle_timeout_s'");
-
 namespace transaction_manager {
 class TransactionManagerImpl : public TransactionManagerService{
 public:

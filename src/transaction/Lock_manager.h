@@ -11,7 +11,6 @@
 class Lock_manager
 {
 public:
-    //enum class LockMode { SHARED, EXLUCSIVE, INTENTION_SHARED, INTENTION_EXCLUSIVE, S_IX };
 
     class LockRequest {
     public:
@@ -51,7 +50,6 @@ public:
 
     explicit Lock_manager(bool enable_no_wait) {
         std::atomic_init(&enable_no_wait_,enable_no_wait);
-        // enable_no_wait_ = enable_no_wait;
         // if (enable_no_wait_) {
         //     dead_lock_detection_ = new std::thread(&Lock_manager::RunNoWaitDetection, this);
         //     std::cout << "Wait Die Detection thread launched";

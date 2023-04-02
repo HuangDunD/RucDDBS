@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <cassert>
 #include <unordered_map>
+#include "string.h"
 
 using table_oid_t = int32_t;
 using row_id_t = int32_t;

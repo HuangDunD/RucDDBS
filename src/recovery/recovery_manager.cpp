@@ -25,7 +25,7 @@ void RecoveryManager::Redo() {
             if (size == 0 || size + inner_offset > LOG_BUFFER_SIZE) {
                 break;
             }
-            auto log = DeserializeFrom(buffer_ + inner_offset);
+            auto log = LogRecord::DeserializeFrom(buffer_ + inner_offset);
             // update max lsn
             max_lsn = std::max(max_lsn, log.GetLsn());
             // remember the necessary information to retrieve log based on lsn
@@ -87,7 +87,7 @@ void RecoveryManager::Undo() {
         auto [offset, size] = lsn_mapping_[lsn];
         log_storage_->ReadLog(buffer_, size, offset);
         // deserialize the log
-        auto log = DeserializeFrom(buffer_);
+        auto log = LogRecord::DeserializeFrom(buffer_);
         // undo log
         UndoLog(log);
         // erase current lsn and insert the previous lsn

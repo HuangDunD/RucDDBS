@@ -126,7 +126,8 @@ public:
 
     inline std::shared_ptr<std::deque<WriteRecord>> get_write_set() {return write_set_;}
 
-    inline bool get_is_distributed(){ return is_distributed; }
+    inline bool get_is_distributed() const { return is_distributed; }
+    inline void set_is_distributed(bool val) {is_distributed = val; } 
     inline std::shared_ptr<std::vector<IP_Port>> get_distributed_node_set() {return distributed_plan_excution_node_;} 
 
     inline std::shared_ptr<std::unordered_set<Lock_data_id>> get_table_S_lock_set() {return table_S_lock_set_;} 
