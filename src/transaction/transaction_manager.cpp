@@ -5,6 +5,7 @@
 
 #include "transaction_manager.h"
 #include "transaction_manager.pb.h"
+#include "dbconfig.h"
 
 std::unordered_map<txn_id_t, Transaction *> TransactionManager::txn_map = {};
 std::shared_mutex TransactionManager::txn_map_mutex = {};
@@ -15,7 +16,7 @@ uint64_t TransactionManager::getTimestampFromServer(){
     options.timeout_ms = 100;
     options.max_retry = 3;
 
-    if (channel.Init(server, &options) != 0) {
+    if (channel.Init(FLAGS_META_SERVER_ADDR.c_str(), &options) != 0) {
         LOG(ERROR) << "Fail to initialize channel";
         return -1;
     }
@@ -75,7 +76,7 @@ void TransactionManager::ReleaseLocks(Transaction *txn){
     return ;
 }
 
-Transaction* TransactionManager::Begin(Transaction* txn, IsolationLevel isolation_level=IsolationLevel::SERIALIZABLE){
+Transaction* TransactionManager::Begin(Transaction*& txn, IsolationLevel isolation_level){
     // Todo:
     // 1. 判断传入事务参数是否为空指针
     // 2. 如果为空指针，创建新事务
@@ -148,6 +149,7 @@ bool TransactionManager::CommitSingle(Transaction * txn){
     txn_map.erase(txn->get_txn_id() );
     // Release the global transaction latch.
     global_txn_latch_.unlock_shared();
+    return true;
 }
 
 bool TransactionManager::Abort(Transaction * txn){
@@ -278,8 +280,4 @@ bool TransactionManager::PrepareCommit(Transaction * txn){
     }
     txn->set_transaction_state(TransactionState::PREPARED);
     return true;
-}
-
-int main(){
-    return 0;
 }

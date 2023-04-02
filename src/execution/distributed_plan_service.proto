@@ -57,7 +57,7 @@ message FilterPlan {
 //插入
 message InsertPlan {
     string db_name = 1;
-    string tab_name = 2;
+    sint32 tab_id = 2;
     sint32 par_id = 3;
     repeated ChildPlan child = 4; 
 }
@@ -112,6 +112,7 @@ message DistributedPlan {
 
 message RemotePlan {
     ChildPlan child = 1;
+    uint64 txn_id = 2;
 }
 
 service RemotePlanNode {

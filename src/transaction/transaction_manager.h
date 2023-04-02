@@ -3,12 +3,10 @@
 #include "Transaction.h"
 #include "Lock_manager.h"
 #include "meta_service.pb.h"
-#include "storage/KVStore.h"
+// #include "storage/KVStore.h"
+#include "Inmemory/KVStore.h"
 
 #include <shared_mutex>
-
-
-#define server "[::1]:8001"
 
 enum class ConcurrencyMode { TWO_PHASE_LOCKING = 0 };
 
@@ -26,20 +24,20 @@ private:
     void ReleaseLocks(Transaction *txn);
 
 public: 
-    friend class TransactionManagerImpl;
-
     ~TransactionManager() = default;
-    explicit TransactionManager(Lock_manager *lock_manager, LogManager *log_manager = nullptr,
+    explicit TransactionManager(Lock_manager *lock_manager, KVStore *kv, LogManager *log_manager = nullptr, 
             ConcurrencyMode concurrency_mode = ConcurrencyMode::TWO_PHASE_LOCKING) {
         lock_manager_ = lock_manager;
         log_manager_ = log_manager;
+        kv_ = kv;
         concurrency_mode_ = concurrency_mode;
     }
 
     ConcurrencyMode getConcurrencyMode() { return concurrency_mode_; }
     void SetConcurrencyMode(ConcurrencyMode concurrency_mode) { concurrency_mode_ = concurrency_mode; }
     Lock_manager *getLockManager() { return lock_manager_; }
-
+    KVStore* getKVstore() {return kv_; }
+    
     /* The transaction map is a local list of all the running transactions in the local node. */
     static std::unordered_map<txn_id_t, Transaction *> txn_map;
     static std::shared_mutex txn_map_mutex;
@@ -56,7 +54,7 @@ public:
 
     uint64_t getTimestampFromServer();
 
-    Transaction* Begin(Transaction* txn, IsolationLevel isolation_level );
+    Transaction* Begin(Transaction*& txn, IsolationLevel isolation_level=IsolationLevel::SERIALIZABLE);
 
     bool Abort(Transaction * txn);
     bool AbortSingle(Transaction * txn);

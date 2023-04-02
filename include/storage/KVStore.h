@@ -7,7 +7,7 @@
 #include "SkipList.h"
 #include "DiskStorage.h"
 #include "Transaction.h"
-// #include "log_manager.h"
+#include "log_manager.h"
  
 class KVStore{
  public:
@@ -36,7 +36,7 @@ class KVStore{
  private:
     SkipList memtable_;
     DiskStorage diskstorage_;
-   //  LogManager* log_manager_;
+    LogManager* log_manager_;
 };
 
 #endif

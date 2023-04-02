@@ -63,13 +63,14 @@ struct Node{
     }
     // 重载操作符 <<
     friend std::ostream &operator<<(std::ostream &os, const Node &node) {
-        os << node.ip_addr << " " << node.port << " " << node.activate << " " << node.leader_par_cnt <<
+        os << node.ip_addr << " " << node.port << " " << node.leader_par_cnt <<
             " " << node.follower_par_cnt << '\n';
         return os;
     }
     // 重载操作符 >>
     friend std::istream &operator>>(std::istream &is, Node &node) {
-        is >> node.ip_addr >> node.port >> node.activate >> node.leader_par_cnt 
+        node.activate = false; 
+        is >> node.ip_addr >> node.port >> node.leader_par_cnt 
             >> node.follower_par_cnt;
         return is;
     }

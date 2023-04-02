@@ -58,7 +58,7 @@ public:
 
     bool ReadLog(char *log_data, int size, size_t offset) {
 
-        if (offset >= GetFileSize(log_name_)) {
+        if (offset >= (size_t)GetFileSize(log_name_)) {
             return false;
         }
 
