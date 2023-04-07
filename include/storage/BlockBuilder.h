@@ -29,5 +29,4 @@ private:
     std::vector<uint64_t> restarts_;
     uint64_t counter_;
     bool finished_;
-
 };

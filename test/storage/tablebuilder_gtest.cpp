@@ -1,12 +1,13 @@
 #include <string>
 #include <fstream>
+#include <iostream>
 
-#include "SkipList.h"
 #include "gtest/gtest.h"
 #include "TableBuilder.h"
+#include "SSTable.h"
 
 TEST(TableBuilder_TEST, emtpy_test) {
-    std::ofstream ofs("table_builder_test", std::ios::binary);
+    std::ofstream ofs("table_empty_test", std::ios::binary);
 
     TableBuilder tablebuilder(&ofs);
 
@@ -15,10 +16,11 @@ TEST(TableBuilder_TEST, emtpy_test) {
 }
 
 TEST(TableBuilder_TEST, simple_test) {
-    std::ofstream ofs("table_builder_test", std::ios::binary);
+    std::ofstream ofs("table_simple_test", std::ios::binary);
 
     TableBuilder tablebuilder(&ofs);
     const int N = 1024;
+
     for(int i = 0; i < N; i++) {
         std::string key(i + 1, 'a');
         std::string value(i + 1, 'b');
@@ -28,14 +30,55 @@ TEST(TableBuilder_TEST, simple_test) {
     tablebuilder.finish();
     ofs.close();
 
+    // 
+    // std::cout << "Complete build table, start read test \n";
     // read
-    std::ifstream ifs("table_builder_test", std::ios::binary);
+
+    std::ifstream ifs("table_simple_test", std::ios::binary);
     if(ifs.is_open()) {
-        uint64_t index_offset, index_size;
-        ifs.seekg(- sizeof(uint64_t) * 2, std::ios::end);
-        ifs.read((char*)&index_offset, sizeof(uint64_t));
-        ifs.read((char*)&index_size, sizeof(uint64_t));
-        
+        SSTable sstable(&ifs, nullptr);
+        for(int i = 0; i < N; i++) {
+            std::string key(i + 1, 'a');
+            std::string false_key(i + 1, 'c');
+            std::string value(i + 1, 'b');
+
+            EXPECT_EQ(std::make_pair(true, value), sstable.get(key));
+            EXPECT_EQ(std::make_pair(false, std::string("")), sstable.get(false_key));
+        }
+    }
+}
+
+TEST(TableBuilder_TEST, large_test) {
+    const std::string file_path = "table_large_test";
+    std::ofstream ofs(file_path, std::ios::binary);
+
+    TableBuilder tablebuilder(&ofs);
+    const int N = 1024 * 4;
+
+    for(int i = 0; i < N; i++) {
+        std::string key(i + 1, 'a');
+        std::string value(i + 1, 'b');
+        tablebuilder.add(key, value);
+        EXPECT_EQ(i + 1, tablebuilder.numEntries());
+    }
+    tablebuilder.finish();
+    ofs.close();
+
+    // 
+    // std::cout << "Complete build table, start read test \n";
+    // read
+
+    std::ifstream ifs(file_path, std::ios::binary);
+    if(ifs.is_open()) {
+        SSTable sstable(&ifs, nullptr);
+        for(int i = 0; i < N; i++) {
+            std::string key(i + 1, 'a');
+            std::string false_key(i + 1, 'c');
+            std::string value(i + 1, 'b');
+
+            EXPECT_EQ(std::make_pair(true, value), sstable.get(key));
+            EXPECT_EQ(std::make_pair(false, std::string("")), sstable.get(false_key));
+        }
     }
 }
 

@@ -32,15 +32,15 @@ public:
 private:
     std::ofstream *file_;
 
-    BlockBuilder datablock_;
-    BlockBuilder indexblock_;
-
     uint64_t offset_;
     uint64_t size_;
     
     std::string last_key_;
 
     uint64_t num_entries_;
+
+    BlockBuilder datablock_;
+    BlockBuilder indexblock_;
 
     // 刷入磁盘
     void flush();

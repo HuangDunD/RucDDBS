@@ -6,7 +6,7 @@
 #include "snappy.h"
 
 TableBuilder::TableBuilder(std::ofstream *file) 
-                    : file_(file), offset_(0), num_entries_(0), datablock_(), indexblock_(){
+                    : file_(file), offset_(0), size_(0), num_entries_(0), datablock_(), indexblock_(){
 
 }
 
@@ -32,7 +32,6 @@ void TableBuilder::add(const std::string &key, const std::string &value) {
     if(datablock_.estimated_size() >= Option::BLOCK_SPACE) {
         flush();
     }
-
 }
 
 void TableBuilder::flush() {
@@ -59,7 +58,7 @@ void TableBuilder::writeBlock(BlockBuilder *block) {
     size_ = compressed.size();
     std::string s;
     s.append((char*)&offset_, sizeof(uint64_t));
-    s.append((char*) &size_, sizeof(uint64_t));
+    s.append((char*)&size_, sizeof(uint64_t));
     offset_ += size_;
     if(block != &indexblock_) {
         // if not index block, then insert handle to indexblock

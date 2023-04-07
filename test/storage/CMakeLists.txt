@@ -29,6 +29,8 @@ if(BLOCKBUILDER_TEST)
     add_executable(blockbuilder_gtest
                         ${PROJECT_SOURCE_DIR}/test/storage/blockbuilder_gtest.cpp
                         ${PROJECT_SOURCE_DIR}/src/storage/BlockBuilder.cpp
+                        ${PROJECT_SOURCE_DIR}/src/storage/Block.cpp
+                        ${PROJECT_SOURCE_DIR}/src/storage/Iterator.cpp
                         ${PROJECT_SOURCE_DIR}/src/storage/Option.cpp)
     target_include_directories(blockbuilder_gtest PRIVATE ${STORAGE_DIR})
     target_link_libraries(blockbuilder_gtest gmock_main gtest)
@@ -41,6 +43,9 @@ if(TABLEBUILDER_TEST)
                         ${PROJECT_SOURCE_DIR}/test/storage/tablebuilder_gtest.cpp
                         ${PROJECT_SOURCE_DIR}/src/storage/TableBuilder.cpp
                         ${PROJECT_SOURCE_DIR}/src/storage/BlockBuilder.cpp
+                        ${PROJECT_SOURCE_DIR}/src/storage/Iterator.cpp
+                        ${PROJECT_SOURCE_DIR}/src/storage/Block.cpp
+                        ${PROJECT_SOURCE_DIR}/src/storage/SSTable.cpp
                         ${PROJECT_SOURCE_DIR}/src/storage/Option.cpp
                         )
     target_include_directories(tablebuilder_gtest PRIVATE ${STORAGE_DIR})
