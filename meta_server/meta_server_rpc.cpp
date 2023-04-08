@@ -201,38 +201,39 @@ void MetaServiceImpl::CreatePartitionTable(::google::protobuf::RpcController* co
 }
 
 int main(){
-    TabMetaServer tab_meta_server{1, "test_table", PartitionType::RANGE_PARTITION, "row1", ColType::TYPE_INT, 3};
-    // std::vector<ParMeta> par_meta;
+    // TabMetaServer tab_meta_server{1, "test_table", PartitionType::RANGE_PARTITION, "row1", ColType::TYPE_INT, 3};
+    // // std::vector<ParMeta> par_meta;
 
-    tab_meta_server.partitions.push_back({"p0", 0, {"0","500"}});
-    tab_meta_server.partitions.push_back({"p1", 1, {"501","1000"}});
-    tab_meta_server.partitions.push_back({"p2", 2, {"1001","2000"}});
+    // tab_meta_server.partitions.push_back({"p0", 0, {"0","500"}});
+    // tab_meta_server.partitions.push_back({"p1", 1, {"501","1000"}});
+    // tab_meta_server.partitions.push_back({"p2", 2, {"1001","2000"}});
 
-    std::vector<ReplicaLocation> t1;
-    t1.push_back({"127.0.0.1", 8000, Replica_Role::Leader});
-    PhyPartitionLocation loc1(1, 0, 1, t1);
+    // std::vector<ReplicaLocation> t1;
+    // t1.push_back({"127.0.0.1", 8000, Replica_Role::Leader});
+    // PhyPartitionLocation loc1(1, 0, 1, t1);
 
-    std::vector<ReplicaLocation> t2;
-    t2.push_back({"127.0.0.1", 7999, Replica_Role::Leader});
-    PhyPartitionLocation loc2(1, 1, 1, t2);
+    // std::vector<ReplicaLocation> t2;
+    // t2.push_back({"127.0.0.1", 7999, Replica_Role::Leader});
+    // PhyPartitionLocation loc2(1, 1, 1, t2);
 
-    std::vector<ReplicaLocation> t3;
-    t3.push_back({"127.0.0.1", 7998, Replica_Role::Leader});
-    PhyPartitionLocation loc3(1, 2, 1, t3);
+    // std::vector<ReplicaLocation> t3;
+    // t3.push_back({"127.0.0.1", 7998, Replica_Role::Leader});
+    // PhyPartitionLocation loc3(1, 2, 1, t3);
 
-    std::vector<PhyPartitionLocation> loc_list;
-    loc_list.push_back(loc1);
-    loc_list.push_back(loc2);
-    loc_list.push_back(loc3);
+    // std::vector<PhyPartitionLocation> loc_list;
+    // loc_list.push_back(loc1);
+    // loc_list.push_back(loc2);
+    // loc_list.push_back(loc3);
 
-    tab_meta_server.table_location_ = std::move(PhyTableLocation(1, DuplicateType::NOT_DUPLICATE, loc_list));
+    // tab_meta_server.table_location_ = std::move(PhyTableLocation(1, DuplicateType::NOT_DUPLICATE, loc_list));
 
-    std::unordered_map<std::string, TabMetaServer*> tabs;
-    tabs["test_table"] = &tab_meta_server;
-    DbMetaServer db_meta("test_db", tabs);
+    // std::unordered_map<std::string, TabMetaServer*> tabs;
+    // tabs["test_table"] = &tab_meta_server;
+    // DbMetaServer db_meta("test_db", tabs);
 
+    // try{
     std::unordered_map<std::string, DbMetaServer*> db_map;
-    db_map["test_db"] = &db_meta;
+    // db_map["test_db"] = &db_meta;
 
     //构造meta_server 并启动oracle
     MetaServer meta_server(db_map);
@@ -252,7 +253,7 @@ int main(){
                 std::cerr << e.GetInfo() << '\n';
             }
             meta_server.get_mutex().unlock();
-            std::this_thread::sleep_for(std::chrono::seconds(1));
+            std::this_thread::sleep_for(std::chrono::seconds(10));
         }
         });
     save_meta.detach();
@@ -283,6 +284,12 @@ int main(){
         LOG(ERROR) << "Fail to start MetaServer";
         return -1;
     }
+    server.RunUntilAskedToQuit();
+
+    // }
+    // catch(MetaServerErrorException& e){
+    //             std::cerr << e.GetInfo() << '\n';
+    // }
 
     // std::signal(SIGINT, [&oracle_background_running, &meta_server](int signal){
     //     oracle_background_running = false;
@@ -296,7 +303,7 @@ int main(){
     //     std::exit(signal);
     // });
 
-    server.RunUntilAskedToQuit();
+    
     
     return 0;
 }

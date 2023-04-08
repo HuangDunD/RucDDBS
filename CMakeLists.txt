@@ -13,25 +13,21 @@ IF(NOT CMAKE_BUILD_TYPE)
   SET(CMAKE_BUILD_TYPE Release)
 ENDIF()
 
+# 定义变量
 set(STORAGE_DIR ${PROJECT_SOURCE_DIR}/include/storage/)
 aux_source_directory(${PROJECT_SOURCE_DIR}/src/storage STORAGE_SRC)
 
+# 添加依赖
 add_subdirectory(${PROJECT_SOURCE_DIR}/deps/snappy)
 
 IF(RUCDDBS_TEST)
-  # add_subdirectory(${PROJECT_SOURCE_DIR}/deps/googletest)
-  # add_executable(skiplist_gtest 
-  #                       ${PROJECT_SOURCE_DIR}/test/storage/skiplist_gtest.cpp 
-  #                       ${PROJECT_SOURCE_DIR}/src/storage/SkipList.cpp
-  #                       ${PROJECT_SOURCE_DIR}/src/storage/Entry.cpp)
-  # target_include_directories(skiplist_gtest PRIVATE ${STORAGE_DIR})
-  # target_link_libraries(skiplist_gtest gmock_main gtest)
   message("build ructest")
   add_subdirectory(${PROJECT_SOURCE_DIR}/deps/googletest)
   add_subdirectory(${PROJECT_SOURCE_DIR}/test/storage)
 endif()
 
 if(RUCDDBS_STORAGE)
+  message("build rucddbs storage")
   add_subdirectory(${PROJECT_SOURCE_DIR}/src/storage)
 endif()
 
