@@ -48,7 +48,7 @@ class TransactionTest : public ::testing::Test {
                 std::cout << "Register success! ip: " << cntl.local_side() << std::endl;
         }
 
-        std::thread rpc_thread([&]{
+        std::thread rpc_thread_trans([&]{
             //启动事务brpc server
             brpc::Server server;
 
@@ -81,73 +81,24 @@ class TransactionTest : public ::testing::Test {
 
             server.RunUntilAskedToQuit();
         });
-        rpc_thread.detach();
+        rpc_thread_trans.detach();
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
 };
 
 TEST_F(TransactionTest, TransactionTest1){
-    // 写入(key1,value1)
-    // 定义一个空事务指针
-    Transaction* txn1 = nullptr;
-    transaction_manager_->Begin(txn1);
-
-    // SQL解析之后到metaserver查询相关表在两个server中
-    txn1->set_is_distributed(true);
-    txn1->get_distributed_node_set()->push_back(IP_Port{"127.0.0.1", 8002});
-    txn1->get_distributed_node_set()->push_back(IP_Port{"127.0.0.1", 8003}); 
-
-    brpc::Channel channel;
-    brpc::ChannelOptions options;
-    options.timeout_ms = 100;
-    options.max_retry = 3;
-
-    if (channel.Init("127.0.0.1:8003", &options) != 0) {
-        LOG(ERROR) << "Fail to initialize channel";
+    while(kv_->get("key2")!="value2"){
+        std::this_thread::sleep_for(std::chrono::seconds(2));
     }
-    distributed_plan_service::RemotePlanNode_Stub stub_exec(&channel);
+    std::cout << "key2, value2" << std::endl;
 
-    distributed_plan_service::RemotePlan request_plan;
-    distributed_plan_service::ValuePlan response_plan;
-    
-    request_plan.set_txn_id(txn1->get_txn_id());
-    distributed_plan_service::InsertPlan *insert_plan = new distributed_plan_service::InsertPlan();
-    insert_plan->set_db_name("test_db");
-    insert_plan->set_tab_id(1);
-    insert_plan->set_par_id(2);
-    distributed_plan_service::ValuePlan *v = new distributed_plan_service::ValuePlan();
-    v->add_value("key2");
-    v->add_value("value2");
-    v->add_child();
-    // distributed_plan_service::ChildPlan vc;
-    // vc.set_allocated_value_plan(&v);
-    insert_plan->add_child();
-    insert_plan->mutable_child(0)->set_allocated_value_plan(v);
-    request_plan.mutable_child()->set_allocated_insert_plan(insert_plan);
-
-    brpc::Controller cntl;
-    stub_exec.SendRemotePlan(&cntl, &request_plan, &response_plan, NULL);
-    if (!cntl.Failed()) {
-        std::cout << "success send plan. " << std::endl;
-    } else {
-        LOG(WARNING) << cntl.ErrorText();
-    }
-
-    cntl.Reset();
-
-    lock_manager_->LockTable(txn1, LockMode::INTENTION_EXCLUSIVE, 1);
-    lock_manager_->LockPartition(txn1, LockMode::EXLUCSIVE, 1 , 1);
-    kv_->put("key1", "value1", txn1);
-        
-    transaction_manager_->Commit(txn1);
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
-    ASSERT_EQ(txn1->get_state(), TransactionState::COMMITTED);
-
+    // while(1);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
 }
 
 int main(int argc, char **argv) {
     gflags::ParseCommandLineFlags(&argc, &argv, true);
+
     testing::InitGoogleTest(&argc, argv);
-    
     return RUN_ALL_TESTS();
 }

@@ -15,7 +15,7 @@
 namespace distributed_plan_service{
 class RemotePlanNodeImpl : public RemotePlanNode{
 public:
-    RemotePlanNodeImpl() {};
+    RemotePlanNodeImpl(TransactionManager *transaction_manager) {transaction_manager_ = transaction_manager; };
     virtual ~RemotePlanNodeImpl() {};
 
     virtual void SendRemotePlan( google::protobuf::RpcController* cntl_base,

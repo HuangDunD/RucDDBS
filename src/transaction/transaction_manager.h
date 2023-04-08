@@ -54,8 +54,12 @@ public:
 
     uint64_t getTimestampFromServer();
 
+    // 从meta_server获取时间戳作为txn id
     Transaction* Begin(Transaction*& txn, IsolationLevel isolation_level=IsolationLevel::SERIALIZABLE);
 
+    // 传入txn_id作为事务id
+    Transaction* Begin(Transaction*& txn, txn_id_t txn_id, IsolationLevel isolation_level=IsolationLevel::SERIALIZABLE); 
+    
     bool Abort(Transaction * txn);
     bool AbortSingle(Transaction * txn);
     
