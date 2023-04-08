@@ -2,11 +2,13 @@
 #define STORAGE_SSTABLE_H
 
 #include <fstream>
+#include <memory>
 
 #include "BlockCache.h"
 #include "Block.h"
 #include "Iterator.h"
 
+// TODO: Iterator and BlockCache
 class SSTable {
 public:
 
@@ -21,14 +23,14 @@ public:
   std::pair<bool, std::string> get(const std::string &key) const;
 
   // 
-  static Block *loadBlock(std::ifstream *ifs, uint64_t block_offset, uint64_t block_size);
+  static std::unique_ptr<Block> loadBlock(std::ifstream *ifs, uint64_t block_offset, uint64_t block_size);
 private:
   // class Iter;
   std::ifstream *ifs_;
   // std::string last_key_;
   
-  Block *index_block_;
-  Iterator *index_iter_;
+  std::unique_ptr<Block> index_block_;
+  std::unique_ptr<Iterator> index_iter_;
 
   BlockCache *block_cache_;
 

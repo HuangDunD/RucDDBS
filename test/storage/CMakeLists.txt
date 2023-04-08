@@ -2,6 +2,7 @@ option(STORAGE_TEST OFF)
 option(SKIPLIST_TEST "SKIPLIST_TEST" ON)
 option(BLOCKBUILDER_TEST "block builder's test" ON)
 option(TABLEBUILDER_TEST "table builder's test" ON)
+option(LEVELZERO_TEST "level0's test" ON)
 
 if(STORAGE_TEST)
     # storage test
@@ -46,8 +47,30 @@ if(TABLEBUILDER_TEST)
                         ${PROJECT_SOURCE_DIR}/src/storage/Iterator.cpp
                         ${PROJECT_SOURCE_DIR}/src/storage/Block.cpp
                         ${PROJECT_SOURCE_DIR}/src/storage/SSTable.cpp
+                        ${PROJECT_SOURCE_DIR}/src/storage/SkipList.cpp
+                        ${PROJECT_SOURCE_DIR}/src/storage/SSTableId.cpp
                         ${PROJECT_SOURCE_DIR}/src/storage/Option.cpp
                         )
     target_include_directories(tablebuilder_gtest PRIVATE ${STORAGE_DIR})
     target_link_libraries(tablebuilder_gtest gmock_main gtest snappy)
+endif()
+
+
+if(LEVELZERO_TEST)
+    message("level0's test")
+    add_executable(level0_gtest
+                        ${PROJECT_SOURCE_DIR}/test/storage/LevelZero_gtest.cpp
+                        ${PROJECT_SOURCE_DIR}/src/storage/TableBuilder.cpp
+                        ${PROJECT_SOURCE_DIR}/src/storage/BlockBuilder.cpp
+                        ${PROJECT_SOURCE_DIR}/src/storage/Iterator.cpp
+                        ${PROJECT_SOURCE_DIR}/src/storage/Block.cpp
+                        ${PROJECT_SOURCE_DIR}/src/storage/SSTable.cpp
+                        ${PROJECT_SOURCE_DIR}/src/storage/LevelZero.cpp
+                        ${PROJECT_SOURCE_DIR}/src/storage/TableCache.cpp
+                        ${PROJECT_SOURCE_DIR}/src/storage/SSTableId.cpp
+                        ${PROJECT_SOURCE_DIR}/src/storage/SkipList.cpp
+                        ${PROJECT_SOURCE_DIR}/src/storage/Option.cpp
+                        )
+    target_include_directories(level0_gtest PRIVATE ${STORAGE_DIR})
+    target_link_libraries(level0_gtest gmock_main gtest snappy)
 endif()

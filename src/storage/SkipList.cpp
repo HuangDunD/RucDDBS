@@ -74,7 +74,7 @@ void SkipList::put(const std::string &key, const std::string &value)
         prevs[i]->nexts_[i] = node;
     }
     num_entries_++;
-    num_bytes_ += value.size();
+    num_bytes_ = num_bytes_ + key.size() + value.size();
     return;
 }
 
@@ -94,7 +94,7 @@ bool SkipList::del(const std::string &key)
         prevs[i]->nexts_[i] = node->nexts_[i];
     }
     num_entries_--;
-    num_bytes_ -= node->value_.size();
+    num_bytes_ = num_bytes_ - node->key_.size() - node->value_.size();
     delete node;
     return true;
 }
@@ -105,18 +105,7 @@ bool SkipList::contains(const std::string &key) const
     return node != tail_ && node->key_ == key;
 }
 
-// SkipList::Iterator SkipList::iterator() const {
-// }
 
-size_t SkipList::size() const
-{
-    return num_entries_;
-}
-
-bool SkipList::empty() const
-{
-    return num_entries_ == 0;
-}
 
 // uint64_t SkipList::space() const {
 //     return (num_entries_ * 2 + num_bytes_ / Option::BLOCK_SPACE * 2 + 6) * sizeof(uint64_t) + num_bytes_;

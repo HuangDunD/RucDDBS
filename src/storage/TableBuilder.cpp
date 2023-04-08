@@ -77,3 +77,17 @@ void TableBuilder::finish() {
     // write index block
     writeBlock(&indexblock_);
 }
+
+bool TableBuilder::create_sstable(const SkipList &memtable, const SSTableId & table_id) {
+    std::ofstream ofs(table_id.name(), std::ios::binary);
+    TableBuilder table_builder(&ofs);
+    auto iter = SkipList::Iterator(&memtable);
+    iter.SeekToFirst();
+    while(iter.Valid()) {
+        table_builder.add(iter.key(), iter.value());
+        iter.Next();
+    }
+    table_builder.finish();
+    ofs.close();
+    return true;
+}
