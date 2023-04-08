@@ -18,13 +18,6 @@ public:
 
    ~KVStore();
 
-//  // put(key, value)
-//  void put(uint64_t key, const std::string &value, Transaction *txn);
-//  // value = get(key)
-//  std::string get(uint64_t key, Transaction *txn);
-//  // del(key)
-//  bool del(uint64_t key, Transaction *txn);
-
    // put(key, value)
    void put(const std::string & key, const std::string &value, Transaction *txn);
    // value = get(key)
@@ -36,7 +29,6 @@ public:
    void reset();
    // flush memtable to disk 
    void flush();
-
 private:
    SkipList memtable_;
    DiskStorage diskstorage_;

@@ -2,6 +2,8 @@
 #include <cstdint>
 #include <string>
 #include <assert.h>
+#include <string.h>
+#include <iostream>
 
 using lsn_t = int32_t;
 using txn_id_t = uint64_t;
@@ -66,6 +68,56 @@ public:
     inline const char* GetValue()  { return value_; }
     // inline const char* GetOldValue()  { return old_value_; }
 
+    // LogRecord DeserializeFrom(const char* storage);
+    static LogRecord DeserializeFrom(const char* storage){
+        int32_t size = *reinterpret_cast<const int32_t *>(storage);
+        storage += sizeof(int32_t);
+        lsn_t lsn = *reinterpret_cast<const lsn_t *>(storage);
+        storage += sizeof(lsn_t);
+        txn_id_t txn_id = *reinterpret_cast<const txn_id_t *>(storage);
+        storage += sizeof(txn_id_t);
+        lsn_t prev_lsn = *reinterpret_cast<const lsn_t *>(storage);
+        storage += sizeof(lsn_t);
+        LogRecordType type = *reinterpret_cast<const LogRecordType *>(storage);
+        storage += sizeof(LogRecordType);
+
+        LogRecord res;
+        assert(type != LogRecordType::INVALID);
+        // then deserialize data based on type
+        // WARNING!!! don't forget to set lsn since constructor won't provide parameter to initialize lsn
+        switch (type) {
+        case LogRecordType::COMMIT:
+        case LogRecordType::ABORT:
+        case LogRecordType::BEGIN: {
+            res = LogRecord(txn_id, prev_lsn, type);
+            break;
+        }
+        case LogRecordType::INSERT:
+        case LogRecordType::DELETE: {
+            uint32_t key_size = *reinterpret_cast<const uint32_t *>(storage);
+            storage += sizeof(uint32_t);
+            char* key = new char[key_size];
+            memcpy(key, storage, key_size);
+            storage += key_size;
+
+            uint32_t value_size = *reinterpret_cast<const uint32_t *>(storage);
+            storage += sizeof(uint32_t);
+            char* value = new char[value_size];
+            memcpy(value, storage, value_size);
+            storage += value_size;
+
+            res = LogRecord(txn_id, prev_lsn, type , key_size, key, value_size, value);
+            break;
+        }
+        default:
+            std::cerr << "Invalid Log Type";
+        }
+
+        res.SetLsn(lsn);
+        assert(size == res.GetSize());
+        return res;
+    }
+
 private:
     int32_t size_{0};
     lsn_t lsn_{INVALID_LSN};
@@ -84,3 +136,6 @@ private:
     // const char* old_value_;
 
 };
+
+
+    

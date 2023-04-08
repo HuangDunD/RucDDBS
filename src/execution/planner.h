@@ -71,12 +71,12 @@ public:
     std::vector<std::shared_ptr<record>> exec_op(){
         std::vector<std::shared_ptr<record>> res;
         auto ret = next_node->exec_op();
-        for(int i = 0; i < ret.size() ; i++){
+        for(size_t i = 0; i < ret.size() ; i++){
             auto cur_record = ret[i];
             std::shared_ptr<record> new_record(new record);
-            for(int j = 0; j < cur_record->row.size(); j++){
+            for(size_t j = 0; j < cur_record->row.size(); j++){
                 auto cur_value = cur_record->row[j];
-                for(int k = 0; k < cols.size(); k++){
+                for(size_t k = 0; k < cols.size(); k++){
                     if(cur_value->col_name == cols[k]->col_name)
                         new_record->row.push_back(cur_value);
                 }
@@ -99,7 +99,7 @@ public:
         if(auto x = std::dynamic_pointer_cast<ast::Col>(conds->rhs)){
             int lf_index = 0;
             int rg_index = 0;
-            for(int i = 0; i < ret[0]->row.size(); i++){
+            for(size_t i = 0; i < ret[0]->row.size(); i++){
                 if(ret[0]->row[i]->tab_name == conds->lhs->tab_name && ret[0]->row[i]->col_name == conds->lhs->col_name){
                     lf_index = i;
                 }
@@ -108,7 +108,7 @@ public:
                 }
             }
 
-            for(int i = 0; i < ret.size(); i++){
+            for(size_t i = 0; i < ret.size(); i++){
                 if(ret[i]->row[lf_index]->str == ret[i]->row[rg_index]->str){
                     res.push_back(ret[i]);
                 }
@@ -116,13 +116,13 @@ public:
         }
         else if(auto x = std::dynamic_pointer_cast<ast::IntLit>(conds->rhs)){
             int lf_index = 0;
-            for(int i = 0; i < ret[0]->row.size(); i++){
+            for(size_t i = 0; i < ret[0]->row.size(); i++){
                 if(ret[0]->row[i]->tab_name == conds->lhs->tab_name && ret[0]->row[i]->col_name == conds->lhs->col_name){
                     lf_index = i;
                 }
             }
             
-            for(int i = 0; i < ret.size(); i++){
+            for(size_t i = 0; i < ret.size(); i++){
                 if(atoi(ret[i]->row[lf_index]->str.c_str()) == (x->val)){
                     res.push_back(ret[i]);
                 }
@@ -141,7 +141,7 @@ public:
     std::vector<std::shared_ptr<record>> exec_op(){
         std::vector<std::shared_ptr<record>> res;
 
-        for(int i = 0 ; i < nodes_plan.size(); i++){
+        for(size_t i = 0 ; i < nodes_plan.size(); i++){
             auto ret = send_plan(nodes_name[i],nodes_plan[i]);
             res.insert(res.end(), ret.begin(), ret.end());
         }
@@ -158,17 +158,17 @@ public:
     std::vector<std::shared_ptr<record>> exec_op(){
         // 
         std::vector<std::vector<std::shared_ptr<record>>> ret;
-        for(int i = 0; i < tables_get.size(); i++){
+        for(size_t i = 0; i < tables_get.size(); i++){
             ret.push_back(tables_get[i]->exec_op());
         }
 
         auto res = ret[0];
         std::vector<std::shared_ptr<record>> tmp; 
 
-        for(int i = 1; i < ret.size(); i++){
+        for(size_t i = 1; i < ret.size(); i++){
             auto tab = ret[i];
-            for(auto j = 0; j < res.size(); j++){
-                for(auto k = 0; k < tab.size(); k++){
+            for(size_t j = 0; j < res.size(); j++){
+                for(size_t k = 0; k < tab.size(); k++){
                     std::shared_ptr<record> join_record(new record);
                     join_record->row.insert(join_record->row.end(), res[j]->row.begin(), res[j]->row.end());
                     join_record->row.insert(join_record->row.end(), tab[k]->row.begin(), tab[k]->row.end());

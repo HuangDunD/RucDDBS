@@ -18,11 +18,17 @@ include(FindProtobuf)
 protobuf_generate_cpp(PROTO_SRC PROTO_HEADER transaction_manager.proto)
 
 # include_directories(${CMAKE_CURRENT_BINARY_DIR})
-include_directories(build)
+include_directories(./)
+include_directories(../recovery)
+include_directories(./build)
+include_directories(../execution)
+include_directories(../execution/build)
 include_directories(../)
 include_directories(../meta)
-include_directories(../meta_server/build)
-include_directories(../meta_server)
+include_directories(../../include)
+include_directories(../../meta_server/build)
+include_directories(../../meta_server/)
+include_directories(../../)
 
 find_library(THRIFT_LIB NAMES thrift)
 if (NOT THRIFT_LIB)
@@ -74,10 +80,22 @@ set(DYNAMIC_LIB
     )
 
 # link_directories(../meta_server/build)
+# aux_source_directory(../recovery RECOVERY_SRC)
 
 # add_executable(Lock_manager_test Lock_manager_test.cpp)
-add_executable(transaction_manager transaction_manager.cpp Lock_manager.cpp 
-    transaction_manager.h ../meta_server/build/meta_service.pb.cc ${PROTO_SRC} ${PROTO_HEADER})
+add_executable(transaction_test
+    transaction_test.cpp 
+    transaction_manager.cpp 
+    Lock_manager.cpp 
+    ../recovery/log_manager.cpp
+    ../recovery/recovery_manager.cpp
+    ../execution/execution_rpc.cpp
+    ../execution/build/distributed_plan_service.pb.cc
+    ../../meta_server/build/meta_service.pb.cc 
+    ../../dbconfig.cc
+    ${PROTO_SRC} ${PROTO_HEADER}
+    
+)
 
 # target_link_libraries(Lock_manager_test transaction ${GTEST_BOTH_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} )
-target_link_libraries(transaction_manager ${BRPC_LIB} ${DYNAMIC_LIB} )
+target_link_libraries(transaction_test ${BRPC_LIB} ${DYNAMIC_LIB} ${GTEST_BOTH_LIBRARIES})
