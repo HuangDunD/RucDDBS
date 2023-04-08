@@ -9,6 +9,7 @@ namespace Option {
 
     extern const std::string NAME_Z;
 
+    extern const uint64_t RESTART_INTERVAL;
     extern const uint64_t BLOCK_SPACE;
     extern const uint64_t SSTABLE_SPACE;
     extern const uint64_t TABLE_CACHE_SIZE;

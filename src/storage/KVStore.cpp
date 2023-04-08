@@ -92,7 +92,7 @@ std::string KVStore::get(uint64_t key, Transaction *txn) {
 }
 
 // TODO design delete
-bool KVStore::del(uint64_t key) {
+bool KVStore::del(uint64_t key, Transaction *txn) {
     if(memtable_.contains(key)){
         memtable_.del(key);
         return true;
@@ -116,5 +116,4 @@ void KVStore::flush() {
     if(!memtable_.empty()){
         diskstorage_.add(memtable_);
     }
-        
 }
