@@ -15,7 +15,7 @@ void RemotePlanNodeImpl::SendRemotePlan( google::protobuf::RpcController* cntl_b
         if(transaction_manager_->txn_map.count(txn_id) != 0){
             txn = transaction_manager_->txn_map[txn_id];
         }else{
-            transaction_manager_->Begin(txn);
+            transaction_manager_->Begin(txn, txn_id);
         }
 
         // std::shared_ptr<Operators> operators = std::make_shared<Operators>();
@@ -56,6 +56,7 @@ void RemotePlanNodeImpl::ConvertIntoPlan(const ChildPlan* child_plan, std::share
                 break;
             }
             case ChildPlan::ChildPlanCase::kInsertPlan :{
+                std::cout << "kinsertplan" << std::endl;
                 // hcy temp code to test transaction
                 std::string db_name = child_plan->insert_plan().db_name();
                 int32_t tab_id = child_plan->insert_plan().tab_id();
@@ -69,6 +70,8 @@ void RemotePlanNodeImpl::ConvertIntoPlan(const ChildPlan* child_plan, std::share
                 lock_manager->LockPartition(txn, LockMode::EXLUCSIVE ,tab_id, par_id);
 
                 transaction_manager_->getKVstore()->put(key, value, txn);
+
+                child_plan = &child_plan->insert_plan().child()[0].value_plan().child()[0];
                 break;
             }
             case ChildPlan::ChildPlanCase::kDeletePlan :

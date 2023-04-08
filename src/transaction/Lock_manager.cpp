@@ -231,7 +231,8 @@ auto Lock_manager::LockTable(Transaction *txn, LockMode lock_mode, const table_o
 }
 
 auto Lock_manager::LockPartition(Transaction *txn, LockMode lock_mode, const table_oid_t &oid, const partition_id_t &p_id) -> bool {
-
+    // for debug
+    std::cout << oid << " " << p_id << std::endl;
     try{
         //检查事务状态
         if(txn->get_state() == TransactionState::DEFAULT){

@@ -59,18 +59,21 @@ public:
             brpc::Controller* cntl = static_cast<brpc::Controller*>(controller);
 
             // 考虑到每台机器可能运行多个server进程, 这里ip_node_map的key值为ip:port
-            std::string ip_port = butil::endpoint2str(cntl->remote_side()).c_str();
-            if(meta_server_->mutable_ip_node_map().count(ip_port)>0){
+            // std::string ip_port = butil::endpoint2str(cntl->remote_side()).c_str();
+            
+            std::string server_name = request->server_name();
+
+            if(meta_server_->mutable_ip_node_map().count(server_name)>0){
                 // meta_server_->mutable_ip_node_map()[butil::ip2str(cntl->remote_side().ip).c_str()]->port = cntl->remote_side().port;
                 // meta_server_->mutable_ip_node_map()[butil::ip2str(cntl->remote_side().ip).c_str()]->activate = true;
-                meta_server_->mutable_ip_node_map()[ip_port]->activate = true;
+                meta_server_->mutable_ip_node_map()[server_name]->activate = true;
             }
             else{
                 // meta_server_->mutable_ip_node_map()[butil::ip2str(cntl->remote_side().ip).c_str()] = new Node(
                 //     butil::ip2str(cntl->remote_side().ip).c_str(), cntl->remote_side().port, true);
 
-                meta_server_->mutable_ip_node_map()[ip_port] = new Node(
-                    butil::ip2str(cntl->remote_side().ip).c_str(), cntl->remote_side().port, true);
+                meta_server_->mutable_ip_node_map()[server_name] = new Node(
+                    butil::ip2str(cntl->remote_side().ip).c_str(), request->server_listen_port(), true);
             }
             response->set_register_ok(true);
     }

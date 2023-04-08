@@ -1,0 +1,196 @@
+--- contention
+cycles/second=1000000000
+51364 1 @ 0x5555559a6d08 0x5555559a79e6 0x5555559a7bcd 0x555555a64c4f 0x555555a51861
+555555554000-5555557c4000 r--p 00000000 08:05 421395                     /home/t500ttt/RucDDBS/src/transaction/build/transaction_test2
+5555557c4000-555555b6e000 r-xp 00270000 08:05 421395                     /home/t500ttt/RucDDBS/src/transaction/build/transaction_test2
+555555b6e000-555555e38000 r--p 0061a000 08:05 421395                     /home/t500ttt/RucDDBS/src/transaction/build/transaction_test2
+555555e39000-555555e4e000 r--p 008e4000 08:05 421395                     /home/t500ttt/RucDDBS/src/transaction/build/transaction_test2
+555555e4e000-555555e50000 rw-p 008f9000 08:05 421395                     /home/t500ttt/RucDDBS/src/transaction/build/transaction_test2
+555555e50000-555556b62000 rw-p 00000000 00:00 0                          [heap]
+7fffb4000000-7fffb4021000 rw-p 00000000 00:00 0 
+7fffb4021000-7fffb8000000 ---p 00000000 00:00 0 
+7fffb8000000-7fffb8021000 rw-p 00000000 00:00 0 
+7fffb8021000-7fffbc000000 ---p 00000000 00:00 0 
+7fffbc000000-7fffbc0a9000 rw-p 00000000 00:00 0 
+7fffbc0a9000-7fffc0000000 ---p 00000000 00:00 0 
+7fffc27fd000-7fffc27fe000 ---p 00000000 00:00 0 
+7fffc27fe000-7fffc2ffe000 rw-p 00000000 00:00 0 
+7fffc2ffe000-7fffc2fff000 ---p 00000000 00:00 0 
+7fffc2fff000-7fffc37ff000 rw-p 00000000 00:00 0 
+7fffc37ff000-7fffc3800000 ---p 00000000 00:00 0 
+7fffc3800000-7fffc4000000 rw-p 00000000 00:00 0 
+7fffc4000000-7fffc4021000 rw-p 00000000 00:00 0 
+7fffc4021000-7fffc8000000 ---p 00000000 00:00 0 
+7fffc8000000-7fffc805a000 rw-p 00000000 00:00 0 
+7fffc805a000-7fffcc000000 ---p 00000000 00:00 0 
+7fffcc000000-7fffcc021000 rw-p 00000000 00:00 0 
+7fffcc021000-7fffd0000000 ---p 00000000 00:00 0 
+7fffd0000000-7fffd00b1000 rw-p 00000000 00:00 0 
+7fffd00b1000-7fffd4000000 ---p 00000000 00:00 0 
+7fffd4000000-7fffd4021000 rw-p 00000000 00:00 0 
+7fffd4021000-7fffd8000000 ---p 00000000 00:00 0 
+7fffd8000000-7fffd8021000 rw-p 00000000 00:00 0 
+7fffd8021000-7fffdc000000 ---p 00000000 00:00 0 
+7fffdc000000-7fffdc021000 rw-p 00000000 00:00 0 
+7fffdc021000-7fffe0000000 ---p 00000000 00:00 0 
+7fffe0000000-7fffe0091000 rw-p 00000000 00:00 0 
+7fffe0091000-7fffe4000000 ---p 00000000 00:00 0 
+7fffe42cf000-7fffe42d0000 ---p 00000000 00:00 0 
+7fffe42d0000-7fffe43d0000 rw-p 00000000 00:00 0 
+7fffe43d0000-7fffe43d1000 ---p 00000000 00:00 0 
+7fffe43d1000-7fffe4552000 rw-p 00000000 00:00 0 
+7fffe4552000-7fffe4553000 ---p 00000000 00:00 0 
+7fffe4553000-7fffe4653000 rw-p 00000000 00:00 0 
+7fffe4653000-7fffe4657000 r--p 00000000 08:05 264737                     /usr/lib/x86_64-linux-gnu/libresolv-2.31.so
+7fffe4657000-7fffe4667000 r-xp 00004000 08:05 264737                     /usr/lib/x86_64-linux-gnu/libresolv-2.31.so
+7fffe4667000-7fffe466b000 r--p 00014000 08:05 264737                     /usr/lib/x86_64-linux-gnu/libresolv-2.31.so
+7fffe466b000-7fffe466c000 r--p 00017000 08:05 264737                     /usr/lib/x86_64-linux-gnu/libresolv-2.31.so
+7fffe466c000-7fffe466d000 rw-p 00018000 08:05 264737                     /usr/lib/x86_64-linux-gnu/libresolv-2.31.so
+7fffe466d000-7fffe4871000 rw-p 00000000 00:00 0 
+7fffe4871000-7fffe4872000 ---p 00000000 00:00 0 
+7fffe4872000-7fffe4972000 rw-p 00000000 00:00 0 
+7fffe4972000-7fffe4973000 ---p 00000000 00:00 0 
+7fffe4973000-7fffe4a73000 rw-p 00000000 00:00 0 
+7fffe4a73000-7fffe4a74000 ---p 00000000 00:00 0 
+7fffe4a74000-7fffe4b74000 rw-p 00000000 00:00 0 
+7fffe4b74000-7fffe4b75000 ---p 00000000 00:00 0 
+7fffe4b75000-7fffe4c75000 rw-p 00000000 00:00 0 
+7fffe4c75000-7fffe4c76000 ---p 00000000 00:00 0 
+7fffe4c76000-7fffe4e78000 rw-p 00000000 00:00 0 
+7fffe4e78000-7fffe4e79000 ---p 00000000 00:00 0 
+7fffe4e79000-7fffe4ffa000 rw-p 00000000 00:00 0 
+7fffe4ffa000-7fffe4ffb000 ---p 00000000 00:00 0 
+7fffe4ffb000-7fffe57fb000 rw-p 00000000 00:00 0 
+7fffe57fb000-7fffe57fc000 ---p 00000000 00:00 0 
+7fffe57fc000-7fffe5ffc000 rw-p 00000000 00:00 0 
+7fffe5ffc000-7fffe5ffd000 ---p 00000000 00:00 0 
+7fffe5ffd000-7fffe67fd000 rw-p 00000000 00:00 0 
+7fffe67fd000-7fffe67fe000 ---p 00000000 00:00 0 
+7fffe67fe000-7fffe6ffe000 rw-p 00000000 00:00 0 
+7fffe6ffe000-7fffe6fff000 ---p 00000000 00:00 0 
+7fffe6fff000-7fffe77ff000 rw-p 00000000 00:00 0 
+7fffe77ff000-7fffe7800000 ---p 00000000 00:00 0 
+7fffe7800000-7fffe8000000 rw-p 00000000 00:00 0 
+7fffe8000000-7fffe8021000 rw-p 00000000 00:00 0 
+7fffe8021000-7fffec000000 ---p 00000000 00:00 0 
+7fffec000000-7fffec250000 rw-p 00000000 00:00 0 
+7fffec250000-7ffff0000000 ---p 00000000 00:00 0 
+7ffff0000000-7ffff0033000 rw-p 00000000 00:00 0 
+7ffff0033000-7ffff4000000 ---p 00000000 00:00 0 
+7ffff4002000-7ffff4003000 r--p 00000000 08:05 264727                     /usr/lib/x86_64-linux-gnu/libnss_dns-2.31.so
+7ffff4003000-7ffff4007000 r-xp 00001000 08:05 264727                     /usr/lib/x86_64-linux-gnu/libnss_dns-2.31.so
+7ffff4007000-7ffff4008000 r--p 00005000 08:05 264727                     /usr/lib/x86_64-linux-gnu/libnss_dns-2.31.so
+7ffff4008000-7ffff4009000 r--p 00005000 08:05 264727                     /usr/lib/x86_64-linux-gnu/libnss_dns-2.31.so
+7ffff4009000-7ffff400a000 rw-p 00006000 08:05 264727                     /usr/lib/x86_64-linux-gnu/libnss_dns-2.31.so
+7ffff400a000-7ffff400b000 r--p 00000000 08:05 271146                     /usr/lib/x86_64-linux-gnu/libnss_mdns4_minimal.so.2
+7ffff400b000-7ffff400d000 r-xp 00001000 08:05 271146                     /usr/lib/x86_64-linux-gnu/libnss_mdns4_minimal.so.2
+7ffff400d000-7ffff400e000 r--p 00003000 08:05 271146                     /usr/lib/x86_64-linux-gnu/libnss_mdns4_minimal.so.2
+7ffff400e000-7ffff400f000 r--p 00003000 08:05 271146                     /usr/lib/x86_64-linux-gnu/libnss_mdns4_minimal.so.2
+7ffff400f000-7ffff4010000 rw-p 00004000 08:05 271146                     /usr/lib/x86_64-linux-gnu/libnss_mdns4_minimal.so.2
+7ffff4010000-7ffff4013000 r--p 00000000 08:05 264729                     /usr/lib/x86_64-linux-gnu/libnss_files-2.31.so
+7ffff4013000-7ffff401a000 r-xp 00003000 08:05 264729                     /usr/lib/x86_64-linux-gnu/libnss_files-2.31.so
+7ffff401a000-7ffff401c000 r--p 0000a000 08:05 264729                     /usr/lib/x86_64-linux-gnu/libnss_files-2.31.so
+7ffff401c000-7ffff401d000 r--p 0000b000 08:05 264729                     /usr/lib/x86_64-linux-gnu/libnss_files-2.31.so
+7ffff401d000-7ffff401e000 rw-p 0000c000 08:05 264729                     /usr/lib/x86_64-linux-gnu/libnss_files-2.31.so
+7ffff401e000-7ffff4024000 rw-p 00000000 00:00 0 
+7ffff4024000-7ffff4025000 ---p 00000000 00:00 0 
+7ffff4025000-7ffff42a8000 rw-p 00000000 00:00 0 
+7ffff42a8000-7ffff42a9000 ---p 00000000 00:00 0 
+7ffff42a9000-7ffff4b2a000 rw-p 00000000 00:00 0 
+7ffff4b2a000-7ffff4b2b000 ---p 00000000 00:00 0 
+7ffff4b2b000-7ffff532b000 rw-p 00000000 00:00 0 
+7ffff532b000-7ffff532c000 ---p 00000000 00:00 0 
+7ffff532c000-7ffff5b2c000 rw-p 00000000 00:00 0 
+7ffff5b2c000-7ffff5b2d000 ---p 00000000 00:00 0 
+7ffff5b2d000-7ffff632d000 rw-p 00000000 00:00 0 
+7ffff632d000-7ffff632e000 ---p 00000000 00:00 0 
+7ffff632e000-7ffff6b2e000 rw-p 00000000 00:00 0 
+7ffff6b2e000-7ffff6b2f000 ---p 00000000 00:00 0 
+7ffff6b2f000-7ffff7337000 rw-p 00000000 00:00 0 
+7ffff7337000-7ffff733a000 r--p 00000000 08:05 275641                     /usr/lib/x86_64-linux-gnu/libsnappy.so.1.1.8
+7ffff733a000-7ffff733e000 r-xp 00003000 08:05 275641                     /usr/lib/x86_64-linux-gnu/libsnappy.so.1.1.8
+7ffff733e000-7ffff7340000 r--p 00007000 08:05 275641                     /usr/lib/x86_64-linux-gnu/libsnappy.so.1.1.8
+7ffff7340000-7ffff7341000 r--p 00008000 08:05 275641                     /usr/lib/x86_64-linux-gnu/libsnappy.so.1.1.8
+7ffff7341000-7ffff7342000 rw-p 00009000 08:05 275641                     /usr/lib/x86_64-linux-gnu/libsnappy.so.1.1.8
+7ffff7342000-7ffff7344000 rw-p 00000000 00:00 0 
+7ffff7344000-7ffff7346000 r--p 00000000 08:05 263832                     /usr/lib/x86_64-linux-gnu/libz.so.1.2.11
+7ffff7346000-7ffff7357000 r-xp 00002000 08:05 263832                     /usr/lib/x86_64-linux-gnu/libz.so.1.2.11
+7ffff7357000-7ffff735d000 r--p 00013000 08:05 263832                     /usr/lib/x86_64-linux-gnu/libz.so.1.2.11
+7ffff735d000-7ffff735e000 ---p 00019000 08:05 263832                     /usr/lib/x86_64-linux-gnu/libz.so.1.2.11
+7ffff735e000-7ffff735f000 r--p 00019000 08:05 263832                     /usr/lib/x86_64-linux-gnu/libz.so.1.2.11
+7ffff735f000-7ffff7360000 rw-p 0001a000 08:05 263832                     /usr/lib/x86_64-linux-gnu/libz.so.1.2.11
+7ffff7360000-7ffff7382000 r--p 00000000 08:05 264717                     /usr/lib/x86_64-linux-gnu/libc-2.31.so
+7ffff7382000-7ffff74fa000 r-xp 00022000 08:05 264717                     /usr/lib/x86_64-linux-gnu/libc-2.31.so
+7ffff74fa000-7ffff7548000 r--p 0019a000 08:05 264717                     /usr/lib/x86_64-linux-gnu/libc-2.31.so
+7ffff7548000-7ffff754c000 r--p 001e7000 08:05 264717                     /usr/lib/x86_64-linux-gnu/libc-2.31.so
+7ffff754c000-7ffff754e000 rw-p 001eb000 08:05 264717                     /usr/lib/x86_64-linux-gnu/libc-2.31.so
+7ffff754e000-7ffff7552000 rw-p 00000000 00:00 0 
+7ffff7552000-7ffff7555000 r--p 00000000 08:05 264322                     /usr/lib/x86_64-linux-gnu/libgcc_s.so.1
+7ffff7555000-7ffff7567000 r-xp 00003000 08:05 264322                     /usr/lib/x86_64-linux-gnu/libgcc_s.so.1
+7ffff7567000-7ffff756b000 r--p 00015000 08:05 264322                     /usr/lib/x86_64-linux-gnu/libgcc_s.so.1
+7ffff756b000-7ffff756c000 r--p 00018000 08:05 264322                     /usr/lib/x86_64-linux-gnu/libgcc_s.so.1
+7ffff756c000-7ffff756d000 rw-p 00019000 08:05 264322                     /usr/lib/x86_64-linux-gnu/libgcc_s.so.1
+7ffff756d000-7ffff757a000 r--p 00000000 08:05 264719                     /usr/lib/x86_64-linux-gnu/libm-2.31.so
+7ffff757a000-7ffff7621000 r-xp 0000d000 08:05 264719                     /usr/lib/x86_64-linux-gnu/libm-2.31.so
+7ffff7621000-7ffff76ba000 r--p 000b4000 08:05 264719                     /usr/lib/x86_64-linux-gnu/libm-2.31.so
+7ffff76ba000-7ffff76bb000 r--p 0014c000 08:05 264719                     /usr/lib/x86_64-linux-gnu/libm-2.31.so
+7ffff76bb000-7ffff76bc000 rw-p 0014d000 08:05 264719                     /usr/lib/x86_64-linux-gnu/libm-2.31.so
+7ffff76bc000-7ffff7752000 r--p 00000000 08:05 264325                     /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.28
+7ffff7752000-7ffff7843000 r-xp 00096000 08:05 264325                     /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.28
+7ffff7843000-7ffff788c000 r--p 00187000 08:05 264325                     /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.28
+7ffff788c000-7ffff788d000 ---p 001d0000 08:05 264325                     /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.28
+7ffff788d000-7ffff7898000 r--p 001d0000 08:05 264325                     /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.28
+7ffff7898000-7ffff789b000 rw-p 001db000 08:05 264325                     /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.28
+7ffff789b000-7ffff789e000 rw-p 00000000 00:00 0 
+7ffff789e000-7ffff789f000 r--p 00000000 08:05 264718                     /usr/lib/x86_64-linux-gnu/libdl-2.31.so
+7ffff789f000-7ffff78a1000 r-xp 00001000 08:05 264718                     /usr/lib/x86_64-linux-gnu/libdl-2.31.so
+7ffff78a1000-7ffff78a2000 r--p 00003000 08:05 264718                     /usr/lib/x86_64-linux-gnu/libdl-2.31.so
+7ffff78a2000-7ffff78a3000 r--p 00003000 08:05 264718                     /usr/lib/x86_64-linux-gnu/libdl-2.31.so
+7ffff78a3000-7ffff78a4000 rw-p 00004000 08:05 264718                     /usr/lib/x86_64-linux-gnu/libdl-2.31.so
+7ffff78a4000-7ffff78a6000 rw-p 00000000 00:00 0 
+7ffff78a6000-7ffff78c2000 r--p 00000000 08:05 264539                     /usr/lib/x86_64-linux-gnu/libssl.so.1.1
+7ffff78c2000-7ffff7911000 r-xp 0001c000 08:05 264539                     /usr/lib/x86_64-linux-gnu/libssl.so.1.1
+7ffff7911000-7ffff792b000 r--p 0006b000 08:05 264539                     /usr/lib/x86_64-linux-gnu/libssl.so.1.1
+7ffff792b000-7ffff792c000 ---p 00085000 08:05 264539                     /usr/lib/x86_64-linux-gnu/libssl.so.1.1
+7ffff792c000-7ffff7935000 r--p 00085000 08:05 264539                     /usr/lib/x86_64-linux-gnu/libssl.so.1.1
+7ffff7935000-7ffff7939000 rw-p 0008e000 08:05 264539                     /usr/lib/x86_64-linux-gnu/libssl.so.1.1
+7ffff7939000-7ffff79b1000 r--p 00000000 08:05 264535                     /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1
+7ffff79b1000-7ffff7b4d000 r-xp 00078000 08:05 264535                     /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1
+7ffff7b4d000-7ffff7bde000 r--p 00214000 08:05 264535                     /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1
+7ffff7bde000-7ffff7c0a000 r--p 002a4000 08:05 264535                     /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1
+7ffff7c0a000-7ffff7c0c000 rw-p 002d0000 08:05 264535                     /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1
+7ffff7c0c000-7ffff7c10000 rw-p 00000000 00:00 0 
+7ffff7c10000-7ffff7c1b000 r--p 00000000 08:05 275645                     /usr/lib/x86_64-linux-gnu/libleveldb.so.1.22.0
+7ffff7c1b000-7ffff7c55000 r-xp 0000b000 08:05 275645                     /usr/lib/x86_64-linux-gnu/libleveldb.so.1.22.0
+7ffff7c55000-7ffff7c69000 r--p 00045000 08:05 275645                     /usr/lib/x86_64-linux-gnu/libleveldb.so.1.22.0
+7ffff7c69000-7ffff7c6a000 ---p 00059000 08:05 275645                     /usr/lib/x86_64-linux-gnu/libleveldb.so.1.22.0
+7ffff7c6a000-7ffff7c6c000 r--p 00059000 08:05 275645                     /usr/lib/x86_64-linux-gnu/libleveldb.so.1.22.0
+7ffff7c6c000-7ffff7c6d000 rw-p 0005b000 08:05 275645                     /usr/lib/x86_64-linux-gnu/libleveldb.so.1.22.0
+7ffff7c6d000-7ffff7d2c000 r--p 00000000 08:05 276468                     /usr/lib/x86_64-linux-gnu/libprotobuf.so.17.0.0
+7ffff7d2c000-7ffff7ed5000 r-xp 000bf000 08:05 276468                     /usr/lib/x86_64-linux-gnu/libprotobuf.so.17.0.0
+7ffff7ed5000-7ffff7f59000 r--p 00268000 08:05 276468                     /usr/lib/x86_64-linux-gnu/libprotobuf.so.17.0.0
+7ffff7f59000-7ffff7f5a000 ---p 002ec000 08:05 276468                     /usr/lib/x86_64-linux-gnu/libprotobuf.so.17.0.0
+7ffff7f5a000-7ffff7f63000 r--p 002ec000 08:05 276468                     /usr/lib/x86_64-linux-gnu/libprotobuf.so.17.0.0
+7ffff7f63000-7ffff7f64000 rw-p 002f5000 08:05 276468                     /usr/lib/x86_64-linux-gnu/libprotobuf.so.17.0.0
+7ffff7f64000-7ffff7f66000 rw-p 00000000 00:00 0 
+7ffff7f66000-7ffff7f6b000 r--p 00000000 08:05 270284                     /usr/lib/x86_64-linux-gnu/libgflags.so.2.2.2
+7ffff7f6b000-7ffff7f8a000 r-xp 00005000 08:05 270284                     /usr/lib/x86_64-linux-gnu/libgflags.so.2.2.2
+7ffff7f8a000-7ffff7f8f000 r--p 00024000 08:05 270284                     /usr/lib/x86_64-linux-gnu/libgflags.so.2.2.2
+7ffff7f8f000-7ffff7f90000 r--p 00028000 08:05 270284                     /usr/lib/x86_64-linux-gnu/libgflags.so.2.2.2
+7ffff7f90000-7ffff7f91000 rw-p 00029000 08:05 270284                     /usr/lib/x86_64-linux-gnu/libgflags.so.2.2.2
+7ffff7f91000-7ffff7f97000 r--p 00000000 08:05 264736                     /usr/lib/x86_64-linux-gnu/libpthread-2.31.so
+7ffff7f97000-7ffff7fa8000 r-xp 00006000 08:05 264736                     /usr/lib/x86_64-linux-gnu/libpthread-2.31.so
+7ffff7fa8000-7ffff7fae000 r--p 00017000 08:05 264736                     /usr/lib/x86_64-linux-gnu/libpthread-2.31.so
+7ffff7fae000-7ffff7faf000 r--p 0001c000 08:05 264736                     /usr/lib/x86_64-linux-gnu/libpthread-2.31.so
+7ffff7faf000-7ffff7fb0000 rw-p 0001d000 08:05 264736                     /usr/lib/x86_64-linux-gnu/libpthread-2.31.so
+7ffff7fb0000-7ffff7fb6000 rw-p 00000000 00:00 0 
+7ffff7fc9000-7ffff7fcd000 r--p 00000000 00:00 0                          [vvar]
+7ffff7fcd000-7ffff7fcf000 r-xp 00000000 00:00 0                          [vdso]
+7ffff7fcf000-7ffff7fd0000 r--p 00000000 08:05 264705                     /usr/lib/x86_64-linux-gnu/ld-2.31.so
+7ffff7fd0000-7ffff7ff3000 r-xp 00001000 08:05 264705                     /usr/lib/x86_64-linux-gnu/ld-2.31.so
+7ffff7ff3000-7ffff7ffb000 r--p 00024000 08:05 264705                     /usr/lib/x86_64-linux-gnu/ld-2.31.so
+7ffff7ffc000-7ffff7ffd000 r--p 0002c000 08:05 264705                     /usr/lib/x86_64-linux-gnu/ld-2.31.so
+7ffff7ffd000-7ffff7ffe000 rw-p 0002d000 08:05 264705                     /usr/lib/x86_64-linux-gnu/ld-2.31.so
+7ffff7ffe000-7ffff7fff000 rw-p 00000000 00:00 0 
+7ffffffde000-7ffffffff000 rw-p 00000000 00:00 0                          [stack]
+ffffffffff600000-ffffffffff601000 --xp 00000000 00:00 0                  [vsyscall]

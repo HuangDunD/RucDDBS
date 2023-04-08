@@ -68,7 +68,7 @@ private:
 
     std::thread *flush_thread_; // 日志刷新线程
 
-    std::mutex latch_; // 互斥锁，用于log_buffer_的互斥访问
+    std::mutex latch_{}; // 互斥锁，用于log_buffer_的互斥访问
 
     std::condition_variable cv_; // 条件变量，用于flush_thread的唤醒; to notify the flush_thread
     

@@ -28,6 +28,7 @@ message ChildPlan {
 //Insert用, 构建Value tuple
 message ValuePlan {
     repeated string value = 2;
+    repeated ChildPlan child = 3;
 };
 
 

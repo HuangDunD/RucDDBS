@@ -14,10 +14,11 @@ static const int idle_timeout_s = -1;
 
 DECLARE_string(META_SERVER_ADDR);
 
-DECLARE_int32(SERVER_PORT);
+DECLARE_int32(SERVER_LISTEN_PORT);
 DECLARE_string(SERVER_LISTEN_ADDR);
 
 // log path
-static const std::string log_path = "/home/t500ttt/RucDDBS/data/";
+// static const std::string log_path = "/home/t500ttt/RucDDBS/data/";
+DECLARE_string(log_path);
 
 #endif
