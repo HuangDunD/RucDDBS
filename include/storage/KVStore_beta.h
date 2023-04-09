@@ -3,10 +3,11 @@
 #include <cstdint>
 #include <string>
 
+#include "KVStoreAPI.h"
 #include "SkipList.h"
 #include "DiskStorage.h"
  
-class KVStore_beta{
+class KVStore_beta : KVStoreAPI{
 public:
    explicit KVStore_beta(const std::string &dir);
    

@@ -2,6 +2,7 @@ build/*
 .git-old/*
 
 **/build/*
+.git-old/*
 data/
 data2/
 bin/
