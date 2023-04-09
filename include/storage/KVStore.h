@@ -6,10 +6,12 @@
 
 #include "SkipList.h"
 #include "DiskStorage.h"
+#include "KVStoreAPI.h"
+
 #include "Transaction.h"
 #include "log_manager.h"
  
-class KVStore{
+class KVStore : public KVStoreAPI{
  public:
     explicit KVStore(const std::string &dir);
     ~KVStore();

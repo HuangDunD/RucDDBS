@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.2)
 
 project(RUCDDBS)
 
-option(RUCDDBS_STORAGE "if build kv_storage" OFF)
-option(RUCDDBS_TEST "build rucddbs test" ON)
+option(RUCDDBS_STORAGE "if build kv_storage" ON)
+option(RUCDDBS_TEST "build rucddbs test" OFF)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED true)
@@ -13,8 +13,6 @@ IF(NOT CMAKE_BUILD_TYPE)
   SET(CMAKE_BUILD_TYPE Release)
 ENDIF()
 
-set(STORAGE_DIR ${PROJECT_SOURCE_DIR}/include/storage/)
-aux_source_directory(${PROJECT_SOURCE_DIR}/src/storage STORAGE_SRC)
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/deps/snappy)
 
