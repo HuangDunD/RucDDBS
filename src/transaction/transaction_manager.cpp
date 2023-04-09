@@ -33,47 +33,110 @@ uint64_t TransactionManager::getTimestampFromServer(){
 }
 
 void TransactionManager::ReleaseLocks(Transaction *txn){
-    
-    for(const auto &lock_row: *txn->get_row_S_lock_set()){
-        lock_manager_->UnLockRow(txn, lock_row.oid_, lock_row.p_id_, lock_row.row_id_);
+
+    for(auto iter = txn->get_row_S_lock_set()->begin(); iter != txn->get_row_S_lock_set()->end();){
+        auto o_id = iter->oid_;
+        auto p_id = iter->p_id_;
+        auto r_id = iter->row_id_;
+        auto next_iter = ++iter;
+        lock_manager_->UnLockRow(txn, o_id, p_id, r_id);
+        iter = next_iter;
     }
-    for(const auto &lock_row: *txn->get_row_X_lock_set()){
-        lock_manager_->UnLockRow(txn, lock_row.oid_, lock_row.p_id_, lock_row.row_id_);
+    for(auto iter = txn->get_row_X_lock_set()->begin(); iter != txn->get_row_X_lock_set()->end();){
+        auto o_id = iter->oid_;
+        auto p_id = iter->p_id_;
+        auto r_id = iter->row_id_;
+        auto next_iter = ++iter;
+        lock_manager_->UnLockRow(txn, o_id, p_id, r_id);
+        iter = next_iter;
     }
 
-    for(const auto &lock_par: *txn->get_partition_S_lock_set()){
-        lock_manager_->UnLockPartition(txn, lock_par.oid_, lock_par.p_id_);
+    for(auto iter = txn->get_partition_S_lock_set()->begin(); iter != txn->get_partition_S_lock_set()->end();){
+        auto o_id = iter->oid_;
+        auto p_id = iter->p_id_;
+        auto next_iter = ++iter;
+        lock_manager_->UnLockPartition(txn, o_id, p_id);
+        iter = next_iter;
     }
-    for(const auto &lock_par: *txn->get_partition_IS_lock_set()){
-        lock_manager_->UnLockPartition(txn, lock_par.oid_, lock_par.p_id_);
+    for(auto iter = txn->get_partition_IS_lock_set()->begin(); iter != txn->get_partition_IS_lock_set()->end();){
+        auto o_id = iter->oid_;
+        auto p_id = iter->p_id_;
+        auto next_iter = ++iter;
+        lock_manager_->UnLockPartition(txn, o_id, p_id);
+        iter = next_iter;
     }
-    for(const auto &lock_par: *txn->get_partition_IX_lock_set()){
-        lock_manager_->UnLockPartition(txn, lock_par.oid_, lock_par.p_id_);
+    for(auto iter = txn->get_partition_IX_lock_set()->begin(); iter != txn->get_partition_IX_lock_set()->end();){
+        auto o_id = iter->oid_;
+        auto p_id = iter->p_id_;
+        auto next_iter = ++iter;
+        lock_manager_->UnLockPartition(txn, o_id, p_id);
+        iter = next_iter;
     }
-    for(const auto &lock_par: *txn->get_partition_SIX_lock_set()){
-        lock_manager_->UnLockPartition(txn, lock_par.oid_, lock_par.p_id_);
+    for(auto iter = txn->get_partition_SIX_lock_set()->begin(); iter != txn->get_partition_SIX_lock_set()->end();){
+        auto o_id = iter->oid_;
+        auto p_id = iter->p_id_;
+        auto next_iter = ++iter;
+        lock_manager_->UnLockPartition(txn, o_id, p_id);
+        iter = next_iter;
     }
-    for(const auto &lock_par: *txn->get_partition_X_lock_set()){
-        lock_manager_->UnLockPartition(txn, lock_par.oid_, lock_par.p_id_);
+    for(auto iter = txn->get_partition_X_lock_set()->begin(); iter != txn->get_partition_X_lock_set()->end();){
+        auto o_id = iter->oid_;
+        auto p_id = iter->p_id_;
+        auto next_iter = ++iter;
+        lock_manager_->UnLockPartition(txn, o_id, p_id);
+        iter = next_iter;
     }
 
-    for(const auto &lock_tab: *txn->get_table_S_lock_set()){
-        lock_manager_->UnLockTable(txn, lock_tab.oid_);
+    for(auto iter = txn->get_table_S_lock_set()->begin(); iter != txn->get_table_S_lock_set()->end();){
+        auto o_id = iter->oid_;
+        auto next_iter = ++iter;
+        lock_manager_->UnLockTable(txn, o_id);
+        iter = next_iter;
     }
-    for(const auto &lock_tab: *txn->get_table_IS_lock_set()){
-        lock_manager_->UnLockTable(txn, lock_tab.oid_);
+    for(auto iter = txn->get_table_IS_lock_set()->begin(); iter != txn->get_table_IS_lock_set()->end();){
+        auto o_id = iter->oid_;
+        auto next_iter = ++iter;
+        lock_manager_->UnLockTable(txn, o_id);
+        iter = next_iter;
     }
-    for(const auto &lock_tab: *txn->get_table_SIX_lock_set()){
-        lock_manager_->UnLockTable(txn, lock_tab.oid_);
+    for(auto iter = txn->get_table_IX_lock_set()->begin(); iter != txn->get_table_IX_lock_set()->end();){
+        auto o_id = iter->oid_;
+        auto next_iter = ++iter;
+        lock_manager_->UnLockTable(txn, o_id);
+        iter = next_iter;
     }
-    for(const auto &lock_tab: *txn->get_table_IX_lock_set()){
-        lock_manager_->UnLockTable(txn, lock_tab.oid_);
+    for(auto iter = txn->get_table_SIX_lock_set()->begin(); iter != txn->get_table_SIX_lock_set()->end();){
+        auto o_id = iter->oid_;
+        auto next_iter = ++iter;
+        lock_manager_->UnLockTable(txn, o_id);
+        iter = next_iter;
     }
-    for(const auto &lock_tab: *txn->get_table_X_lock_set()){
-        lock_manager_->UnLockTable(txn, lock_tab.oid_);
+    for(auto iter = txn->get_table_X_lock_set()->begin(); iter != txn->get_table_X_lock_set()->end();){
+        auto o_id = iter->oid_;
+        auto next_iter = ++iter;
+        lock_manager_->UnLockTable(txn, o_id);
+        iter = next_iter;
     }
     
     return ;
+}
+
+Transaction* TransactionManager::Begin(Transaction*& txn, txn_id_t txn_id, IsolationLevel isolation_level){
+    global_txn_latch_.lock_shared();
+
+    if (txn == nullptr) {
+        txn = new Transaction(txn_id, isolation_level); 
+    }
+
+    if (enable_logging) {
+        LogRecord record(txn->get_txn_id(), txn->get_prev_lsn(), LogRecordType::BEGIN);
+        lsn_t lsn = log_manager_->AppendLogRecord(record);
+        txn->set_prev_lsn(lsn);
+    }
+
+    std::unique_lock<std::shared_mutex> l(txn_map_mutex);
+    txn_map[txn->get_txn_id()] = txn;
+    return txn;
 }
 
 Transaction* TransactionManager::Begin(Transaction*& txn, IsolationLevel isolation_level){
@@ -100,6 +163,7 @@ Transaction* TransactionManager::Begin(Transaction*& txn, IsolationLevel isolati
 }
 
 bool TransactionManager::AbortSingle(Transaction * txn){
+    std::cout << txn->get_txn_id() << " " << "abort" << std::endl;
     auto write_set = txn->get_write_set();
     while (!write_set->empty()) {
         auto &item = write_set->back();
@@ -107,10 +171,11 @@ bool TransactionManager::AbortSingle(Transaction * txn){
             kv_->put(std::string(item.getKey(),item.getKeySize()), std::string(item.getValue(),item.getValueSize()), txn);
         }else if(item.getWType() == WType::INSERT_TUPLE){
             kv_->del(std::string(item.getKey(), item.getKeySize()),txn);
-        }else if (item.getWType() == WType::UPDATE_TUPLE){
-            kv_->del(std::string(item.getKey(),item.getKeySize()), txn);
-            kv_->put(std::string(item.getKey(), item.getKeySize()), std::string(item.getOldValue(), item.getOldValueSize()), txn);
         }
+        // else if (item.getWType() == WType::UPDATE_TUPLE){
+        //     kv_->del(std::string(item.getKey(),item.getKeySize()), txn);
+        //     kv_->put(std::string(item.getKey(), item.getKeySize()), std::string(item.getOldValue(), item.getOldValueSize()), txn);
+        // }
         write_set->pop_back();
     }
     write_set->clear();
@@ -131,19 +196,19 @@ bool TransactionManager::AbortSingle(Transaction * txn){
 }
 
 bool TransactionManager::CommitSingle(Transaction * txn){
+    std::cout << txn->get_txn_id() << " " << "commit" << std::endl;
     if(txn->get_state() == TransactionState::ABORTED){
         return false;
     }
-    txn->set_transaction_state(TransactionState::COMMITTED);
     if(enable_logging){
         //写Commit日志
         LogRecord record(txn->get_txn_id(), txn->get_prev_lsn(), LogRecordType::COMMIT);
         auto lsn = log_manager_->AppendLogRecord(record);
         txn->set_prev_lsn(lsn);
     }
-
     // Release all locks
     ReleaseLocks(txn);
+    txn->set_transaction_state(TransactionState::COMMITTED);
     // Remove txn from txn_map
     std::unique_lock<std::shared_mutex> l(txn_map_mutex);
     txn_map.erase(txn->get_txn_id() );
@@ -199,14 +264,15 @@ bool TransactionManager::Commit(Transaction * txn){
     else {
         //分布式事务, 2PC两阶段提交
         brpc::ChannelOptions options;
-        options.timeout_ms = 100;
-        options.max_retry = 3;
+        options.timeout_ms = 0x7fffffff;
+        options.max_retry = 1;
         // 创建一个存储std::future对象的vector，用于搜集所有匿名函数的返回值
         std::vector<std::future<bool>> futures_prepare;
 
         //准备阶段
         for(auto node: *txn->get_distributed_node_set()){
-            futures_prepare.push_back(std::async(std::launch::async, [&txn, &node, &options]()->bool{
+            futures_prepare.push_back(std::async(std::launch::async, [&txn, node, &options]()->bool{
+                // LOG(INFO) << "prepare pause: " <<  node.ip_addr << " " << node.port << std::endl;
                 brpc::Channel channel;
                 if (channel.Init(node.ip_addr.c_str(), node.port , &options) != 0) {
                     LOG(ERROR) << "Fail to initialize channel";
@@ -242,7 +308,8 @@ bool TransactionManager::Commit(Transaction * txn){
             //commit all
             std::vector<std::future<void>> futures_commit;
             for(auto node: *txn->get_distributed_node_set()){
-                futures_commit.push_back(std::async(std::launch::async, [&txn, &node, &options](){
+                // LOG(INFO) << "commit pause: " <<  node.ip_addr << " " << node.port << std::endl;
+                futures_commit.push_back(std::async(std::launch::async, [&txn, node, &options](){
                     brpc::Channel channel;
                     if (channel.Init(node.ip_addr.c_str(), node.port , &options) != 0) {
                         LOG(ERROR) << "Fail to initialize channel";
@@ -260,12 +327,16 @@ bool TransactionManager::Commit(Transaction * txn){
                     // return response.ok();
                 }) );
             }
+            for(size_t i=0; i<(*txn->get_distributed_node_set()).size(); i++){
+                futures_commit[i].get();
+            }
         }
     }
     return true;
 }
 
 bool TransactionManager::PrepareCommit(Transaction * txn){
+    std::cout << txn->get_txn_id() << " " << "prepare commit" << std::endl;
     if(txn->get_state() == TransactionState::ABORTED){
         return false;
     }

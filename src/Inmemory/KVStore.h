@@ -9,7 +9,7 @@
 
 class KVStore{
  public:
-    explicit KVStore(){};
+    explicit KVStore(LogManager* log_manager){log_manager_ = log_manager;};
     ~KVStore(){};
     // put(key, value)
     void put(const std::string &key, const std::string &value){
@@ -23,6 +23,9 @@ class KVStore{
             auto lsn = log_manager_->AppendLogRecord(record);
             txn->set_prev_lsn(lsn);
         }
+        //add write record into write set.
+        WriteRecord wr = WriteRecord(key.c_str(), key.size(), WType::INSERT_TUPLE);
+        txn->get_write_set()->push_back(wr);
         memtable_[key] = value;
     }
 
@@ -53,7 +56,10 @@ class KVStore{
             auto lsn = log_manager_->AppendLogRecord(record);
             txn->set_prev_lsn(lsn);
         }
-        
+         //add write record into write set.
+        WriteRecord wr = WriteRecord(key.c_str(), key.size(), memtable_[key].c_str(), memtable_[key].size(), WType::DELETE_TUPLE);
+        txn->get_write_set()->push_back(wr);
+
         memtable_.erase(key);
         return true;
     }

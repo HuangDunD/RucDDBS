@@ -242,7 +242,7 @@ public:
         }
         os << meta_server.ip_node_map_.size() << '\n';
         for (auto &entry : meta_server.ip_node_map_) {
-            os << *entry.second << '\n';  // entry.second是Node类型，然后调用重载的Node的操作符<<
+            os << entry.first << " "<< *entry.second << '\n';  // entry.second是Node类型，然后调用重载的Node的操作符<<
         }
         return os;
     }
@@ -258,8 +258,12 @@ public:
         is >> n;
         for (size_t i = 0; i < n; i++) {
             auto node = new Node();
+            std::string server_name;
+            is >> server_name;
             is >> *node;
-            meta_server.ip_node_map_[node->ip_addr] = node;
+            //TODO
+            // meta_server.ip_node_map_[node->ip_addr] = node;
+            meta_server.ip_node_map_[server_name] = node;
         }
         return is;
     }

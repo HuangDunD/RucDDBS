@@ -120,6 +120,8 @@ message GetTableInfoResponse{
 
 message RegisterRequest{
     bool sayhello = 1;
+    string server_name = 2;
+    uint32 server_listen_port = 3;
 }
 
 message RegisterResponse{
