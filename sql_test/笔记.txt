@@ -1,0 +1,19 @@
+KV 的key 类型
+tab_name + par + 主键
+
+create table：
+    直接写在metadata里面即可
+insert table：
+    转换成关系型
+    找到对应partition写进去就行
+delete：
+    利用metadata发给可能需要delete的节点
+    在每个节点执行delete计划，
+    先执行scan操作，根据scan出的结果
+    调用kv进行delete
+update
+    利用metadata发给可能需要delete的节点
+    在每个节点执行delete计划，
+    先执行scan操作，根据scan出的结果
+    重构scan的结果
+    重写
