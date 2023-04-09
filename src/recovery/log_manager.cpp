@@ -3,11 +3,15 @@
 
 lsn_t LogManager::AppendLogRecord(LogRecord &log_record) {
     std::unique_lock<std::mutex> l(latch_);
+    // for debug
+    std::cout << "append log record: " << static_cast<int>(log_record.GetLogRecordType()) << std::endl;
+
     if (log_buffer_write_offset_ + log_record.GetSize() >= LOG_BUFFER_SIZE) {
         needFlush_ = true;
         cv_.notify_one(); //let RunFlushThread wake up.
         operation_cv_.wait(l, [&] {return log_buffer_write_offset_ + log_record.GetSize()< LOG_BUFFER_SIZE;});
     }
+    log_record.SetLsn(next_lsn_++);
     memcpy(log_buffer_ + log_buffer_write_offset_, &log_record, LogRecord::HEADER_SIZE);
     int pos = log_buffer_write_offset_ + LogRecord::HEADER_SIZE;
 
@@ -40,7 +44,6 @@ lsn_t LogManager::AppendLogRecord(LogRecord &log_record) {
     //     pos += log_record.GetOldValueSize();
     // }
     log_buffer_write_offset_ = pos;
-    log_record.SetLsn(next_lsn_++);
     return log_record.GetLsn();
 };
 
