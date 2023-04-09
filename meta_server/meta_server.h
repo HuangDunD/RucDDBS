@@ -47,6 +47,34 @@ struct ParMeta {
     }
 };
 
+struct Column_info{
+    std::vector<std::string> column_name;
+    std::vector<ColType> column_type;
+
+    // 重载操作符 <<
+    friend std::ostream &operator<<(std::ostream &os, const Column_info &cols) {
+        os << cols.column_name.size();
+        int size = cols.column_name.size();
+        for(auto i = 0; i < size; i++){
+            os << cols.column_name[i] << ' ' << cols.column_type[i] << std::endl;
+        }
+        return os;
+    }
+    // 重载操作符 >>
+    friend std::istream &operator>>(std::istream &is, Column_info &cols) {
+        int size;
+        is >> size;
+        for(auto i = 0; i < size; i++){
+            std::string tmp_name;
+            ColType tmp_type;
+            is >> tmp_name >> tmp_type;
+            cols.column_name.push_back(tmp_name);
+            cols.column_type.push_back(tmp_type);
+        }
+        return is;
+    }
+};
+
 struct Node{
     std::string ip_addr;
     int32_t port;
@@ -80,6 +108,7 @@ struct TabMetaServer
 {
     table_oid_t oid; //表id
     std::string name; //表name
+    Column_info col_info; // 表的列信息，包括各个列的列名，和类别
 
     PartitionType partition_type; //分区表的分区方式
     std::string partition_key_name; //分区键列名
@@ -100,6 +129,8 @@ struct TabMetaServer
         os << tab.oid << ' ' << tab.name << ' ' << tab.partition_type << ' ' 
             << tab.partition_key_name << ' ' << tab.partition_key_type << ' ' << tab.partition_cnt_  << ' ' << 
             tab.partitions.size() << '\n';
+        // 打印各个列的属性
+        os << tab.col_info;
         for (auto &entry : tab.partitions){
             os << entry;
         }
@@ -111,6 +142,8 @@ struct TabMetaServer
         size_t n;
         is >> tab.oid >> tab.name >> tab.partition_type >> tab.partition_key_name 
             >> tab.partition_key_type >> tab.partition_cnt_  >> n;
+        // 获取各个列的属性
+        is >> tab.col_info;
         for(size_t i=0; i<n; i++){
             ParMeta pm;
             is >> pm;
@@ -181,7 +214,8 @@ public:
     void oracle_start(std::atomic<bool> &oracle_background_running){timestamp_oracle.start(oracle_background_running);}
 
     std::string getPartitionKey(std::string db_name, std::string table_name);
-
+    Column_info GetColInfor(std::string db_name, std::string table_name);
+    
     std::unordered_map<partition_id_t,ReplicaLocation> getReplicaLocationList( std::string db_name, std::string table_name, 
             std::string partitionKeyName, std::string min_range, std::string max_range);
 

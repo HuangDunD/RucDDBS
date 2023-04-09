@@ -71,6 +71,12 @@ void MetaServiceImpl::CreateTable(::google::protobuf::RpcController* controller,
                 meta_server_->mutable_db_map()[request->db_name()]->gettablemap()[request->tab_name()] = tms;
 
                 tms->name = request->tab_name();
+                // 把表的列信息写进去
+                for(int i = 0; i < request->col_name_size() ; i++){
+                    tms->col_info.column_name.push_back(request->col_name()[i]);
+                    tms->col_info.column_type.push_back(ColType(request->col_type()[i]));
+                }
+
                 tms->oid = meta_server_->mutable_db_map()[request->db_name()]->get_next_oid();
                 meta_server_->mutable_db_map()[request->db_name()]->set_next_oid(tms->oid + 1);
                 tms->partition_type = PartitionType::NONE_PARTITION;
@@ -113,6 +119,13 @@ void MetaServiceImpl::CreatePartitionTable(::google::protobuf::RpcController* co
             auto tms = new TabMetaServer();
             meta_server_->mutable_db_map()[request->db_name()]->gettablemap()[request->tab_name()] = tms;
             tms->name = request->tab_name();
+
+                            // 把表的列信息写进去
+            for(int i = 0; i < request->col_name_size() ; i++){
+                tms->col_info.column_name.push_back(request->col_name()[i]);
+                tms->col_info.column_type.push_back(ColType(request->col_type()[i]));
+            }
+
             tms->oid = meta_server_->mutable_db_map()[request->db_name()]->get_next_oid();
             meta_server_->mutable_db_map()[request->db_name()]->set_next_oid(tms->oid + 1);
 

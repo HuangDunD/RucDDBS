@@ -1,4 +1,6 @@
 build/*
+.git-old/*
+
 **/build/*
 .git-old/*
 data/

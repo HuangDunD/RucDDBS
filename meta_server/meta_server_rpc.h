@@ -102,8 +102,28 @@ public:
             auto now = meta_server_->get_oracle().getTimeStamp();
             response->set_timestamp(now);
     }
+    // 获取表的列名信息
+    virtual void GetTableInfo(::google::protobuf::RpcController* cntl_base,
+                       const ::meta_service::GetTableInfoRequest* request,
+                       ::meta_service::GetTableInfoResponse* response,
+                       ::google::protobuf::Closure* done){
+            //注意 brpc::ClosureGuard done_guard(done) 这一行, 极易忘记!!!
+        brpc::ClosureGuard done_guard(done);
 
-
+        brpc::Controller* cntl = static_cast<brpc::Controller*>(cntl_base);
+        
+        LOG(INFO) << "Received request[log_id=" << cntl->log_id() 
+            << "] from " << cntl->remote_side() 
+            << " to " << cntl->local_side()
+            << ": db_name: " << request->db_name() << "table name: " << request->tab_name();
+        
+        auto Col = meta_server_->GetColInfor(request->db_name(),request->tab_name());
+        int size = Col.column_name.size();
+        for(int i = 0; i < size; i++){
+            response->add_col_name(Col.column_name[i]);
+            response->add_col_type(int(Col.column_type[i]));
+        }
+    }
 private: 
     MetaServer *meta_server_;
 };

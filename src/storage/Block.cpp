@@ -66,8 +66,8 @@ void Block::extract(uint64_t position, uint64_t *size, std::string &s) const {
     // s = block_content_.substr(position + sizeof(uint64_t), *size);
 }
 
-Iterator* Block::NewIterator() const {
-    return new Iter(this);
+std::unique_ptr<Iterator> Block::NewIterator() const {
+    return std::make_unique<Iter>(this);
 }
 
 Block::Iter::Iter(const Block *block) : block_(block) {

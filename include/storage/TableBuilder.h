@@ -4,6 +4,8 @@
  
 #include "BlockBuilder.h"
 #include "Option.h"
+#include "SkipList.h"
+#include "SSTableId.h"
 
 // #include "dbconfig.h"
 
@@ -23,8 +25,8 @@ public:
 
     void finish();
 
-    // // 使用memtable构造一个sst文件
-    // void create_sstable(const SkipList *memtable);
+    // 使用memtable构造一个sst文件
+    static bool create_sstable(const SkipList &memtable, const SSTableId &table_id);
 
     // uint64_t fileSize() const;
 

@@ -19,7 +19,7 @@ SSTable::SSTable(std::ifstream *ifs, BlockCache *block_cache)
     index_iter_ = index_block_->NewIterator();
 }
 
-Block *SSTable::loadBlock(std::ifstream *ifs, uint64_t block_offset, uint64_t block_size){
+std::unique_ptr<Block> SSTable::loadBlock(std::ifstream *ifs, uint64_t block_offset, uint64_t block_size){
     assert(ifs->is_open());
     char buffer[block_size];
     ifs->seekg(block_offset, std::ios::beg);
@@ -29,12 +29,11 @@ Block *SSTable::loadBlock(std::ifstream *ifs, uint64_t block_offset, uint64_t bl
     if(Option::BLOCK_COMPRESSED) {
         snappy::Uncompress(buffer, block_size, &uncompressed);
     }
-    return new Block(uncompressed);
+    return std::make_unique<Block>(uncompressed);
 }
 
 SSTable::~SSTable() {
-    delete index_iter_;
-    delete index_block_;
+
 }
 
 std::pair<bool, std::string> SSTable::get(const std::string &key) const {
@@ -56,9 +55,8 @@ std::pair<bool, std::string> SSTable::get(const std::string &key) const {
             // 是否实现了block_cache
             if(block_cache_ == nullptr) {
                 // 没有实现block_cache，直接读取                
-                Block *data_block = loadBlock(ifs_, block_offset, block_size);
+                std::unique_ptr<Block> data_block = loadBlock(ifs_, block_offset, block_size);
                 auto ret = data_block->get(key);
-                delete data_block;
                 return ret;
             }
         }else {

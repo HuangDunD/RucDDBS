@@ -34,10 +34,13 @@ public:
     // Iterator newIterator() const;
 
     // return how many (key, value) pairs in skiplist
-    size_t size() const;
+    inline size_t size() const { return num_entries_; }
+
+    // return the space of skiplist
+    inline size_t space() const { return num_bytes_; }
 
     // return true, if the skiplist is empty
-    bool empty() const;
+    inline bool empty() const { return num_entries_ ==  0; }
 
     // clear the skiplist
     // Require: before clear the skiplist, store the data in SSTable
