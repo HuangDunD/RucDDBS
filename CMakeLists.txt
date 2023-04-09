@@ -25,6 +25,9 @@ endif()
 if(RUCDDBS_STORAGE)
   message("build rucddbs storage")
   add_subdirectory(${PROJECT_SOURCE_DIR}/src/storage)
+
+  add_executable(storage_example ${PROJECT_SOURCE_DIR}/storage_example.cpp)
+  target_link_libraries(storage_example KV_STORAGE_BETA)
 endif()
 
 

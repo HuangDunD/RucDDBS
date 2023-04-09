@@ -3,7 +3,7 @@
 #include "Option.h"
 #include "KVStore_beta.h"
 
-KVStore_beta::KVStore_beta(const std::string &dir) : diskstorage_(dir){
+KVStore_beta::KVStore_beta(const std::string &dir) : KVStoreAPI(dir), diskstorage_(dir){
     
 }
 
