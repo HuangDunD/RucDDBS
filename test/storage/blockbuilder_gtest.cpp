@@ -44,7 +44,7 @@ TEST(BlockBuilderTest, simple_test) {
     }
     // 迭代器测试
     // 初始化
-    Iterator *iter = block.NewIterator();
+    std::unique_ptr<Iterator> iter = block.NewIterator();
     EXPECT_EQ(false, iter->Valid());
     // 测试接口SeekToFirst()和Next();
     iter->SeekToFirst();
@@ -123,7 +123,7 @@ TEST(BlockBuilderTest, large_test) {
     }
     // 迭代器测试
     // 初始化
-    Iterator *iter = block.NewIterator();
+    std::unique_ptr<Iterator> iter = block.NewIterator();
     EXPECT_EQ(false, iter->Valid());
     // 测试接口SeekToFirst()和Next();
     iter->SeekToFirst();

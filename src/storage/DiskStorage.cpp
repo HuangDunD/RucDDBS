@@ -4,7 +4,7 @@
 #include "DiskStorage.h"
 #include "Option.h"
 
-DiskStorage::DiskStorage(const std::string &dir) : dir_(dir), level0_(dir_ + "/" + Option::NAME_Z, &table_cache_, &block_cache_){
+DiskStorage::DiskStorage(const std::string &dir) : dir_(dir), level0_(dir_ + "/" + Option::NAME_Z, nullptr, nullptr){
     if(!std::filesystem::exists(dir_)){
         std::filesystem::create_directory(dir_);
     }
@@ -19,7 +19,7 @@ void DiskStorage::add(const SkipList &memtable){
     save_meta();
 }
 
-std::pair<bool, std::string> DiskStorage::search(uint64_t key) {
+std::pair<bool, std::string> DiskStorage::search(std::string key) {
     return level0_.search(key);
 }
 
