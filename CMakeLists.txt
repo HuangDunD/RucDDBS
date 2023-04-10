@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.2)
 project(RUCDDBS)
 
 option(RUCDDBS_STORAGE "if build kv_storage" OFF)
-option(RUCDDBS_TRANSACTION "if build kv_storage" OFF)
+option(RUCDDBS_TRANSACTION "if build transaction" ON)
 option(RUCDDBS_TEST "build rucddbs test" ON)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -14,9 +14,9 @@ IF(NOT CMAKE_BUILD_TYPE)
   SET(CMAKE_BUILD_TYPE Release)
 ENDIF()
 
-find_package(GTest REQUIRED)
+# find_package(GTest REQUIRED)
 find_package(Threads REQUIRED)
-include_directories(${GTEST_INCLUDE_DIRS})
+# include_directories(${GTEST_INCLUDE_DIRS})
 
 find_library(THRIFT_LIB NAMES thrift)
 if (NOT THRIFT_LIB)
@@ -55,11 +55,34 @@ include_directories(${LEVELDB_INCLUDE_PATH})
 find_package(OpenSSL)
 include_directories(${OPENSSL_INCLUDE_DIR})
 
+set(DYNAMIC_LIB
+    ${CMAKE_THREAD_LIBS_INIT}
+    ${GFLAGS_LIBRARY}
+    ${PROTOBUF_LIBRARIES}
+    ${LEVELDB_LIB}
+    ${OPENSSL_CRYPTO_LIBRARY}
+    ${OPENSSL_SSL_LIBRARY}
+    ${THRIFT_LIB}
+    ${THRIFTNB_LIB}
+    dl
+    )
+
+include_directories(${PROJECT_SOURCE_DIR})
+include_directories(${PROJECT_SOURCE_DIR}/meta_server/)
+include_directories(${PROJECT_SOURCE_DIR}/meta_server/build)
+
+set(INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include/)
 set(STORAGE_DIR ${PROJECT_SOURCE_DIR}/include/storage/)
 set(TRANSACTION_DIR ${PROJECT_SOURCE_DIR}/include/transaction/)
+set(IMMEMORY_DIR ${PROJECT_SOURCE_DIR}/include/Inmemory/)
+set(RECOVERY_DIR ${PROJECT_SOURCE_DIR}/include/recovery/)
+set(EXECUTION_DIR ${PROJECT_SOURCE_DIR}/src/execution)
 
+add_library(config STATIC dbconfig.cc) 
 aux_source_directory(${PROJECT_SOURCE_DIR}/src/storage STORAGE_SRC)
 aux_source_directory(${PROJECT_SOURCE_DIR}/src/transaction TRANSACTION_SRC)
+aux_source_directory(${PROJECT_SOURCE_DIR}/src/recovery RECOVERY_SRC)
+aux_source_directory(${PROJECT_SOURCE_DIR}/src/execution EXECUTION_SRC)
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/deps/snappy)
 add_subdirectory(${PROJECT_SOURCE_DIR}/include/proto)
@@ -75,6 +98,8 @@ IF(RUCDDBS_TEST)
   message("build ructest")
   add_subdirectory(${PROJECT_SOURCE_DIR}/deps/googletest)
   add_subdirectory(${PROJECT_SOURCE_DIR}/test/storage)
+  add_subdirectory(${PROJECT_SOURCE_DIR}/test/recovery)
+  add_subdirectory(${PROJECT_SOURCE_DIR}/test/transaction)
 endif()
 
 if(RUCDDBS_STORAGE)
@@ -82,6 +107,7 @@ if(RUCDDBS_STORAGE)
 endif()
 
 if(RUCDDBS_TRANSACTION)
+  add_subdirectory(${PROJECT_SOURCE_DIR}/src/recovery)
   add_subdirectory(${PROJECT_SOURCE_DIR}/src/transaction)
 endif()
 

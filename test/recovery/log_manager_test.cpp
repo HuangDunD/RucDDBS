@@ -42,11 +42,6 @@ TEST_F(LogManagerTest, AppendLogRecordTest) {
 int main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
-
-    // LogStorage *log_storage = new LogStorage("test"); 
-    // LogManager *log_manager_ = new LogManager(log_storage);
-
     // LogRecord *record1 = new LogRecord(1, 0, LogRecordType::INSERT, 4, "key1", 6, "value1");
     // lsn_t lsn1 = log_manager_->AppendLogRecord(record1);
-
 }
