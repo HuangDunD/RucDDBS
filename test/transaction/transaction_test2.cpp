@@ -87,9 +87,9 @@ class TransactionTest : public ::testing::Test {
 };
 
 TEST_F(TransactionTest, TransactionTest1){
-    // while(kv_->get("key2")!="value2"){
+    while(kv_->get("key2")!="value2"){
         std::this_thread::sleep_for(std::chrono::seconds(2));
-    // }
+    }
     std::cout << "key2, value2" << std::endl;
 
     // while(1);
