@@ -6,7 +6,7 @@
             "type": "cppdbg",
             "request": "launch",
             // "program": "${fileDirname}/build/${fileBasenameNoExtension}",
-            "program": "${fileDirname}/build/transaction_test2",
+            "program": "${workspaceFolder}/build/test/transaction/transaction_test2",
             "args": [
                 "-SERVER_NAME", "server2", 
                 "-SERVER_LISTEN_PORT", "8003",
@@ -34,7 +34,7 @@
             "name": "(gdb) server1",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${fileDirname}/build/transaction_test",
+            "program": "${workspaceFolder}/build/test/transaction/transaction_test",
             "args": [
                 "-SERVER_NAME", "server1", 
                 "-SERVER_LISTEN_PORT", "8002",
