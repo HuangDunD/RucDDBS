@@ -6,3 +6,4 @@ build/*
 data/
 data2/
 bin/
+rpc_data/
