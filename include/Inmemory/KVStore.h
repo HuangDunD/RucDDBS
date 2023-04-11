@@ -15,7 +15,7 @@ class KVStore{
     void put(const std::string &key, const std::string &value){
         memtable_[key] = value;
     };
-    void put(const std::string &key, const std::string &value, Transaction *txn){
+    void put(const std::string &key, const std::string &value, Transaction *txn, bool add_writeset = true){
         if(enable_logging){
             //写Put日志
             LogRecord record (txn->get_txn_id(), txn->get_prev_lsn(), LogRecordType::INSERT,
@@ -24,8 +24,10 @@ class KVStore{
             txn->set_prev_lsn(lsn);
         }
         //add write record into write set.
-        WriteRecord wr = WriteRecord(key, WType::INSERT_TUPLE);
-        txn->get_write_set()->push_back(wr);
+        if(add_writeset){
+            WriteRecord wr = WriteRecord(key, WType::INSERT_TUPLE);
+            txn->get_write_set()->push_back(wr);
+        }
         memtable_[key] = value;
     }
 
@@ -45,7 +47,7 @@ class KVStore{
         memtable_.erase(key);
         return true;
     }
-    bool del(const std::string &key, Transaction *txn){
+    bool del(const std::string &key, Transaction *txn,  bool add_writeset = true){
         if(memtable_.count(key) == 0){
             return false;
         }
@@ -57,9 +59,10 @@ class KVStore{
             txn->set_prev_lsn(lsn);
         }
          //add write record into write set.
-        WriteRecord wr = WriteRecord(key, memtable_[key], WType::DELETE_TUPLE);
-        txn->get_write_set()->push_back(wr);
-
+        if(add_writeset){
+            WriteRecord wr = WriteRecord(key, memtable_[key], WType::DELETE_TUPLE);
+            txn->get_write_set()->push_back(wr);
+        }
         memtable_.erase(key);
         return true;
     }

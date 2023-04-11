@@ -168,9 +168,9 @@ bool TransactionManager::AbortSingle(Transaction * txn){
     while (!write_set->empty()) {
         auto &item = write_set->back();
         if(item.getWType() == WType::DELETE_TUPLE){
-            kv_->put(item.getKey(), item.getValue(), txn);
+            kv_->put(item.getKey(), item.getValue(), txn, false);
         }else if(item.getWType() == WType::INSERT_TUPLE){
-            kv_->del(item.getKey(), txn);
+            kv_->del(item.getKey(), txn, false);
         }
         // else if (item.getWType() == WType::UPDATE_TUPLE){
         //     kv_->del(std::string(item.getKey(),item.getKeySize()), txn);
@@ -224,13 +224,13 @@ bool TransactionManager::Abort(Transaction * txn){
     }
     else{
         brpc::ChannelOptions options;
-        options.timeout_ms = 100;
+        options.timeout_ms = 0x7fffffff;
         options.max_retry = 3;
         // 创建一个存储std::future对象的vector，用于搜集所有匿名函数的返回值
         std::vector<std::future<bool>> futures;
 
         for(auto node: *txn->get_distributed_node_set()){
-            futures.push_back(std::async(std::launch::async, [&txn, &node, &options]()->bool{
+            futures.push_back(std::async(std::launch::async, [&txn, node, &options]()->bool{
                 brpc::Channel channel;
                 if (channel.Init(node.ip_addr.c_str(), node.port , &options) != 0) {
                     LOG(ERROR) << "Fail to initialize channel";
@@ -265,7 +265,7 @@ bool TransactionManager::Commit(Transaction * txn){
         //分布式事务, 2PC两阶段提交
         brpc::ChannelOptions options;
         options.timeout_ms = 0x7fffffff;
-        options.max_retry = 1;
+        options.max_retry = 3;
         // 创建一个存储std::future对象的vector，用于搜集所有匿名函数的返回值
         std::vector<std::future<bool>> futures_prepare;
 
@@ -327,9 +327,9 @@ bool TransactionManager::Commit(Transaction * txn){
                     // return response.ok();
                 }) );
             }
-            for(size_t i=0; i<(*txn->get_distributed_node_set()).size(); i++){
-                futures_commit[i].get();
-            }
+            // for(size_t i=0; i<(*txn->get_distributed_node_set()).size(); i++){
+            //     futures_commit[i].get();
+            // }
         }
     }
     return true;
