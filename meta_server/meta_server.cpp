@@ -46,6 +46,24 @@ std::string MetaServer::getPartitionKey(std::string db_name, std::string table_n
     return res;
 }
 
+Column_info MetaServer::GetColInfor(std::string db_name, std::string table_name){
+    std::shared_lock<std::shared_mutex> ms_latch(mutex_); 
+    DbMetaServer *dms = db_map_[db_name];
+    if(dms == nullptr) 
+        throw MetaServerErrorException(MetaServerError::NO_DATABASE);
+    std::shared_lock<std::shared_mutex> dms_latch(dms->get_mutex());
+    ms_latch.unlock();
+    
+    TabMetaServer *tms = dms->gettablemap()[table_name];
+    if(tms == nullptr)
+        throw MetaServerErrorException(MetaServerError::NO_TABLE);
+    std::shared_lock<std::shared_mutex> tms_latch(tms->mutex_);
+    dms_latch.unlock();
+    
+    auto res = tms->col_info;
+    return res;
+}
+
 std::unordered_map<partition_id_t,ReplicaLocation> MetaServer::getReplicaLocationList
             (std::string db_name, std::string table_name, std::string partitionKeyName, std::string min_range, std::string max_range){
     

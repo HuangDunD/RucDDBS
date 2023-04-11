@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <memory>
 
 #include "Iterator.h"
 #include "Option.h"
@@ -18,7 +19,7 @@ public:
     std::pair<bool, std::string> get(const std::string &key) const;
 
     // new iterator
-    Iterator *NewIterator() const;
+    std::unique_ptr<Iterator> NewIterator() const;
 
     // size of block
     // size_t size() const;

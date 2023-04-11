@@ -21,4 +21,7 @@ DECLARE_string(SERVER_LISTEN_ADDR);
 // static const std::string log_path = "/home/t500ttt/RucDDBS/data/";
 DECLARE_string(log_path);
 
+// 写死database name 目前只考虑数据库操作
+static const std::string DB_NAME = "RucDDBS";
+
 #endif

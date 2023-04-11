@@ -84,17 +84,11 @@ aux_source_directory(${PROJECT_SOURCE_DIR}/src/transaction TRANSACTION_SRC)
 aux_source_directory(${PROJECT_SOURCE_DIR}/src/recovery RECOVERY_SRC)
 aux_source_directory(${PROJECT_SOURCE_DIR}/src/execution EXECUTION_SRC)
 
+# 添加依赖
 add_subdirectory(${PROJECT_SOURCE_DIR}/deps/snappy)
 add_subdirectory(${PROJECT_SOURCE_DIR}/include/proto)
 
 IF(RUCDDBS_TEST)
-  # add_subdirectory(${PROJECT_SOURCE_DIR}/deps/googletest)
-  # add_executable(skiplist_gtest 
-  #                       ${PROJECT_SOURCE_DIR}/test/storage/skiplist_gtest.cpp 
-  #                       ${PROJECT_SOURCE_DIR}/src/storage/SkipList.cpp
-  #                       ${PROJECT_SOURCE_DIR}/src/storage/Entry.cpp)
-  # target_include_directories(skiplist_gtest PRIVATE ${STORAGE_DIR})
-  # target_link_libraries(skiplist_gtest gmock_main gtest)
   message("build ructest")
   add_subdirectory(${PROJECT_SOURCE_DIR}/deps/googletest)
   add_subdirectory(${PROJECT_SOURCE_DIR}/test/storage)
@@ -103,7 +97,11 @@ IF(RUCDDBS_TEST)
 endif()
 
 if(RUCDDBS_STORAGE)
+  message("build rucddbs storage")
   add_subdirectory(${PROJECT_SOURCE_DIR}/src/storage)
+
+  add_executable(storage_example ${PROJECT_SOURCE_DIR}/storage_example.cpp)
+  target_link_libraries(storage_example KV_STORAGE_BETA)
 endif()
 
 if(RUCDDBS_TRANSACTION)
