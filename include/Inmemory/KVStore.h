@@ -24,7 +24,7 @@ class KVStore{
             txn->set_prev_lsn(lsn);
         }
         //add write record into write set.
-        WriteRecord wr = WriteRecord(key.c_str(), key.size(), WType::INSERT_TUPLE);
+        WriteRecord wr = WriteRecord(key, WType::INSERT_TUPLE);
         txn->get_write_set()->push_back(wr);
         memtable_[key] = value;
     }
@@ -57,7 +57,7 @@ class KVStore{
             txn->set_prev_lsn(lsn);
         }
          //add write record into write set.
-        WriteRecord wr = WriteRecord(key.c_str(), key.size(), memtable_[key].c_str(), memtable_[key].size(), WType::DELETE_TUPLE);
+        WriteRecord wr = WriteRecord(key, memtable_[key], WType::DELETE_TUPLE);
         txn->get_write_set()->push_back(wr);
 
         memtable_.erase(key);

@@ -168,9 +168,9 @@ bool TransactionManager::AbortSingle(Transaction * txn){
     while (!write_set->empty()) {
         auto &item = write_set->back();
         if(item.getWType() == WType::DELETE_TUPLE){
-            kv_->put(std::string(item.getKey(),item.getKeySize()), std::string(item.getValue(),item.getValueSize()), txn);
+            kv_->put(item.getKey(), item.getValue(), txn);
         }else if(item.getWType() == WType::INSERT_TUPLE){
-            kv_->del(std::string(item.getKey(), item.getKeySize()),txn);
+            kv_->del(item.getKey(), txn);
         }
         // else if (item.getWType() == WType::UPDATE_TUPLE){
         //     kv_->del(std::string(item.getKey(),item.getKeySize()), txn);
