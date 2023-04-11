@@ -462,7 +462,3 @@ auto Lock_manager::Unlock(Transaction *txn, const Lock_data_id &l_id) -> bool {
 auto Lock_manager::RunNoWaitDetection() -> bool{ 
     return true;
 } 
-
-// int main(){
-//     std::cout << "test" << std::endl;
-// }
