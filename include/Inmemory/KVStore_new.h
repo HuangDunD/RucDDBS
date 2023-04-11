@@ -11,6 +11,9 @@ public:
     
     ~KVStore(){ flush(); };
 
+    using KVStore_beta::put;
+	using KVStore_beta::del;
+
     // put(key, value)
     void put(const std::string & key, const std::string &value, Transaction *txn, bool add_writeset = true){
         if(enable_logging){

@@ -4,6 +4,7 @@
 #include "meta_server_rpc.h"
 #include "execution_rpc.h"
 
+#include <filesystem>
 #include <brpc/channel.h>
 
 DEFINE_string(SERVER_NAME, "", "Server NAME");
@@ -19,10 +20,15 @@ class TransactionTest : public ::testing::Test {
    public:
     void SetUp() override {
         ::testing::Test::SetUp();
+        std::string dir = "./data2";
         lock_manager_ = std::make_unique<Lock_manager>(true);
         log_storage_ = std::make_unique<LogStorage>("test_db");
         log_manager_ = std::make_unique<LogManager>(log_storage_.get());
-        kv_ = std::make_unique<KVStore>(log_manager_.get());
+        if(std::filesystem::exists(dir)) {
+            std::filesystem::remove_all(dir);
+            std::filesystem::remove(dir);
+        }
+        kv_ = std::make_unique<KVStore>(dir, log_manager_.get());
         transaction_manager_ = std::make_unique<TransactionManager>(lock_manager_.get(), kv_.get(), log_manager_.get(), 
             ConcurrencyMode::TWO_PHASE_LOCKING);
 
@@ -87,12 +93,12 @@ class TransactionTest : public ::testing::Test {
 };
 
 TEST_F(TransactionTest, TransactionTest1){
-    while(kv_->get("key2")!="value2"){
+    while(kv_->get("key2").second!="value2"){
         std::this_thread::sleep_for(std::chrono::seconds(2));
     }
     std::cout << "key2, value2" << std::endl;
 
-    while(kv_->get("key4")!="value4"){
+    while(kv_->get("key4").second!="value4"){
         std::this_thread::sleep_for(std::chrono::seconds(2));
     }
     std::cout << "key4, value4" << std::endl;

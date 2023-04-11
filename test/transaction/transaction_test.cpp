@@ -5,6 +5,7 @@
 #include "execution_rpc.h"
 
 #include <brpc/channel.h>
+#include <filesystem>
 
 DEFINE_string(SERVER_NAME, "", "Server NAME");
 
@@ -19,10 +20,15 @@ class TransactionTest : public ::testing::Test {
    public:
     void SetUp() override {
         ::testing::Test::SetUp();
+        std::string dir = "./data";
         lock_manager_ = std::make_unique<Lock_manager>(true);
         log_storage_ = std::make_unique<LogStorage>("test_db");
         log_manager_ = std::make_unique<LogManager>(log_storage_.get());
-        kv_ = std::make_unique<KVStore>(log_manager_.get());
+        if(std::filesystem::exists(dir)) {
+            std::filesystem::remove_all(dir);
+            std::filesystem::remove(dir);
+        }
+        kv_ = std::make_unique<KVStore>(dir, log_manager_.get());
         transaction_manager_ = std::make_unique<TransactionManager>(lock_manager_.get(), kv_.get(), log_manager_.get(), 
             ConcurrencyMode::TWO_PHASE_LOCKING);
 
@@ -143,7 +149,7 @@ TEST_F(TransactionTest, TransactionTest1){
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
     ASSERT_EQ(txn1->get_state(), TransactionState::COMMITTED);
 
-    ASSERT_EQ(kv_->get("key1"), "value1");
+    ASSERT_EQ(kv_->get("key1").second, "value1");
 
     // try to abort a transaction
     Transaction* txn2 = nullptr;
@@ -183,11 +189,11 @@ TEST_F(TransactionTest, TransactionTest1){
     kv_->put("key3", "value3", txn2);
 
     ASSERT_EQ(txn2->get_state(), TransactionState::GROWING);
-    ASSERT_EQ(kv_->get("key3"), "value3");
+    ASSERT_EQ(kv_->get("key3").second, "value3");
 
     transaction_manager_->Abort(txn2);
     ASSERT_EQ(txn2->get_state(), TransactionState::ABORTED);
-    ASSERT_EQ(kv_->get("key3"), "");
+    ASSERT_EQ(kv_->get("key3").second, "");
     
 }
 

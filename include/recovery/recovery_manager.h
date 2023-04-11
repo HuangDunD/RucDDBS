@@ -4,7 +4,8 @@
 #include "log_manager.h"
 #include "log_record.h"
 // #include "KVStore.h"
-#include "Inmemory/KVStore.h"
+// #include "Inmemory/KVStore.h"
+#include "Inmemory/KVStore_new.h"
 
 #include <unordered_map>
 
