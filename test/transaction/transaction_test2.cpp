@@ -92,8 +92,12 @@ TEST_F(TransactionTest, TransactionTest1){
     }
     std::cout << "key2, value2" << std::endl;
 
-    // while(1);
-    std::this_thread::sleep_for(std::chrono::seconds(1));
+    while(kv_->get("key4")!="value4"){
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+    }
+    std::cout << "key4, value4" << std::endl;
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
 }
 
 int main(int argc, char **argv) {

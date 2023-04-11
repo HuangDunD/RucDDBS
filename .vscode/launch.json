@@ -28,7 +28,8 @@
                     "text": "-gdb-set disassembly-flavor intel",
                     "ignoreFailures": true
                 }
-            ]
+            ],
+            "preLaunchTask": "CMake Build"
         },
         {
             "name": "(gdb) server1",

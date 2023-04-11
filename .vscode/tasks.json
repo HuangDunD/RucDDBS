@@ -1,6 +1,6 @@
 {
     "options": {
-        "cwd": "${fileDirname}/build"
+        "cwd": "${workspaceFolder}/build"
     },
     "tasks": [
         {
