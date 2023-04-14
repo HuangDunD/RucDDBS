@@ -4,7 +4,7 @@
 #include "DiskStorage.h"
 #include "Option.h"
 
-DiskStorage::DiskStorage(const std::string &dir) : dir_(dir), level0_(dir_ + "/" + Option::NAME_Z, nullptr, nullptr){
+DiskStorage::DiskStorage(const std::string &dir) : dir_(dir), level0_(dir_ + "/" + Option::NAME_Z, &table_cache_, nullptr){
     if(!std::filesystem::exists(dir_)){
         std::filesystem::create_directory(dir_);
     }

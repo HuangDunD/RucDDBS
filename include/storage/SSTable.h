@@ -25,7 +25,7 @@ public:
   // 
   static std::unique_ptr<Block> loadBlock(std::ifstream *ifs, uint64_t block_offset, uint64_t block_size);
 private:
-  // class Iter;
+  class Iter;
   std::ifstream *ifs_;
   // std::string last_key_;
   
@@ -35,6 +35,42 @@ private:
   BlockCache *block_cache_;
 
 };
+
+// class Iter : public Iterator {
+// public:
+//   Iter(const Block *block);
+    
+//     ~Iter();
+
+//     // Is iterator at a key/value pair. Before use, call this function
+//     bool Valid() const override;
+
+//     // 
+//     void SeekToFirst() override;
+
+//     // 
+//     void SeekToLast() override;
+
+//     //
+//     void Seek(const std::string &key) override;
+    
+//     //
+//     void Next() override;
+    
+//     //
+//     void Prev() override;
+
+//     //
+//     std::string Key() const;
+
+//     //
+//     std::string Value() const;
+// private:
+//   // current block
+//   std::unique_ptr<Block> data_block;
+//   // current block's iterator
+//   std::unique_ptr<Iterator> data_block_iter;
+// }
 
 // #include <string>
 // #include <cstdint>

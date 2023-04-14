@@ -58,6 +58,8 @@ std::pair<bool, std::string> SSTable::get(const std::string &key) const {
                 std::unique_ptr<Block> data_block = loadBlock(ifs_, block_offset, block_size);
                 auto ret = data_block->get(key);
                 return ret;
+            }else {
+                
             }
         }else {
             // 否则查看下一个block

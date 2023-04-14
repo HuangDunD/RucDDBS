@@ -42,7 +42,8 @@ std::pair<bool, std::string> LevelZero::search(std::string key) {
         // TODO table cache
         std::pair<bool, std::string> result;
         if(table_cache_ != nullptr) {
-
+            SSTable *sstable = table_cache_->open(sst);
+            result = sstable->get(key);
         }else {
             std::ifstream ifs(sst.name(), std::ios::binary);
             SSTable sstable(&ifs, nullptr);

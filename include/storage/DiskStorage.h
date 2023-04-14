@@ -23,7 +23,7 @@ private:
    std::string dir_;
    uint64_t no_;
    // BlockCache block_cache_;
-   // TableCache table_cache_;
+   TableCache table_cache_;
    LevelZero level0_;
    
    void read_meta();

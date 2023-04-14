@@ -3,6 +3,7 @@
 
 #include "gtest/gtest.h"
 
+#include "TableCache.h"
 #include "LevelZero.h"
 
 #include <gtest/gtest.h>
@@ -28,14 +29,16 @@ class LEVELZERO_TEST : public ::testing::Test {
 
 
 TEST_F(LEVELZERO_TEST, empty_test) {
-  LevelZero level0(dir, nullptr, nullptr);
+  TableCache tablecache;
+  LevelZero level0(dir, &tablecache, nullptr);
 
   EXPECT_EQ(0, level0.size());
   EXPECT_EQ(std::make_pair(false, std::string("")), level0.search("a"));
 }
 
 TEST_F(LEVELZERO_TEST, simple_test) {
-  LevelZero level0(dir, nullptr, nullptr);
+  TableCache tablecache;
+  LevelZero level0(dir, &tablecache, nullptr);
 
   const int N = 1024;
   const int OFFSET = 3;
@@ -69,7 +72,8 @@ TEST_F(LEVELZERO_TEST, simple_test) {
 
 
 TEST_F(LEVELZERO_TEST, large_test) {
-  LevelZero level0(dir, nullptr, nullptr);
+  TableCache tablecache;
+  LevelZero level0(dir, &tablecache, nullptr);
 
   const int N = 1024;
   const int OFFSET = 25;
