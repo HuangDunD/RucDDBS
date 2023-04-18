@@ -5,6 +5,8 @@
 #include "Option.h"
 #include "gtest/gtest.h"
 
+#include <iostream>
+
 BlockBuilder block_builder;
 
 TEST(BlockBuilderTest, empty_test) {
@@ -34,14 +36,23 @@ TEST(BlockBuilderTest, simple_test) {
     }
 
     // block phase
-    Block block(block_builder.finish());
+    BlockContents block_content{nullptr, 0, false, false};
+    std::string block_data = block_builder.finish();
+    block_content.data = block_data.data();
+    block_content.size = block_data.size();
+
+    Block block(block_content);
     
+    // std::cout << __FILE__ << __LINE__ << std::endl;
+    std::cout << block.size() << std::endl;
     // get接口测试
     for(int i = 0; i < N; i++) {
         std::string key(i + 1, 'a');
         std::string value(i + 1, 'b');
         EXPECT_EQ(std::make_pair(true, value), block.get(key));
+        // std::cout << __FILE__ << __LINE__ << std::endl;
     }
+    // std::cout << __FILE__ << __LINE__ << std::endl;
     // 迭代器测试
     // 初始化
     std::unique_ptr<Iterator> iter = block.NewIterator();
@@ -113,7 +124,12 @@ TEST(BlockBuilderTest, large_test) {
     }
 
     // block phase
-    Block block(block_builder.finish());
+    BlockContents block_content{nullptr, 0, false, false};
+    std::string block_data = block_builder.finish();
+    block_content.data = block_data.data();
+    block_content.size = block_data.size();
+
+    Block block(block_content);
     
     // get接口测试
     for(int i = 0; i < N; i++) {
