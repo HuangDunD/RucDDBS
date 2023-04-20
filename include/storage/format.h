@@ -10,11 +10,11 @@ public:
     BlockHandle() = default;
     explicit BlockHandle(uint64_t offset, uint64_t size);
 
-    void EncodeInto(std::string &s);
+    void EncodeInto(std::string &s) const ;
     bool DecodeFrom(const std::string &s);
 
-    inline uint64_t size() { return size_; }
-    inline uint64_t offset() { return offset_; }
+    inline uint64_t size() const { return size_; }
+    inline uint64_t offset() const { return offset_; }
 private:
     uint64_t offset_;
     uint64_t size_;

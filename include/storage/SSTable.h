@@ -1,9 +1,10 @@
-#ifndef STORAGE_SSTABLE_H
-#define STORAGE_SSTABLE_H
+#pragma once
 
 #include <fstream>
 #include <memory>
+#include <mutex>
 
+#include "format.h"
 #include "BlockCache.h"
 #include "Block.h"
 #include "Iterator.h"
@@ -22,55 +23,68 @@ public:
 
   std::pair<bool, std::string> get(const std::string &key) const;
 
+  std::unique_ptr<Iterator> NewIterator() const;
   // 
-  static std::unique_ptr<Block> loadBlock(std::ifstream *ifs, uint64_t block_offset, uint64_t block_size);
+  // static std::unique_ptr<Block> loadBlock(std::ifstream *ifs, uint64_t block_offset, uint64_t block_size);
 private:
   class Iter;
   std::ifstream *ifs_;
   // std::string last_key_;
   
-  std::unique_ptr<Block> index_block_;
+  Footer footer_;
+  Block* index_block_;
   std::unique_ptr<Iterator> index_iter_;
 
   BlockCache *block_cache_;
-
 };
 
-// class Iter : public Iterator {
-// public:
-//   Iter(const Block *block);
-    
-//     ~Iter();
+class SSTable::Iter : public Iterator {
+public:
+  Iter(const SSTable *sstable);
+  
+  ~Iter();
 
-//     // Is iterator at a key/value pair. Before use, call this function
-//     bool Valid() const override;
+  // Is iterator at a key/value pair. Before use, call this function
+  bool Valid() const override;
 
-//     // 
-//     void SeekToFirst() override;
+  // 
+  void SeekToFirst() override;
 
-//     // 
-//     void SeekToLast() override;
+  // 
+  void SeekToLast() override;
 
-//     //
-//     void Seek(const std::string &key) override;
-    
-//     //
-//     void Next() override;
-    
-//     //
-//     void Prev() override;
+  //
+  void Seek(const std::string &key) override;
+  
+  //
+  void Next() override;
+  
+  //
+  void Prev() override;
 
-//     //
-//     std::string Key() const;
+  //
+  std::string Key() const;
 
-//     //
-//     std::string Value() const;
-// private:
-//   // current block
-//   std::unique_ptr<Block> data_block;
-//   // current block's iterator
-//   std::unique_ptr<Iterator> data_block_iter;
-// }
+  //
+  std::string Value() const;
+
+private:
+  const SSTable *sstable_;
+  std::ifstream *ifs_;
+  const BlockCache *block_cache_;
+  // index block
+  const Block *index_block_;
+  const std::unique_ptr<Iterator> index_iter_;
+  // data block
+  Block *data_block_;
+  std::unique_ptr<Iterator> data_iter_;
+
+  // read data_block
+  void read_from_index();
+
+  // mutex
+  std::mutex latch_;
+};
 
 // #include <string>
 // #include <cstdint>
@@ -106,7 +120,3 @@ private:
 //     uint64_t indexSpace() const;
 //     Location locate(uint64_t pos) const;
 // };
-
-
-
-#endif

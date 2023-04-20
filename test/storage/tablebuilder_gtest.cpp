@@ -5,6 +5,7 @@
 #include "gtest/gtest.h"
 #include "TableBuilder.h"
 #include "SSTable.h"
+#include "Iterator.h"
 
 TEST(TableBuilder_TEST, emtpy_test) {
     std::ofstream ofs("table_empty_test", std::ios::binary);
@@ -35,16 +36,54 @@ TEST(TableBuilder_TEST, simple_test) {
     // read
 
     std::ifstream ifs("table_simple_test", std::ios::binary);
-    if(ifs.is_open()) {
-        SSTable sstable(&ifs, nullptr);
-        for(int i = 0; i < N; i++) {
-            std::string key(i + 1, 'a');
-            std::string false_key(i + 1, 'c');
-            std::string value(i + 1, 'b');
+    SSTable sstable(&ifs, nullptr);
+    for(int i = 0; i < N; i++) {
+        std::string key(i + 1, 'a');
+        std::string false_key(i + 1, 'c');
+        std::string value(i + 1, 'b');
 
-            EXPECT_EQ(std::make_pair(true, value), sstable.get(key));
-            EXPECT_EQ(std::make_pair(false, std::string("")), sstable.get(false_key));
-        }
+        EXPECT_EQ(std::make_pair(true, value), sstable.get(key));
+        EXPECT_EQ(std::make_pair(false, std::string("")), sstable.get(false_key));
+    }
+
+    // iterator test
+    auto iter = sstable.NewIterator();
+    EXPECT_EQ(false, iter->Valid());
+    // 正向遍历测试
+    iter->SeekToFirst();
+    for(int i = 0; i < N; i++) {
+        std::string key(i + 1, 'a');
+        std::string value(i + 1, 'b');
+
+        EXPECT_EQ(key, iter->Key());
+        EXPECT_EQ(value, iter->Value());
+
+        iter->Next();
+    }
+    EXPECT_EQ(false, iter->Valid());
+
+    // 反向遍历测试
+    iter->SeekToLast();
+    for(int i = N - 1; i >= 0; i--) {
+        std::string key(i + 1, 'a');
+        std::string value(i + 1, 'b');
+
+        EXPECT_EQ(key, iter->Key());
+        EXPECT_EQ(value, iter->Value());
+
+        iter->Prev();
+    }
+    EXPECT_EQ(false, iter->Valid());
+
+    // Seek测试
+    for(int i = 0; i < N; i++) {
+        std::string key(i + 1, 'a');
+        std::string value(i + 1, 'b');
+
+        iter->Seek(key);
+
+        EXPECT_EQ(key, iter->Key());
+        EXPECT_EQ(value, iter->Value());
     }
 }
 

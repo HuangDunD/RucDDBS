@@ -2,6 +2,7 @@
 
 #include <fstream>
  
+#include "format.h"
 #include "BlockBuilder.h"
 #include "Option.h"
 #include "SkipList.h"
@@ -47,5 +48,5 @@ private:
     // 刷入磁盘
     void flush();
 
-    void writeBlock(BlockBuilder *block);
+    BlockHandle writeBlock(BlockBuilder *block);
 };

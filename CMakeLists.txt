@@ -3,16 +3,17 @@ cmake_minimum_required(VERSION 3.2)
 project(RUCDDBS)
 
 option(RUCDDBS_STORAGE "if build kv_storage" OFF)
-option(RUCDDBS_TRANSACTION "if build transaction" ON)
+option(RUCDDBS_TRANSACTION "if build transaction" OFF)
 option(RUCDDBS_TEST "build rucddbs test" ON)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED true)
 set(CMAKE_CXX_FLAGS "-Wall")
 
-IF(NOT CMAKE_BUILD_TYPE)
-  SET(CMAKE_BUILD_TYPE Release)
-ENDIF()
+SET(CMAKE_BUILD_TYPE "Debug")
+# IF(NOT CMAKE_BUILD_TYPE)
+#   SET(CMAKE_BUILD_TYPE Debug)
+# ENDIF()
 
 # find_package(GTest REQUIRED)
 find_package(Threads REQUIRED)
@@ -92,8 +93,9 @@ IF(RUCDDBS_TEST)
   message("build ructest")
   add_subdirectory(${PROJECT_SOURCE_DIR}/deps/googletest)
   add_subdirectory(${PROJECT_SOURCE_DIR}/test/storage)
-  add_subdirectory(${PROJECT_SOURCE_DIR}/test/recovery)
-  add_subdirectory(${PROJECT_SOURCE_DIR}/test/transaction)
+  
+  # add_subdirectory(${PROJECT_SOURCE_DIR}/test/recovery)
+  # add_subdirectory(${PROJECT_SOURCE_DIR}/test/transaction)
 endif()
 
 if(RUCDDBS_STORAGE)

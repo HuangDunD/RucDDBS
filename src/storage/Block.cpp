@@ -160,5 +160,6 @@ void Block::Iter::Prev() {
         offset += entry_.size();
         entry_.DecodeFrom(data_, offset);
     }
+    current_ = offset;
 }
 

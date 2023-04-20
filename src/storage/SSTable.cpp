@@ -10,64 +10,193 @@
 SSTable::SSTable(std::ifstream *ifs, BlockCache *block_cache) 
                     : ifs_(ifs), block_cache_(block_cache) {
     assert(ifs_->is_open());
-    uint64_t index_offset, index_size;
-    ifs_->seekg(- sizeof(uint64_t) * 2, std::ios::end);
-    ifs_->read((char*)&index_offset, sizeof(uint64_t));
-    ifs_->read((char*)&index_size, sizeof(uint64_t));
-    
-    index_block_ = loadBlock(ifs_, index_offset, index_size);
-    index_iter_ = index_block_->NewIterator();
-}
+    ifs_->seekg(- sizeof(Footer), std::ios::end);
+    char buf[sizeof(Footer)];
+    ifs_->read(buf, sizeof(Footer));
+    footer_.DecodeFrom(std::string(buf, sizeof(Footer)));
 
-std::unique_ptr<Block> SSTable::loadBlock(std::ifstream *ifs, uint64_t block_offset, uint64_t block_size){
-    assert(ifs->is_open());
-    char buffer[block_size];
-    ifs->seekg(block_offset, std::ios::beg);
-    ifs->read(buffer, block_size);
+
+    BlockContents index_content;
+    ReadBlock(ifs, footer_.index_handle(), &index_content);
+
+    index_block_ = new Block(index_content);
+
+    index_iter_ = index_block_->NewIterator();
+    // uint64_t index_offset, index_size;
+    // ifs_->seekg(- sizeof(uint64_t) * 2, std::ios::end);
+    // ifs_->read((char*)&index_offset, sizeof(uint64_t));
+    // ifs_->read((char*)&index_size, sizeof(uint64_t));
     
-    std::string uncompressed;
-    if(Option::BLOCK_COMPRESSED) {
-        snappy::Uncompress(buffer, block_size, &uncompressed);
-    }
-    return std::make_unique<Block>(uncompressed);
+    // index_block_ = loadBlock(ifs_, index_offset, index_size);
+    // index_iter_ = index_block_->NewIterator();
 }
 
 SSTable::~SSTable() {
-
+    // std::cout << __FILE__ << __LINE__ <<  "" << std::endl;
+    delete index_block_;
 }
+
+// std::unique_ptr<Block> SSTable::loadBlock(std::ifstream *ifs, uint64_t block_offset, uint64_t block_size){
+//     assert(ifs->is_open());
+//     char buffer[block_size];
+//     ifs->seekg(block_offset, std::ios::beg);
+//     ifs->read(buffer, block_size);
+    
+//     std::string uncompressed;
+//     if(Option::BLOCK_COMPRESSED) {
+//         snappy::Uncompress(buffer, block_size, &uncompressed);
+//     }
+//     return std::make_unique<Block>(uncompressed);
+// }
 
 std::pair<bool, std::string> SSTable::get(const std::string &key) const {
     assert(ifs_->is_open());
-
-    uint64_t block_offset, block_size;
     
-    // 首先找到在哪个block中
-    index_iter_->SeekToFirst();
-    while(index_iter_->Valid()) {
-        std::string last_key = index_iter_->Key();
-        // 如果last_key >= key，说明可能在这个block里
-        if(last_key >= key) {
-            // 计算block位置的大小
-            std::string offset_size = index_iter_->Value();
-            std::memcpy(&block_offset, offset_size.c_str(), sizeof(uint64_t));
-            std::memcpy(&block_size, offset_size.c_str() + sizeof(uint64_t), sizeof(uint64_t));
-
-            // 是否实现了block_cache
-            if(block_cache_ == nullptr) {
-                // 没有实现block_cache，直接读取                
-                std::unique_ptr<Block> data_block = loadBlock(ifs_, block_offset, block_size);
-                auto ret = data_block->get(key);
-                return ret;
-            }else {
-                
-            }
-        }else {
-            // 否则查看下一个block
-            index_iter_->Next();
-        }
+    auto iter = NewIterator();
+    iter->Seek(key);
+    if(iter->Valid() && iter->Key() == key) {
+        return std::make_pair(true, iter->Value());
     }
     return std::make_pair(false, "");
+    // // 首先找到在哪个block中
+    // index_iter_->SeekToFirst();
+    // while(index_iter_->Valid()) {
+    //     std::string last_key = index_iter_->Key();
+    //     // 如果last_key >= key，说明可能在这个block里
+    //     if(last_key >= key) {
+    //         // 计算block位置的大小
+    //         BlockHandle data_handle;
+    //         data_handle.DecodeFrom(index_iter_->Value());
+
+    //         // 是否实现了block_cache
+    //         if(block_cache_ == nullptr) {
+    //             // 没有实现block_cache，直接读取    
+    //             BlockContents data_content;
+    //             ReadBlock(ifs_, data_handle, &data_content);            
+    //             std::unique_ptr<Block> data_block = std::make_unique<Block>(data_content);
+    //             auto ret = data_block->get(key);
+    //             return ret;
+    //         }else {
+                
+    //         }
+    //     }else {
+    //         // 否则查看下一个block
+    //         index_iter_->Next();
+    //     }
+    // }
+    // return std::make_pair(false, "");
 }
+
+std::unique_ptr<Iterator> SSTable::NewIterator() const {
+    return std::make_unique<SSTable::Iter>(this);
+}
+
+SSTable::Iter::Iter(const SSTable *sstable) : sstable_(sstable), ifs_(sstable->ifs_), block_cache_(sstable_->block_cache_),
+                                            index_block_(sstable->index_block_), index_iter_(index_block_->NewIterator()), data_block_(nullptr) {
+}
+
+SSTable::Iter::~Iter() {
+    if(block_cache_ == nullptr && data_block_ != nullptr) {
+        delete data_block_;
+    }
+}
+
+bool SSTable::Iter::Valid() const {
+    return index_iter_->Valid() && data_iter_->Valid();
+}
+
+void SSTable::Iter::SeekToFirst() {
+    std::scoped_lock lock(latch_);
+    index_iter_->SeekToFirst();
+    read_from_index();
+    if(data_block_ != nullptr) {
+        data_iter_->SeekToFirst();
+    }
+}
+
+void SSTable::Iter::SeekToLast() {
+    std::scoped_lock lock(latch_);
+    index_iter_->SeekToLast();
+    read_from_index();
+    if(data_block_ != nullptr) {
+        data_iter_->SeekToLast();
+    }
+}
+
+void SSTable::Iter::Seek(const std::string &key) {
+    std::scoped_lock lock(latch_);
+    index_iter_->Seek(key);
+    read_from_index();
+    if(data_block_ != nullptr) {
+        data_iter_->Seek(key);
+    }
+}
+
+void SSTable::Iter::Next() {
+    std::scoped_lock lock(latch_);
+    assert(Valid());
+    data_iter_->Next();
+    if(!data_iter_->Valid()) {
+        index_iter_->Next();
+        read_from_index();
+        if(data_block_ != nullptr) {
+            data_iter_->SeekToFirst();
+        }
+    }
+}
+
+void SSTable::Iter::Prev() {
+    std::scoped_lock lock(latch_);
+    assert(Valid());
+    data_iter_->Prev();
+    if(!data_iter_->Valid()) {
+        index_iter_->Prev();
+        read_from_index();
+        if(data_block_ != nullptr) {
+            data_iter_->SeekToLast();
+        }
+    }
+}
+
+std::string SSTable::Iter::Key() const {
+    assert(Valid());
+    return data_iter_->Key();
+}
+
+std::string SSTable::Iter::Value() const {
+    assert(Valid());
+    return data_iter_->Value();
+}
+
+// 根据当前的index读入对应的block，如果index不合法，则data_block为nullptr
+void SSTable::Iter::read_from_index() {
+    // 如果没有缓冲池，则先释放内存
+    if(block_cache_ == nullptr && data_block_ != nullptr) {
+        delete data_block_;
+    }
+    if(!index_iter_->Valid()){
+        data_block_ = nullptr;
+        data_iter_ = nullptr;
+        return ;
+    }
+    BlockHandle data_handle;
+    data_handle.DecodeFrom(index_iter_->Value());
+    if(block_cache_ == nullptr) {
+        BlockContents data_contents;
+        ReadBlock(ifs_, data_handle, &data_contents);
+        data_block_ = new Block(data_contents);
+        data_iter_ = data_block_->NewIterator();
+    }else {
+
+    }
+    return ;
+}
+
+
+
+
+
+
 
 
 // #include <fstream>

@@ -44,7 +44,7 @@ TEST(BlockBuilderTest, simple_test) {
     Block block(block_content);
     
     // std::cout << __FILE__ << __LINE__ << std::endl;
-    std::cout << block.size() << std::endl;
+    // std::cout << block.size() << std::endl;
     // get接口测试
     for(int i = 0; i < N; i++) {
         std::string key(i + 1, 'a');
@@ -68,11 +68,18 @@ TEST(BlockBuilderTest, simple_test) {
         iter->Next();
     }
     EXPECT_EQ(false, iter->Valid());
-    // 测试SeekToLast()
+    // 反向遍历
     iter->SeekToLast();
-    EXPECT_EQ(true, iter->Valid());
-    EXPECT_EQ(std::string(N, 'a'), iter->Key());
-    EXPECT_EQ(std::string(N, 'b'), iter->Value());
+    for(int i = N - 1; i >= 0; i--) {
+        std::string key(i + 1, 'a');
+        std::string value(i + 1, 'b');
+
+        EXPECT_EQ(true, iter->Valid());
+        EXPECT_EQ(key, iter->Key());
+        EXPECT_EQ(value, iter->Value());
+        iter->Prev();
+    }
+    EXPECT_EQ(false, iter->Valid());
     // 测试Seek
     for(int i = 0; i < N; i++) {
         std::string key(i + 1, 'a');
@@ -81,8 +88,8 @@ TEST(BlockBuilderTest, simple_test) {
         EXPECT_EQ(true, iter->Valid());
         EXPECT_EQ(key, iter->Key());
         EXPECT_EQ(value, iter->Value());
-        iter->Next();
     }
+    // EXPECT_EQ(false, iter->Valid());
 }
 
 TEST(BlockBuilderTest, repeat_test) { 
@@ -152,11 +159,18 @@ TEST(BlockBuilderTest, large_test) {
         iter->Next();
     }
     EXPECT_EQ(false, iter->Valid());
-    // 测试SeekToLast()
+    // 反向遍历
     iter->SeekToLast();
-    EXPECT_EQ(true, iter->Valid());
-    EXPECT_EQ(std::string(N, 'a'), iter->Key());
-    EXPECT_EQ(std::string(N, 'b'), iter->Value());
+    for(int i = N - 1; i >= 0; i--) {
+        std::string key(i + 1, 'a');
+        std::string value(i + 1, 'b');
+
+        EXPECT_EQ(true, iter->Valid());
+        EXPECT_EQ(key, iter->Key());
+        EXPECT_EQ(value, iter->Value());
+        iter->Prev();
+    }
+    EXPECT_EQ(false, iter->Valid());
     // 测试Seek
     for(int i = 0; i < N; i++) {
         std::string key(i + 1, 'a');

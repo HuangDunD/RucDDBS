@@ -26,6 +26,7 @@ uint64_t TableBuilder::numEntries() const {
 void TableBuilder::add(const std::string &key, const std::string &value) {
     assert(file_->is_open());
 
+    assert(key >= last_key_);
     last_key_ = key;
     datablock_.add(key, value);
     num_entries_++;
@@ -34,15 +35,20 @@ void TableBuilder::add(const std::string &key, const std::string &value) {
     }
 }
 
+// 写data_block
 void TableBuilder::flush() {
     assert(file_->is_open());
     if(datablock_.empty()) {
         return ;
     }
-    writeBlock(&datablock_);
+    BlockHandle data_handle = writeBlock(&datablock_);
+    // 写index_block
+    std::string s;
+    data_handle.EncodeInto(s);
+    indexblock_.add(last_key_, s);
 }
 
-void TableBuilder::writeBlock(BlockBuilder *block) {
+BlockHandle TableBuilder::writeBlock(BlockBuilder *block) {
     assert(file_->is_open());
     // if compressed
     std::string block_content = block->finish();
@@ -54,20 +60,20 @@ void TableBuilder::writeBlock(BlockBuilder *block) {
     }
     file_->write(compressed.data(), compressed.size());
 
-
+    // increase offset
     size_ = compressed.size();
-    std::string s;
-    s.append((char*)&offset_, sizeof(uint64_t));
-    s.append((char*)&size_, sizeof(uint64_t));
+    BlockHandle block_handle(offset_, size_);
     offset_ += size_;
-    if(block != &indexblock_) {
-        // if not index block, then insert handle to indexblock
-        indexblock_.add(last_key_, s);
-    }else {
-        // if index block, insert handle finally
-        file_->write(s.data(), s.size());
-    }
     block->reset();
+    return block_handle;
+    // if(block != &indexblock_) {
+    //     // if not index block, then insert handle to indexblock
+    //     indexblock_.add(last_key_, s);
+    // }else {
+    //     // if index block, insert handle finally
+    //     file_->write(s.data(), s.size());
+    // }
+
 }
 
 void TableBuilder::finish() {
@@ -75,7 +81,14 @@ void TableBuilder::finish() {
     // write least data first
     flush();
     // write index block
-    writeBlock(&indexblock_);
+    BlockHandle index_handle = writeBlock(&indexblock_);
+    // write footer;
+    Footer footer;
+    footer.set_meta_index_handle(BlockHandle(0, 0));
+    footer.set_index_hanlde(index_handle);
+    std::string s;
+    footer.EncodeInto(s);
+    file_->write(s.data(), s.size());
 }
 
 bool TableBuilder::create_sstable(const SkipList &memtable, const SSTableId & table_id) {
