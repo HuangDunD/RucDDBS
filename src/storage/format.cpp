@@ -69,5 +69,53 @@ bool ReadBlock(std::ifstream *ifs, const BlockHandle& handle, BlockContents* res
 
     return true;
 }
+TableMeta::TableMeta(const SSTableId table_id, const uint64_t num_entries, 
+            const uint64_t size, const std::string &first_key, const std::string &last_key)
+            : table_id_(table_id), num_entries_(num_entries), size_(size), first_key_(first_key),
+            last_key_(last_key)
+{
+
+}
+
+void TableMeta::EncodeInto(std::string &s) const {
+    uint64_t size = table_id_.name().size();
+    s.append((char*)&size, sizeof(uint64_t));
+    s.append(table_id_.name().data(), size);
+
+    s.append((char*)&num_entries_, sizeof(uint64_t));
+    s.append((char*)&size_, sizeof(uint64_t));
+
+    size = first_key_.size();
+    s.append((char*)&size, sizeof(uint64_t));
+    s.append(first_key_.data(), first_key_.size());
+
+    size = last_key_.size();
+    s.append((char*)&size, sizeof(uint64_t));
+    s.append(last_key_.data(), last_key_.size());
+}
+
+void TableMeta::DecodeFrom(const std::string &s) {
+    uint64_t size;
+    uint64_t offset = 0;
+
+    memcpy(&size, s.data() + offset, sizeof(uint64_t)); offset += sizeof(uint64_t);
+    char buf[size];
+    memcpy(buf, s.data() + offset, size); offset += size;
+    table_id_.DecodeFrom(std::string(buf, size));
+
+    memcpy(&num_entries_, s.data() + offset, sizeof(uint64_t)); offset += sizeof(uint64_t);
+    memcpy(&size_, s.data() + offset, sizeof(uint64_t)); offset += sizeof(uint64_t);
+
+    memcpy(&size, s.data() + offset, sizeof(uint64_t)); offset += sizeof(uint64_t);
+    char fkey[size];
+    memcpy(fkey, s.data() + offset, size); offset += size;
+    first_key_ = std::string(fkey, size);
+
+    memcpy(&size, s.data() + offset, sizeof(uint64_t)); offset += sizeof(uint64_t);
+    char lkey[size];
+    memcpy(lkey, s.data() + offset, size); offset += size;
+    last_key_ = std::string(lkey, size);
+}
+
 
 

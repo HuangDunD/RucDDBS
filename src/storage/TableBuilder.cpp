@@ -76,7 +76,7 @@ BlockHandle TableBuilder::writeBlock(BlockBuilder *block) {
 
 }
 
-void TableBuilder::finish() {
+TableMeta TableBuilder::finish(const SSTableId &table_id) {
     assert(file_->is_open());
     // write least data first
     flush();
@@ -89,18 +89,24 @@ void TableBuilder::finish() {
     std::string s;
     footer.EncodeInto(s);
     file_->write(s.data(), s.size());
+
+    return TableMeta{table_id, num_entries_, size_, std::string(""), last_key_};
 }
 
-bool TableBuilder::create_sstable(const SkipList &memtable, const SSTableId & table_id) {
+TableMeta TableBuilder::create_sstable(const SkipList &memtable, const SSTableId & table_id) {
     std::ofstream ofs(table_id.name(), std::ios::binary);
     TableBuilder table_builder(&ofs);
     auto iter = SkipList::Iterator(&memtable);
     iter.SeekToFirst();
+
+    assert(ofs.is_open());
+
     while(iter.Valid()) {
+        assert(ofs.is_open());
         table_builder.add(iter.key(), iter.value());
         iter.Next();
     }
-    table_builder.finish();
+    auto table_meta = table_builder.finish(table_id);
     ofs.close();
-    return true;
+    return table_meta;
 }

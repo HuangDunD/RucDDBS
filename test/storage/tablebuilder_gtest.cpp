@@ -28,7 +28,7 @@ TEST(TableBuilder_TEST, simple_test) {
         tablebuilder.add(key, value);
         EXPECT_EQ(i + 1, tablebuilder.numEntries());
     }
-    tablebuilder.finish();
+    tablebuilder.finish(SSTableId());
     ofs.close();
 
     // 
@@ -100,7 +100,7 @@ TEST(TableBuilder_TEST, large_test) {
         tablebuilder.add(key, value);
         EXPECT_EQ(i + 1, tablebuilder.numEntries());
     }
-    tablebuilder.finish();
+    tablebuilder.finish(SSTableId());
     ofs.close();
 
     // 

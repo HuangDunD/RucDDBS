@@ -1,10 +1,10 @@
 option(STORAGE_TEST OFF)
-option(SKIPLIST_TEST "SKIPLIST_TEST" OFF)
+option(SKIPLIST_TEST "SKIPLIST_TEST" ON)
 option(BLOCKBUILDER_TEST "block builder's test" ON)
 option(TABLEBUILDER_TEST "table builder's test" ON)
-option(LEVELZERO_TEST "level0's test" OFF)
-option(DISKSTORAGE_TEST "disk storage's test" OFF)
-option(KVSTORAGE_BETA_TEST "kvstorage beta's test" OFF)
+option(LEVELZERO_TEST "level0's test" ON)
+option(DISKSTORAGE_TEST "disk storage's test" ON)
+option(KVSTORAGE_BETA_TEST "kvstorage beta's test" ON)
 
 if(STORAGE_TEST)
     # storage test
@@ -49,9 +49,9 @@ if(TABLEBUILDER_TEST)
                         ${PROJECT_SOURCE_DIR}/src/storage/Iterator.cpp
                         ${PROJECT_SOURCE_DIR}/src/storage/Block.cpp
                         ${PROJECT_SOURCE_DIR}/src/storage/SSTable.cpp
+                        ${PROJECT_SOURCE_DIR}/src/storage/SSTableId.cpp
                         ${PROJECT_SOURCE_DIR}/src/storage/SkipList.cpp
                         ${PROJECT_SOURCE_DIR}/src/storage/format.cpp
-                        ${PROJECT_SOURCE_DIR}/src/storage/SSTableId.cpp
                         ${PROJECT_SOURCE_DIR}/src/storage/Option.cpp
                         )
     target_include_directories(tablebuilder_gtest PRIVATE ${STORAGE_DIR})
@@ -72,6 +72,7 @@ if(LEVELZERO_TEST)
                         ${PROJECT_SOURCE_DIR}/src/storage/TableCache.cpp
                         ${PROJECT_SOURCE_DIR}/src/storage/SSTableId.cpp
                         ${PROJECT_SOURCE_DIR}/src/storage/SkipList.cpp
+                        ${PROJECT_SOURCE_DIR}/src/storage/format.cpp
                         ${PROJECT_SOURCE_DIR}/src/storage/Option.cpp
                         )
     target_include_directories(level0_gtest PRIVATE ${STORAGE_DIR})
@@ -92,6 +93,7 @@ if(DISKSTORAGE_TEST)
                         ${PROJECT_SOURCE_DIR}/src/storage/TableCache.cpp
                         ${PROJECT_SOURCE_DIR}/src/storage/SSTableId.cpp
                         ${PROJECT_SOURCE_DIR}/src/storage/SkipList.cpp
+                        ${PROJECT_SOURCE_DIR}/src/storage/format.cpp
                         ${PROJECT_SOURCE_DIR}/src/storage/Option.cpp
                         )
     target_include_directories(diskstorage_gtest PRIVATE ${STORAGE_DIR})
@@ -112,6 +114,7 @@ if(KVSTORAGE_BETA_TEST)
                         ${PROJECT_SOURCE_DIR}/src/storage/LevelZero.cpp
                         ${PROJECT_SOURCE_DIR}/src/storage/TableCache.cpp
                         ${PROJECT_SOURCE_DIR}/src/storage/SSTableId.cpp
+                        ${PROJECT_SOURCE_DIR}/src/storage/format.cpp
                         ${PROJECT_SOURCE_DIR}/src/storage/SkipList.cpp
                         ${PROJECT_SOURCE_DIR}/src/storage/Option.cpp
                         )

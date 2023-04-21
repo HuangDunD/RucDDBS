@@ -9,6 +9,7 @@
 #include "TableCache.h"
 #include "BlockCache.h"
 #include "SSTable.h"
+#include "format.h"
 
 // TODO table_cache
 class LevelZero {
@@ -27,7 +28,7 @@ public:
   inline uint64_t size() { return size_; }
 private:
   std::string dir_;
-  std::vector<SSTableId> ssts_;
+  std::vector<TableMeta> ssts_;
   uint64_t size_;
   uint64_t num_entries_;
 

@@ -24,10 +24,10 @@ public:
     // 插入键值对
     void add(const std::string &key, const std::string &value);
 
-    void finish();
+    TableMeta finish(const SSTableId &table_id);
 
     // 使用memtable构造一个sst文件
-    static bool create_sstable(const SkipList &memtable, const SSTableId &table_id);
+    static TableMeta create_sstable(const SkipList &memtable, const SSTableId &table_id);
 
     // uint64_t fileSize() const;
 
@@ -38,6 +38,7 @@ private:
     uint64_t offset_;
     uint64_t size_;
     
+    std::string first_key_;
     std::string last_key_;
 
     uint64_t num_entries_;

@@ -4,6 +4,7 @@
 #include <sstream>
 #include <fstream>
 
+#include "SSTableId.h"
 // Block的句柄
 class BlockHandle {
 public:
@@ -51,5 +52,20 @@ struct BlockContents {
 // 读取Block至result中，如果成功返回true，否则返回false
 bool ReadBlock(std::ifstream *ifs, const BlockHandle& handle, BlockContents* result);
 
+struct TableMeta {
+    SSTableId table_id_;
+    uint64_t num_entries_;
+    uint64_t size_;
+    std::string first_key_;
+    std::string last_key_;
+
+    TableMeta() = default;
+
+    TableMeta(const SSTableId table_id, const uint64_t num_entries, 
+                const uint64_t size, const std::string &first_key, const std::string &last_key);
+
+    void EncodeInto(std::string &s) const;
+    void DecodeFrom(const std::string &s);
+};
 
 
