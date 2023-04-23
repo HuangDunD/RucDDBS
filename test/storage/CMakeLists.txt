@@ -2,6 +2,7 @@ option(STORAGE_TEST OFF)
 option(SKIPLIST_TEST "SKIPLIST_TEST" ON)
 option(BLOCKBUILDER_TEST "block builder's test" ON)
 option(TABLEBUILDER_TEST "table builder's test" ON)
+option(MERGER_TEST "merger's test" ON)
 option(LEVELZERO_TEST "level0's test" ON)
 option(DISKSTORAGE_TEST "disk storage's test" ON)
 option(KVSTORAGE_BETA_TEST "kvstorage beta's test" ON)
@@ -56,6 +57,26 @@ if(TABLEBUILDER_TEST)
                         )
     target_include_directories(tablebuilder_gtest PRIVATE ${STORAGE_DIR})
     target_link_libraries(tablebuilder_gtest gmock_main gtest snappy)
+endif()
+
+# MERGER test
+if(MERGER_TEST)
+    message("storage test: merger test")
+    add_executable(merger_gtest
+                        ${PROJECT_SOURCE_DIR}/test/storage/merger_gtest.cpp
+                        ${PROJECT_SOURCE_DIR}/src/storage/TableBuilder.cpp
+                        ${PROJECT_SOURCE_DIR}/src/storage/BlockBuilder.cpp
+                        ${PROJECT_SOURCE_DIR}/src/storage/Iterator.cpp
+                        ${PROJECT_SOURCE_DIR}/src/storage/Block.cpp
+                        ${PROJECT_SOURCE_DIR}/src/storage/SSTable.cpp
+                        ${PROJECT_SOURCE_DIR}/src/storage/SSTableId.cpp
+                        ${PROJECT_SOURCE_DIR}/src/storage/SkipList.cpp
+                        ${PROJECT_SOURCE_DIR}/src/storage/format.cpp
+                        ${PROJECT_SOURCE_DIR}/src/storage/Option.cpp
+                        ${PROJECT_SOURCE_DIR}/src/storage/Merger.cpp
+                        )
+    target_include_directories(merger_gtest PRIVATE ${STORAGE_DIR})
+    target_link_libraries(merger_gtest gmock_main gtest snappy)
 endif()
 
 

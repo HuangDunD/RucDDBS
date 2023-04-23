@@ -5,12 +5,13 @@
 
 #include "format.h"
 #include "TableBuilder.h"
-#include "LevelZero.h"
+#include "LevelNoneZero.h"
+#include "Merger.h"
 
-LevelZero::LevelZero(const std::string &dir,TableCache* table_cache, BlockCache *block_cache) : dir_(dir),
+LevelNoneZero::LevelNoneZero(const std::string &dir,TableCache* table_cache, BlockCache *block_cache) : dir_(dir),
 table_cache_(table_cache), block_cache_(block_cache)
 {
-    // if no level0 directory, create level0
+    // if no this directory, create this
     if(!std::filesystem::exists(dir_)){
         std::filesystem::create_directories(dir_);
         size_ = 0;
@@ -33,18 +34,14 @@ table_cache_(table_cache), block_cache_(block_cache)
     }
 }
 
-void LevelZero::add(const SkipList &memtable, uint64_t no) {
-    // ssts_.emplace_back(SSTableId(dir_, no));
-    SSTableId new_table_id(dir_, no);
-    TableMeta new_table_meta = TableBuilder::create_sstable(memtable, new_table_id);
-    ssts_.push_back(new_table_meta);
-    ++size_;
-    num_entries_ += memtable.size();
-    save_meta();
+// TODO
+void LevelNoneZero::merge(const TableMeta &table_meta, uint64_t no) {
+    //
+    
 }
 
 // TODO
-std::pair<bool, std::string> LevelZero::search(std::string key) {
+std::pair<bool, std::string> LevelNoneZero::search(std::string key) {
     for(auto sst : ssts_){
         if(key < sst.first_key_ || key > sst.last_key_){
             continue;
@@ -66,17 +63,7 @@ std::pair<bool, std::string> LevelZero::search(std::string key) {
     return std::make_pair(false, "");
 }
 
-TableMeta LevelZero::back() const {
-    return ssts_.back();
-}
-
-void LevelZero::pop_back() {
-    auto sstable = ssts_.back();
-    ssts_.pop_back();
-    std::filesystem::remove(sstable.table_id_.name());
-}
-
-void LevelZero::save_meta() const {
+void LevelNoneZero::save_meta() const {
     std::ofstream ofs(dir_ + "/index", std::ios::binary);
     ofs.write((char*)&size_, sizeof(uint64_t));
     ofs.write((char*)&num_entries_, sizeof(uint64_t));

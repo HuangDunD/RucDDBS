@@ -10,6 +10,8 @@ public:
     Iterator(const Iterator&) = delete;
     Iterator& operator=(const Iterator&) = delete;
 
+    Iterator(Iterator &&) = default;
+
     virtual ~Iterator();
 
     // Is iterator at a key/value pair. Before use, call this function

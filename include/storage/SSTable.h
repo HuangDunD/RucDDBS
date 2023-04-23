@@ -42,6 +42,8 @@ class SSTable::Iter : public Iterator {
 public:
   Iter(const SSTable *sstable);
   
+  Iter(Iter &&) = default;
+  
   ~Iter();
 
   // Is iterator at a key/value pair. Before use, call this function
