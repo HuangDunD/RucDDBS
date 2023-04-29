@@ -4,7 +4,14 @@
 
 
 std::unique_ptr<Iterator> NewMergingIterator(std::vector<std::unique_ptr<Iterator>> children) {
-    return std::make_unique<MergerIterator>(std::move(children));
+    if(children.size() == 0) {
+        return nullptr;
+    }else if(children.size() == 1) {
+        return std::move(children[0]);
+    }else {
+        return std::make_unique<MergerIterator>(std::move(children));
+    }
+    
 }
 
 
@@ -84,10 +91,10 @@ void MergerIterator::Prev() {
     find_largest();
 }
 
-
+// 默认反向扫描
 void MergerIterator::find_smallest() {
     size_t smallest = children_.size();
-    for(size_t i = 0; i < children_.size(); i++) {
+    for(int i = children_.size() - 1; i >= 0; i--) {
         if(children_[i]->Valid()) {
             if(smallest >= children_.size()) {
                 smallest = i;
@@ -100,6 +107,7 @@ void MergerIterator::find_smallest() {
     current_ = smallest;
 }
 
+// 默认反向扫描
 void MergerIterator::find_largest() {
     size_t largest = children_.size();
     for(int i = children_.size() - 1; i >= 0; i--) {

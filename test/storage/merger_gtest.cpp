@@ -162,11 +162,11 @@ TEST_F(MERGER_TEST, repeated_test) {
   for(uint64_t i = 0; i < n * size; i++) {
     EXPECT_EQ(true, merger->Valid());
     EXPECT_EQ(keys[i], merger->Key());
-    EXPECT_EQ("A", merger->Value());
+    EXPECT_EQ("B", merger->Value());
     merger->Next();
     EXPECT_EQ(true, merger->Valid());
     EXPECT_EQ(keys[i], merger->Key());
-    EXPECT_EQ("B", merger->Value());
+    EXPECT_EQ("A", merger->Value());
     merger->Next();
   }
   EXPECT_EQ(false, merger->Valid());
@@ -192,6 +192,72 @@ TEST_F(MERGER_TEST, repeated_test) {
     delete Btable_files[i];
   }
 }
+
+TEST_F(MERGER_TEST, large_test) {
+  // n表示SSTable文件数量，size表示SSTable文件的size
+  const uint64_t n = 100;
+  const size_t size = 1024;
+  // 声明SSTableId
+  SSTableId table_ids[n];
+  for(uint64_t i = 0; i < n; i++) {
+    table_ids[i] = SSTableId(dir, i);
+  }
+  // 获得keys
+  std::string s = "";
+  std::vector<std::string> keys;
+  for(size_t i = 0; i < n * size; i++) {
+    increase(s);
+    keys.push_back(s);
+  }
+  //创建SSTable
+  for(uint64_t i = 0; i < n; i++) {
+    std::ofstream ofs(table_ids[i].name(), std::ios::binary);
+    TableBuilder table_builder(&ofs);
+    for(uint64_t j = i; j < n * size; j += n) {
+      table_builder.add(keys[j], keys[j]);
+    }
+    EXPECT_EQ(size, table_builder.numEntries());
+    table_builder.finish(table_ids[i]);
+    ofs.close();
+  }
+  // 读取SSTable并创建iterator
+  std::ifstream *table_files[n];
+  SSTable *sstables[n];
+  std::vector<std::unique_ptr<Iterator>> children;
+  for(uint64_t i = 0; i < n ;i++) {
+    table_files[i] = new std::ifstream(table_ids[i].name());
+    sstables[i] = new SSTable(table_files[i], nullptr);
+    children.push_back(sstables[i]->NewIterator());
+  }
+  // 创建Merger
+  auto merger = NewMergingIterator(std::move(children));
+  EXPECT_EQ(false, merger->Valid());
+  // 正向遍历
+  merger->SeekToFirst();
+  for(uint64_t i = 0; i < n * size; i++) {
+    EXPECT_EQ(true, merger->Valid());
+    EXPECT_EQ(keys[i], merger->Key());
+    EXPECT_EQ(keys[i], merger->Value());
+    merger->Next();
+  }
+  EXPECT_EQ(false, merger->Valid());
+  // 反向遍历
+  merger->SeekToLast();
+  for(int i = keys.size() - 1; i >= 0; i--) {
+    EXPECT_EQ(true, merger->Valid());
+    EXPECT_EQ(keys[i], merger->Key());
+    EXPECT_EQ(keys[i], merger->Value());
+    merger->Prev();
+  }
+  EXPECT_EQ(false, merger->Valid());
+
+  // 处理
+  for(uint64_t i = 0; i < n ;i++) {
+    delete sstables[i];
+    delete table_files[i];
+  }
+}
+
 
 int main(int argc, char **argv) {
   printf("Running main() from %s\n", __FILE__);

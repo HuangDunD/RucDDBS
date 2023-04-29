@@ -35,6 +35,7 @@ private:
   Block* index_block_;
   std::unique_ptr<Iterator> index_iter_;
 
+  std::unique_ptr<Iterator> iter_;
   BlockCache *block_cache_;
 };
 

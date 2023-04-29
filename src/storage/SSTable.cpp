@@ -22,6 +22,8 @@ SSTable::SSTable(std::ifstream *ifs, BlockCache *block_cache)
     index_block_ = new Block(index_content);
 
     index_iter_ = index_block_->NewIterator();
+
+    iter_ = NewIterator();
     // uint64_t index_offset, index_size;
     // ifs_->seekg(- sizeof(uint64_t) * 2, std::ios::end);
     // ifs_->read((char*)&index_offset, sizeof(uint64_t));
@@ -51,11 +53,10 @@ SSTable::~SSTable() {
 
 std::pair<bool, std::string> SSTable::get(const std::string &key) const {
     assert(ifs_->is_open());
-    
-    auto iter = NewIterator();
-    iter->Seek(key);
-    if(iter->Valid() && iter->Key() == key) {
-        return std::make_pair(true, iter->Value());
+
+    iter_->Seek(key);
+    if(iter_->Valid() && iter_->Key() == key) {
+        return std::make_pair(true, iter_->Value());
     }
     return std::make_pair(false, "");
     // // 首先找到在哪个block中

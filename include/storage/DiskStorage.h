@@ -6,6 +6,7 @@
 
 #include "SkipList.h"
 #include "LevelZero.h" 
+#include "LevelNoneZero.h"
 #include "BlockCache.h"
 #include "TableCache.h"
 
@@ -25,6 +26,10 @@ private:
    // BlockCache block_cache_;
    TableCache table_cache_;
    LevelZero level0_;
+
+   std::vector<std::unique_ptr<LevelNoneZero>> levels_; 
+
+   std::mutex latch_;
    
    void read_meta();
    void save_meta() const;

@@ -110,6 +110,8 @@ if(DISKSTORAGE_TEST)
                         ${PROJECT_SOURCE_DIR}/src/storage/Iterator.cpp
                         ${PROJECT_SOURCE_DIR}/src/storage/Block.cpp
                         ${PROJECT_SOURCE_DIR}/src/storage/SSTable.cpp
+                        ${PROJECT_SOURCE_DIR}/src/storage/LevelNoneZero.cpp
+                        ${PROJECT_SOURCE_DIR}/src/storage/Merger.cpp
                         ${PROJECT_SOURCE_DIR}/src/storage/LevelZero.cpp
                         ${PROJECT_SOURCE_DIR}/src/storage/TableCache.cpp
                         ${PROJECT_SOURCE_DIR}/src/storage/SSTableId.cpp
@@ -133,6 +135,8 @@ if(KVSTORAGE_BETA_TEST)
                         ${PROJECT_SOURCE_DIR}/src/storage/Block.cpp
                         ${PROJECT_SOURCE_DIR}/src/storage/SSTable.cpp
                         ${PROJECT_SOURCE_DIR}/src/storage/LevelZero.cpp
+                        ${PROJECT_SOURCE_DIR}/src/storage/LevelNoneZero.cpp
+                        ${PROJECT_SOURCE_DIR}/src/storage/Merger.cpp
                         ${PROJECT_SOURCE_DIR}/src/storage/TableCache.cpp
                         ${PROJECT_SOURCE_DIR}/src/storage/SSTableId.cpp
                         ${PROJECT_SOURCE_DIR}/src/storage/format.cpp

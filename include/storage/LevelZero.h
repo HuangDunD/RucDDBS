@@ -3,6 +3,8 @@
 
 #include <string>
 #include <cstdint>
+#include <vector>
+#include <mutex>
 
 #include "SSTableId.h"
 #include "SkipList.h"
@@ -29,7 +31,10 @@ public:
   // 返回弹出最后一个SSTable
   void pop_back();
 
-  inline uint64_t size() { return size_; }
+  void clear();
+
+  inline uint64_t size() { return ssts_.size(); }
+  inline std::vector<TableMeta> sstables() { return ssts_; }
 private:
   std::string dir_;
   std::vector<TableMeta> ssts_;
@@ -38,6 +43,8 @@ private:
 
   TableCache *table_cache_;
   BlockCache *block_cache_;
+
+  std::mutex latch_;
 
   void save_meta() const;
 };

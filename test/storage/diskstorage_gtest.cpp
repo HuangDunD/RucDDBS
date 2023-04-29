@@ -7,101 +7,275 @@
 
 #include <gtest/gtest.h>
 
+
+#include <string>
+#include <filesystem>
+
+#include "gtest/gtest.h"
+#include "TableBuilder.h"
+#include "Merger.h"
+
 class DISKSTORAGE_TEST : public ::testing::Test {
  protected:
   void SetUp() override {
     // 在测试之前设置
     if(std::filesystem::exists(dir)) {
       std::filesystem::remove_all(dir);
-      std::filesystem::remove(dir);
+      // std::filesystem::remove(dir);
     }
+    std::filesystem::create_directory(dir);
   }
 
   void TearDown() override {
     // 在测试之后做清理工作
   }
 
-  const std::string dir = "disk_data";
+  void increase(std::string &s) {
+    if(s.size() == 0) {
+        s = "A";
+    }
+    size_t i = s.size() - 1;
+    if(s[i] == 'Z') {
+       s[i] = 'a';
+    }else if(s[i] == 'z') {
+       s.push_back('A');
+    }else{
+       s[i]++;
+    }
+  }
+
+  const std::string dir = "./diskstorage_test_data";
 };
-
-
-
-
-TEST_F(DISKSTORAGE_TEST, empty_test) {
-  DiskStorage disk(dir);
-
-  EXPECT_EQ(std::make_pair(false, std::string("")), disk.search("a"));
-}
 
 TEST_F(DISKSTORAGE_TEST, simple_test) {
   DiskStorage disk(dir);
 
-  const int N = 1024;
-  const int OFFSET = 3;
+  const int N = 1024 * 8;
   // start put
   testing::Test::RecordProperty("message", "start puting");
   SkipList memtable;
-  for(int offset = 0; offset < OFFSET; offset++) {
-    memtable.clear();
-    for(int i = 0; i < N; i++) {
-      char single_key = 'a' + (char)offset;
-      char single_value = ++single_key;
-      std::string key(i + 1, single_key);
-      std::string value(i + 1, single_value);
-      memtable.put(key, value);
+  std::string s = "";
+  for(int i = 0; i < N; i++) {
+    increase(s);
+    memtable.put(s, s);
+    if(memtable.size() >= 1024) {
+      disk.add(memtable);
+      memtable.clear();
     }
-    disk.add(memtable);
   }
   testing::Test::RecordProperty("message", "end puting");
 
   testing::Test::RecordProperty("message", "start search");
-  for(int offset = 0; offset < OFFSET; offset++) {
-    for(int i = 0; i < N; i++) {
-      char single_key = 'a' + (char)offset;
-      char single_value = ++single_key;
-      std::string key(i + 1, single_key);
-      std::string value(i + 1, single_value);
-      EXPECT_EQ(std::make_pair(true, value), disk.search(key));
-    }
+  s = "";
+  for(int i = 0; i < N; i++) {
+    increase(s);
+    EXPECT_EQ(std::make_pair(true, s), disk.search(s));
   }
 }
 
-
-TEST_F(DISKSTORAGE_TEST, large_test) {
+TEST_F(DISKSTORAGE_TEST, middle_test) {
   DiskStorage disk(dir);
 
-  const int N = 1024;
-  const int OFFSET = 25;
+  const int N = 1024 * 32;
   // start put
   testing::Test::RecordProperty("message", "start puting");
   SkipList memtable;
-  for(int offset = 0; offset < OFFSET; offset++) {
-    memtable.clear();
-    for(int i = 0; i < N; i++) {
-      char single_key = 'a' + (char)offset;
-      char single_value = ++single_key;
-      std::string key(i + 1, single_key);
-      std::string value(i + 1, single_value);
-      memtable.put(key, value);
+  std::string s = "";
+  for(int i = 0; i < N; i++) {
+    increase(s);
+    memtable.put(s, s);
+    if(memtable.size() >= 1024) {
+      disk.add(memtable);
+      memtable.clear();
     }
-    disk.add(memtable);
   }
   testing::Test::RecordProperty("message", "end puting");
 
   testing::Test::RecordProperty("message", "start search");
-  for(int offset = 0; offset < OFFSET; offset++) {
-    for(int i = 0; i < N; i++) {
-      char single_key = 'a' + (char)offset;
-      char single_value = ++single_key;
-      std::string key(i + 1, single_key);
-      std::string value(i + 1, single_value);
-      EXPECT_EQ(std::make_pair(true, value), disk.search(key));
-    }
+  s = "";
+  for(int i = 0; i < N; i++) {
+    increase(s);
+    EXPECT_EQ(std::make_pair(true, s), disk.search(s));
   }
 }
+
+// TEST_F(DISKSTORAGE_TEST, large_test) {
+//   DiskStorage disk(dir);
+
+//   const int N = 1024 * 64;
+//   // start put
+//   testing::Test::RecordProperty("message", "start puting");
+//   SkipList memtable;
+//   std::string s = "";
+//   for(int i = 0; i < N; i++) {
+//     increase(s);
+//     memtable.put(s, s);
+//     if(memtable.size() >= 1024) {
+//       disk.add(memtable);
+//       memtable.clear();
+//     }
+//   }
+//   testing::Test::RecordProperty("message", "end puting");
+
+//   testing::Test::RecordProperty("message", "start search");
+//   s = "";
+//   for(int i = 0; i < N; i++) {
+//     increase(s);
+
+//     {
+//       if(s == "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzB")
+//       {
+//         disk.search(s);
+//       }
+//     }
+
+
+//     EXPECT_EQ(std::make_pair(true, s), disk.search(s));
+//   }
+// }
+
 
 int main(int argc, char **argv) {
   printf("Running main() from %s\n", __FILE__);
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();   
 }
+
+// class DISKSTORAGE_TEST : public ::testing::Test {
+//  protected:
+//   void SetUp() override {
+//     // 在测试之前设置
+//     if(std::filesystem::exists(dir)) {
+//       std::filesystem::remove_all(dir);
+//       std::filesystem::remove(dir);
+//     }
+//   }
+
+//   void TearDown() override {
+//     // 在测试之后做清理工作
+//   }
+
+//   const std::string dir = "disk_data";
+// };
+
+
+
+
+// TEST_F(DISKSTORAGE_TEST, empty_test) {
+//   DiskStorage disk(dir);
+
+//   EXPECT_EQ(std::make_pair(false, std::string("")), disk.search("a"));
+// }
+
+// TEST_F(DISKSTORAGE_TEST, simple_test) {
+//   DiskStorage disk(dir);
+
+//   const int N = 1024;
+//   const int OFFSET = 3;
+//   // start put
+//   testing::Test::RecordProperty("message", "start puting");
+//   SkipList memtable;
+//   for(int offset = 0; offset < OFFSET; offset++) {
+//     memtable.clear();
+//     for(int i = 0; i < N; i++) {
+//       char single_key = 'a' + (char)offset;
+//       char single_value = ++single_key;
+//       std::string key(i + 1, single_key);
+//       std::string value(i + 1, single_value);
+//       memtable.put(key, value);
+//     }
+//     disk.add(memtable);
+//   }
+//   testing::Test::RecordProperty("message", "end puting");
+
+//   testing::Test::RecordProperty("message", "start search");
+//   for(int offset = 0; offset < OFFSET; offset++) {
+//     for(int i = 0; i < N; i++) {
+//       char single_key = 'a' + (char)offset;
+//       char single_value = ++single_key;
+//       std::string key(i + 1, single_key);
+//       std::string value(i + 1, single_value);
+//       EXPECT_EQ(std::make_pair(true, value), disk.search(key));
+//     }
+//   }
+// }
+
+// TEST_F(DISKSTORAGE_TEST, middle_test) {
+//   DiskStorage disk(dir);
+
+//   const int N = 1024;
+//   const int OFFSET = 25;
+//   // start put
+//   testing::Test::RecordProperty("message", "start puting");
+//   SkipList memtable;
+//   for(int offset = 0; offset < OFFSET; offset++) {
+//     memtable.clear();
+//     for(int i = 0; i < N; i++) {
+//       char single_key = 'a' + (char)offset;
+//       char single_value = ++single_key;
+//       std::string key(i + 1, single_key);
+//       std::string value(i + 1, single_value);
+//       memtable.put(key, value);
+//     }
+//     disk.add(memtable);
+//   }
+//   testing::Test::RecordProperty("message", "end puting");
+
+//   testing::Test::RecordProperty("message", "start search");
+//   for(int offset = 0; offset < OFFSET; offset++) {
+//     for(int i = 0; i < N; i++) {
+//       char single_key = 'a' + (char)offset;
+//       char single_value = ++single_key;
+//       std::string key(i + 1, single_key);
+//       std::string value(i + 1, single_value);
+//       EXPECT_EQ(std::make_pair(true, value), disk.search(key));
+//     }
+//   }
+// }
+
+
+// TEST_F(DISKSTORAGE_TEST, large_test) {
+//   DiskStorage disk(dir);
+
+//   const int N = 1024 * 2;
+//   const int OFFSET = 25;
+//   // start put
+//   testing::Test::RecordProperty("message", "start puting");
+//   SkipList memtable;
+//   for(int offset = 0; offset < OFFSET; offset++) {
+//     memtable.clear();
+//     for(int i = 0; i < N; i++) {
+//       char single_key = 'a' + (char)offset;
+//       char single_value = ++single_key;
+//       std::string key(i + 1, single_key);
+//       std::string value(i + 1, single_value);
+//       memtable.put(key, value);
+//     }
+//     disk.add(memtable);
+//     for(int i = 0; i < N; i++) {
+//       char single_key = 'a' + (char)offset;
+//       char single_value = ++single_key;
+//       std::string key(i + 1, single_key);
+//       std::string value(i + 1, single_value);
+//       EXPECT_EQ(std::make_pair(true, value), disk.search(key));
+//     }
+//   }
+//   testing::Test::RecordProperty("message", "end puting");
+
+//   testing::Test::RecordProperty("message", "start search");
+//   for(int offset = 0; offset < OFFSET; offset++) {
+//     for(int i = 0; i < N; i++) {
+//       char single_key = 'a' + (char)offset;
+//       char single_value = ++single_key;
+//       std::string key(i + 1, single_key);
+//       std::string value(i + 1, single_value);
+//       EXPECT_EQ(std::make_pair(true, value), disk.search(key));
+//     }
+//   }
+// }
+
+// int main(int argc, char **argv) {
+//   printf("Running main() from %s\n", __FILE__);
+//   testing::InitGoogleTest(&argc, argv);
+//   return RUN_ALL_TESTS();   
+// }

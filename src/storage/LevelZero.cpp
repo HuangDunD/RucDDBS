@@ -34,7 +34,8 @@ table_cache_(table_cache), block_cache_(block_cache)
 }
 
 void LevelZero::add(const SkipList &memtable, uint64_t no) {
-    // ssts_.emplace_back(SSTableId(dir_, no));
+    std::scoped_lock lock(latch_);
+
     SSTableId new_table_id(dir_, no);
     TableMeta new_table_meta = TableBuilder::create_sstable(memtable, new_table_id);
     ssts_.push_back(new_table_meta);
@@ -45,7 +46,13 @@ void LevelZero::add(const SkipList &memtable, uint64_t no) {
 
 // TODO
 std::pair<bool, std::string> LevelZero::search(std::string key) {
-    for(auto sst : ssts_){
+    std::scoped_lock lock(latch_);
+
+    // for(auto sst : ssts_.){
+    // std::for_each(ssts_.rbegin(), ssts_.rend(), [](const TableMeta &sst){
+    for(int i = ssts_.size() - 1; i >= 0; i--) {
+        const TableMeta &sst = ssts_[i];
+
         if(key < sst.first_key_ || key > sst.last_key_){
             continue;
         }
@@ -74,6 +81,7 @@ void LevelZero::pop_back() {
     auto sstable = ssts_.back();
     ssts_.pop_back();
     std::filesystem::remove(sstable.table_id_.name());
+    save_meta();
 }
 
 void LevelZero::save_meta() const {
@@ -88,4 +96,16 @@ void LevelZero::save_meta() const {
         ofs.write(buf.c_str(), size);
     }
     ofs.close();
+}
+
+void LevelZero::clear() {
+    std::scoped_lock lock(latch_);
+
+    for(auto sst : ssts_) {
+        std::filesystem::remove(sst.table_id_.name());
+    }
+    ssts_.clear();
+    size_ = 0;
+
+    save_meta();
 }
