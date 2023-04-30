@@ -6,6 +6,7 @@
 #include<vector>
 #include<string>
 #include<iostream>
+#include<sstream>
 
 #include "nlohmann/json.hpp"
 
@@ -40,9 +41,19 @@ public:
         }
     }
 
-    void encodeInto(std::string &value) const {
+    void encodeIntoKey(std::string &key) const {
+        assert(!row.empty());
+
+        stringstream s;
+        s << row[0]->tab_name << "_" << row[0]->str;
+        key = s.str();
+    }
+
+    void encodeIntoValue(std::string &value) const {
+        assert(!row.empty());
+
         using json = nlohmann::json;
-        
+
         json j;
         for(auto iter :row) {
             j[iter->col_name]["value_type"] = iter->type;
@@ -52,6 +63,7 @@ public:
         }
         value = j.dump();
     }
+
 
     void decodeFrom(const std::string &s) {
         using json = nlohmann::json;
