@@ -12,4 +12,7 @@ project(DistDB)
 # 上面的例子定义了将 src 子目录加入工程，并指定编译输出(包含编译中间结果)路径为 bin 目录。
 # 如果不进行 bin 目录的指定，那么编译结果(包括中间结果)都将存放在 build/src 目录(这个目录跟原有的 src 目录对应)
 # 指定 bin 目录后，相当于在编译时将 src 重命名为 bin，所有的中间结果和目标二进制都将存放在 bin 目录。
+
+add_subdirectory(${PROJECT_SOURCE_DIR}/deps/json)
+
 add_subdirectory(src bin)
