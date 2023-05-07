@@ -16,7 +16,7 @@ enum class IsolationLevel { READ_UNCOMMITTED, REPEATABLE_READ, READ_COMMITTED, S
 
 struct IP_Port{
     std::string ip_addr;
-    int32_t port;
+    uint32_t port;
 };
 
 using txn_id_t = uint64_t;
@@ -92,6 +92,7 @@ private:
 
     bool is_distributed; //是否是分布式事务
     std::shared_ptr<std::vector<IP_Port>> distributed_plan_excution_node_; //分布式执行计划涉及节点
+    IP_Port coor_ip_;// 协调者节点
 
     std::shared_ptr<std::unordered_set<Lock_data_id>> table_S_lock_set_;
     std::shared_ptr<std::unordered_set<Lock_data_id>> table_X_lock_set_;  
@@ -126,9 +127,11 @@ public:
 
     inline std::shared_ptr<std::deque<WriteRecord>> get_write_set() {return write_set_;}
 
-    inline bool get_is_distributed() const { return is_distributed; }
+    inline bool get_is_distributed() const { return is_distributed; } //如果查询只涉及一个节点, 那么is_distributed=false, 否则为true
     inline void set_is_distributed(bool val) {is_distributed = val; } 
-    inline std::shared_ptr<std::vector<IP_Port>> get_distributed_node_set() {return distributed_plan_excution_node_;} 
+    inline std::shared_ptr<std::vector<IP_Port>> get_distributed_node_set() {return distributed_plan_excution_node_;}
+    inline IP_Port get_coor_ip() {return coor_ip_; }
+    inline void set_coor_ip(IP_Port p) { coor_ip_ = p; }
 
     inline std::shared_ptr<std::unordered_set<Lock_data_id>> get_table_S_lock_set() {return table_S_lock_set_;} 
     inline std::shared_ptr<std::unordered_set<Lock_data_id>> get_table_X_lock_set() {return table_X_lock_set_;} 

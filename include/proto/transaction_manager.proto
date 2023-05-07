@@ -14,7 +14,16 @@ message AbortResponse {
 
 message PrepareRequest {
     uint64 txn_id = 1;
+    // 所有参与者ip
+    message IP_Port{
+        string ip_addr = 1;
+        uint32 port = 2;
+    };
+    repeated IP_Port ips = 2;
+    // 协调者监听端口ip
+    IP_Port coor_ip = 3;
 };
+
 message PrepareResponse {
     bool ok = 1;
 }
