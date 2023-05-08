@@ -62,16 +62,23 @@ public:
 
     auto RunNoWaitDetection() -> bool; 
 
+    /// @param txn 事务指针
+    /// @param lock_mode 锁模式：读写、写锁、意向读锁、意向写锁、意象读写锁
+    /// @param oid 表id
+    /// @param p_id 分区id
+    /// @param row_id 行id
+    /// @return 加锁是否成功，成功返回true，否则返回false
+    /// @brief 事务申请表锁
     auto LockTable(Transaction *txn, LockMode lock_mode, const table_oid_t &oid) -> bool;
-
+    /// @brief 事务释放表锁
     auto UnLockTable(Transaction *txn, const table_oid_t &oid) -> bool;
-
+    /// @brief 事务申请分区锁
     auto LockPartition(Transaction *txn, LockMode lock_mode, const table_oid_t &oid, const partition_id_t &p_id) -> bool;
-
+    /// @brief 事务释放分区锁
     auto UnLockPartition(Transaction *txn, const table_oid_t &oid, const partition_id_t &p_id) -> bool;
-
+    /// @brief 事务申请行锁
     auto LockRow(Transaction *txn, LockMode lock_mode, const table_oid_t &oid, const partition_id_t &p_id, const row_id_t &row_id) -> bool;
-
+    /// @brief 事务释放行锁
     auto UnLockRow(Transaction *txn,  const table_oid_t &oid, const partition_id_t &p_id, const row_id_t &row_id) -> bool;
 
 
