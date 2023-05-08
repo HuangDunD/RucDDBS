@@ -6,10 +6,10 @@ package transaction_manager;
 option cc_generic_services = true;
 
 message AbortRequest {
-    uint64 txn_id = 1;
+
 };
 message AbortResponse {
-    bool ok = 1;
+    
 }
 
 message PrepareRequest {
