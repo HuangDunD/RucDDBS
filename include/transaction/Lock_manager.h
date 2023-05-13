@@ -28,8 +28,6 @@ public:
         std::list<LockRequest *> request_queue_;
         /** For notifying blocked transactions on this rid */
         std::condition_variable cv_;
-        // waiting bit: if there is a lock request which is not granted, the waiting -bit will be true
-        bool is_waiting_ = false;
         // upgrading_flag: if there is a lock waiting for upgrading, other transactions that request for upgrading will be aborted
         // (deadlock prevetion)
         bool upgrading_ = false;                    // 当前队列中是否存在一个正在upgrade的锁
