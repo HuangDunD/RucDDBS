@@ -36,9 +36,9 @@ public:
         /** coordination */
         std::mutex latch_;
         // the number of shared locks
-        int shared_lock_num_ = 0;
+        // int shared_lock_num_ = 0;
         // the number of IX locks
-        int IX_lock_num_ = 0;
+        // int IX_lock_num_ = 0;
 
     };
 
