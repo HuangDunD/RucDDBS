@@ -64,19 +64,19 @@ public:
                        ::transaction_manager::CommitResponse* response,
                        ::google::protobuf::Closure* done){
 
-                brpc::ClosureGuard done_guard(done);
-                txn_id_t txn_id = request->txn_id();
-                auto txn = transaction_manager_->getTransaction(txn_id);
-                if(txn == nullptr){
-                    response->set_ok(false);
-                    return;
-                }
-                if(!transaction_manager_->CommitSingle(txn)){
-                    response->set_ok(false);
-                    return;
-                }
-                response->set_ok(true);
+            brpc::ClosureGuard done_guard(done);
+            txn_id_t txn_id = request->txn_id();
+            auto txn = transaction_manager_->getTransaction(txn_id);
+            if(txn == nullptr){
+                response->set_ok(false);
                 return;
+            }
+            if(!transaction_manager_->CommitSingle(txn)){
+                response->set_ok(false);
+                return;
+            }
+            response->set_ok(true);
+            return;
        }
 
 private:

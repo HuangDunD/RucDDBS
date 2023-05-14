@@ -117,10 +117,10 @@ auto Lock_manager::checkSameTxnLockRequest(Transaction *txn, LockRequestQueue *r
                     iter->lock_mode_ = target_lock_mode;
                     iter->granted_ = false;
                     request_queue->cv_.wait(queue_lock, [&request_queue, &iter, &txn]{
-                        //TODO deadlock
                         if(Lock_manager::enable_no_wait_==false)
                             return Lock_manager::checkQueueCompatible(request_queue, iter) || 
                                 txn->get_state()==TransactionState::ABORTED;
+                        // deadlock prevent
                         if(Lock_manager::checkQueueCompatible(request_queue,iter)==true)
                             return true;
                         else{
@@ -202,17 +202,21 @@ auto Lock_manager::LockTable(Transaction *txn, LockMode lock_mode, const table_o
         //             });
 
         request_queue->cv_.wait(queue_lock, [&request_queue, &lock_request, &txn]{
-                        //TODO deadlock
-                        if(Lock_manager::enable_no_wait_==false)
-                            return Lock_manager::checkQueueCompatible(request_queue, lock_request) || 
-                                txn->get_state()==TransactionState::ABORTED;
-                        if(Lock_manager::checkQueueCompatible(request_queue,lock_request)==true)
-                            return true;
-                        else{
-                            txn->set_transaction_state(TransactionState::ABORTED);
-                            return true;
-                        }
-                    });
+            // 如果不使用NO-Wait算法，则检查队列锁请求兼容情况和事务状态，
+            // 如果可以锁请求兼容或事务已经回滚，则返回true，跳出等待
+            if(Lock_manager::enable_no_wait_==false)
+                return Lock_manager::checkQueueCompatible(request_queue, lock_request) || 
+                    txn->get_state()==TransactionState::ABORTED;
+            // 如果使用No-Wait算法， 如果当前请求与锁请求队列兼容
+            // 那么返回true，跳出等待
+            if(Lock_manager::checkQueueCompatible(request_queue,lock_request)==true)
+                return true;
+            // 否则，当前事务回滚，跳出等待
+            else{
+                txn->set_transaction_state(TransactionState::ABORTED);
+                return true;
+            }
+        });
         if(txn->get_state()==TransactionState::ABORTED) 
             throw TransactionAbortException (txn->get_txn_id(), AbortReason::DEAD_LOCK_PREVENT_NO_WAIT) ;
 

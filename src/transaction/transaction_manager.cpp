@@ -140,7 +140,7 @@ Transaction* TransactionManager::Begin(Transaction*& txn, txn_id_t txn_id, Isola
 }
 
 Transaction* TransactionManager::Begin(Transaction*& txn, IsolationLevel isolation_level){
-    // Todo:
+
     // 1. 判断传入事务参数是否为空指针
     // 2. 如果为空指针，创建新事务
     // 3. 把开始事务加入到全局事务表中
