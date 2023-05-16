@@ -45,12 +45,12 @@ public:
                     return;
                 }
                 // fault_tolerance: 设置参与者节点上的协调者ip
-                txn->set_coor_ip({request->coor_ip().ip_addr(), request->coor_ip().port()});
+                // txn->set_coor_ip({request->coor_ip().ip_addr(), request->coor_ip().port()});
                 // fault_tolerance: 设置参与者节点上的所有参与者节点
-                for(int i=0; i<request->ips_size(); i++){
-                    IP_Port t{request->ips()[i].ip_addr(), request->ips()[i].port()};
-                    txn->get_distributed_node_set()->push_back(t);
-                }
+                // for(int i=0; i<request->ips_size(); i++){
+                //     IP_Port t{request->ips()[i].ip_addr(), request->ips()[i].port()};
+                //     txn->get_distributed_node_set()->push_back(t);
+                // }
                 if(!transaction_manager_->PrepareCommit(txn)){
                     response->set_ok(false);
                     return;

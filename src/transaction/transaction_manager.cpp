@@ -326,19 +326,20 @@ bool TransactionManager::Commit(Transaction * txn){
                 transaction_manager::PrepareRequest request;
                 transaction_manager::PrepareResponse response;
                 request.set_txn_id(txn->get_txn_id());
-
+                
+                // hcydebugfault
                 // 设置协调者监听ip
-                transaction_manager::PrepareRequest_IP_Port t;
-                t.set_ip_addr(FLAGS_SERVER_LISTEN_ADDR);
-                t.set_port(FLAGS_SERVER_LISTEN_PORT);
-                request.set_allocated_coor_ip(&t);
+                // transaction_manager::PrepareRequest_IP_Port t;
+                // t.set_ip_addr(FLAGS_SERVER_LISTEN_ADDR);
+                // t.set_port(FLAGS_SERVER_LISTEN_PORT);
+                // request.set_allocated_coor_ip(&t);
 
-                // 为了容错, 将事务涉及到的所有节点发送给每一个参与者
-                for(auto x : *txn->get_distributed_node_set() ){
-                    transaction_manager::PrepareRequest_IP_Port* t = request.add_ips();
-                    t->set_ip_addr(x.ip_addr.c_str());
-                    t->set_port(x.port);
-                }
+                // // 为了容错, 将事务涉及到的所有节点发送给每一个参与者
+                // for(auto x : *txn->get_distributed_node_set() ){
+                //     transaction_manager::PrepareRequest_IP_Port* t = request.add_ips();
+                //     t->set_ip_addr(x.ip_addr.c_str());
+                //     t->set_port(x.port);
+                // }
                 
                 stub.PrepareTransaction(&cntl, &request, &response, NULL);
                 if(cntl.Failed()) {

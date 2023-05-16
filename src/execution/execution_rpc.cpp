@@ -15,6 +15,7 @@ void RemotePlanNodeImpl::SendRemotePlan( google::protobuf::RpcController* cntl_b
         if(transaction_manager_->txn_map.count(txn_id) != 0){
             txn = transaction_manager_->txn_map[txn_id];
         }else{
+            l.unlock();
             transaction_manager_->Begin(txn, txn_id);
         }
 
