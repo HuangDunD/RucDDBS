@@ -94,6 +94,7 @@ IF(RUCDDBS_TEST)
   add_subdirectory(${PROJECT_SOURCE_DIR}/test/storage)
   add_subdirectory(${PROJECT_SOURCE_DIR}/test/recovery)
   add_subdirectory(${PROJECT_SOURCE_DIR}/test/transaction)
+  add_subdirectory(${PROJECT_SOURCE_DIR}/test/benchmark)
 endif()
 
 if(RUCDDBS_STORAGE)

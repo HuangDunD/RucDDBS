@@ -1,6 +1,7 @@
 #pragma once
 #include "log_record.h"
 #include "storage/LogStorage.h"
+#include "dbconfig.h"
 #include <chrono>
 #include <string.h>
 #include <atomic>
@@ -8,7 +9,6 @@
 #include <condition_variable>
 #include <thread>
 
-static constexpr std::atomic<bool> enable_logging(true);
 static constexpr int BUFFER_POOL_SIZE = 10;                                          // size of buffer pool
 static constexpr int PAGE_SIZE = 4096;                                        // size of a data page in byte
 static constexpr int LOG_BUFFER_SIZE = ((BUFFER_POOL_SIZE + 1) * PAGE_SIZE);  // size of a log buffer in byte

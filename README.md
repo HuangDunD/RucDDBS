@@ -8,7 +8,20 @@
 2. **创建KVStore_beta对象**: KVStore_beta store("datapath");
 3. **在cmake项目中链接KV_STORAGE_BETA库**:  target_link_libraries(storage_example KV_STORAGE_BETA)
 
-transaction test
-
+# transaction test
 ./transaction_test -SERVER_NAME server1 -SERVER_LISTEN_PORT 8002 -log_path /home/t500ttt/RucDDBS/data/
 ./transaction_test2 -SERVER_NAME server2 -SERVER_LISTEN_PORT 8003 -log_path /home/t500ttt/RucDDBS/data2/
+
+# transaction benchmark test
+# 生成负载
+./benchmark_workload -DIR ./data1
+./benchmark_workload -DIR ./data2
+./benchmark_workload -DIR ./data3
+
+# 数据检验
+./data_test -DIR ./data1
+
+# 负载测试
+./benchmark_test -DIR ./data1 -SERVER_NAME server1 -SERVER_LISTEN_PORT 8011 -log_path /home/t500ttt/RucDDBS/data/
+./benchmark_test -DIR ./data2 -SERVER_NAME server2 -SERVER_LISTEN_PORT 8012 -log_path /home/t500ttt/RucDDBS/data2/
+./benchmark_test -DIR ./data3 -SERVER_NAME server3 -SERVER_LISTEN_PORT 8013 -log_path /home/t500ttt/RucDDBS/data3/

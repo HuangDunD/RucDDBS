@@ -1,0 +1,104 @@
+#include "benchmark_txn.h"
+
+#include <butil/logging.h> 
+#include <brpc/channel.h>
+#include <random>
+
+Transaction* Benchmark_Txn::Generate(int read_ratio){
+    Transaction* txn = nullptr;
+    transaction_manager_->Begin(txn);
+    uint32_t operator_num = (rand() % 90) + 10;
+
+    std::vector<BenchMark_Operator> ops;
+
+    // 设置随机数生成器
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<int> dis_txn_node_cnt(1, node_cnt);
+    std::uniform_int_distribution<int> dis_index(0, node_cnt-1);
+    std::uniform_real_distribution<double> dis_read_op(0.0, 1.0);
+
+    uint32_t txn_node_cnt = dis_txn_node_cnt(gen); // 事务节点数量
+    
+    std::unordered_set<int> index_set;
+
+    while(index_set.size()<txn_node_cnt){ 
+        int index = dis_index(gen);
+        if(index_set.count(index)) 
+            continue;
+        index_set.emplace(index);
+
+        IP_Port ip = NodeSet[index];
+        txn->get_distributed_node_set()->push_back(ip);
+
+        while(ops.size() < operator_num / txn_node_cnt){
+            if(dis_read_op(gen) <= read_ratio){
+                //生成读操作
+                BenchMark_Operator op;
+                op.txn_id = txn->get_txn_id();
+                op.key = "key" + std::to_string(rand() % FLAGS_BANCHMARK_NUM);
+                op.op_type = BenchMark_Operator::OP_TYPE::Get;
+                op.node_id = txn->get_distributed_node_set()->size()-1;
+                // op.node_id = index;
+            }
+            else{
+                //生成写操作
+                BenchMark_Operator op;
+                op.txn_id = txn->get_txn_id();
+                op.key = "key" + std::to_string(rand() % FLAGS_BANCHMARK_NUM);
+                op.value = "value" + std::to_string(rand() % FLAGS_BANCHMARK_NUM);
+                op.op_type = rand()%2 ? (BenchMark_Operator::OP_TYPE::Put) : (BenchMark_Operator::OP_TYPE::Del);
+                op.node_id = txn->get_distributed_node_set()->size()-1;
+            }
+        }
+    }// 生成分布式事务ip and port
+
+    brpc::Channel channel;
+    brpc::ChannelOptions options;
+    options.timeout_ms = 300;
+    options.max_retry = 3;
+
+    int cur_node_id = -1;
+    for(auto x: ops){
+        if( x.node_id != cur_node_id){
+            IP_Port ip = txn->get_distributed_node_set()->at(x.node_id);
+            if (channel.Init(ip.ip_addr.c_str(), ip.port, &options) != 0) {
+                LOG(ERROR) << "Fail to initialize channel";
+            }
+            cur_node_id = x.node_id;
+        }
+        
+        benchmark_service::BenchmarkService_Stub stub_oper(&channel);
+        benchmark_service::OperatorRequest request;
+        benchmark_service::OperatorResponse response;
+        
+        request.set_txn_id(x.txn_id);
+        request.set_key(x.key);
+        request.set_value(x.value);
+        switch (x.op_type)
+        {
+        case BenchMark_Operator::OP_TYPE::Get :
+            request.set_op_type(benchmark_service::OperatorRequest_OP_TYPE::OperatorRequest_OP_TYPE_Get);
+            break;
+        case BenchMark_Operator::OP_TYPE::Put :
+            request.set_op_type(benchmark_service::OperatorRequest_OP_TYPE::OperatorRequest_OP_TYPE_Put);
+            break;   
+        case BenchMark_Operator::OP_TYPE::Del :
+            request.set_op_type(benchmark_service::OperatorRequest_OP_TYPE::OperatorRequest_OP_TYPE_Del);
+            break;   
+        default:
+            break;
+        }
+
+        brpc::Controller cntl;
+        stub_oper.SendOperator(&cntl, &request, &response, NULL);
+        if (cntl.Failed()) {
+            LOG(WARNING) << cntl.ErrorText();
+        }
+        cntl.Reset();
+
+    }
+    transaction_manager_->Commit(txn);
+
+    return txn;
+}
