@@ -22,6 +22,6 @@
 ./data_test -DIR ./data1
 
 # 负载测试
-./benchmark_test -DIR ./data1 -SERVER_NAME server1 -SERVER_LISTEN_PORT 8011 -log_path /home/t500ttt/RucDDBS/data/
-./benchmark_test -DIR ./data2 -SERVER_NAME server2 -SERVER_LISTEN_PORT 8012 -log_path /home/t500ttt/RucDDBS/data2/
-./benchmark_test -DIR ./data3 -SERVER_NAME server3 -SERVER_LISTEN_PORT 8013 -log_path /home/t500ttt/RucDDBS/data3/
+./benchmark_test -DIR ./data1 -SERVER_NAME server1 -SERVER_LISTEN_PORT 8011 -log_path /home/t500ttt/RucDDBS/data1/ -THREAD_NUM 16
+./benchmark_test -DIR ./data2 -SERVER_NAME server2 -SERVER_LISTEN_PORT 8012 -log_path /home/t500ttt/RucDDBS/data2/ -THREAD_NUM 16
+./benchmark_test -DIR ./data3 -SERVER_NAME server3 -SERVER_LISTEN_PORT 8013 -log_path /home/t500ttt/RucDDBS/data3/ -THREAD_NUM 16

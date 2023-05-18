@@ -4,10 +4,9 @@
 #include <brpc/channel.h>
 #include <random>
 
-Transaction* Benchmark_Txn::Generate(int read_ratio){
+Transaction* Benchmark_Txn::Generate(double read_ratio){
     Transaction* txn = nullptr;
     transaction_manager_->Begin(txn);
-    uint32_t operator_num = (rand() % 90) + 10;
 
     std::vector<BenchMark_Operator> ops;
 
@@ -17,10 +16,17 @@ Transaction* Benchmark_Txn::Generate(int read_ratio){
     std::uniform_int_distribution<int> dis_txn_node_cnt(1, node_cnt);
     std::uniform_int_distribution<int> dis_index(0, node_cnt-1);
     std::uniform_real_distribution<double> dis_read_op(0.0, 1.0);
+    std::uniform_int_distribution<int> dis_op_num(5, 30);
 
     uint32_t txn_node_cnt = dis_txn_node_cnt(gen); // 事务节点数量
     
+    uint32_t operator_num = dis_op_num(gen);
+
     std::unordered_set<int> index_set;
+
+    if(txn_node_cnt > 1){ 
+        txn->set_is_distributed(true);
+    }
 
     while(index_set.size()<txn_node_cnt){ 
         int index = dis_index(gen);
@@ -31,7 +37,9 @@ Transaction* Benchmark_Txn::Generate(int read_ratio){
         IP_Port ip = NodeSet[index];
         txn->get_distributed_node_set()->push_back(ip);
 
-        while(ops.size() < operator_num / txn_node_cnt){
+        int cur_gen_size = 0;
+
+        while(cur_gen_size++ < operator_num / txn_node_cnt){
             if(dis_read_op(gen) <= read_ratio){
                 //生成读操作
                 BenchMark_Operator op;
@@ -40,6 +48,7 @@ Transaction* Benchmark_Txn::Generate(int read_ratio){
                 op.op_type = BenchMark_Operator::OP_TYPE::Get;
                 op.node_id = txn->get_distributed_node_set()->size()-1;
                 // op.node_id = index;
+                ops.push_back(op);
             }
             else{
                 //生成写操作
@@ -49,13 +58,14 @@ Transaction* Benchmark_Txn::Generate(int read_ratio){
                 op.value = "value" + std::to_string(rand() % FLAGS_BANCHMARK_NUM);
                 op.op_type = rand()%2 ? (BenchMark_Operator::OP_TYPE::Put) : (BenchMark_Operator::OP_TYPE::Del);
                 op.node_id = txn->get_distributed_node_set()->size()-1;
+                ops.push_back(op);
             }
         }
     }// 生成分布式事务ip and port
 
     brpc::Channel channel;
     brpc::ChannelOptions options;
-    options.timeout_ms = 300;
+    options.timeout_ms = 200;
     options.max_retry = 3;
 
     int cur_node_id = -1;
@@ -95,8 +105,8 @@ Transaction* Benchmark_Txn::Generate(int read_ratio){
         if (cntl.Failed()) {
             LOG(WARNING) << cntl.ErrorText();
         }
+        if(response.ok() == false) break;
         cntl.Reset();
-
     }
     transaction_manager_->Commit(txn);
 

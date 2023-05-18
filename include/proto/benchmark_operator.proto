@@ -6,7 +6,7 @@ option cc_generic_services = true;
 // 要实现的是其他事务层接收读写操作序列并执行
 
 message OperatorRequest{
-    uint32 txn_id = 1;
+    uint64 txn_id = 1;
     string key = 2;
     string value = 3;
     enum OP_TYPE{

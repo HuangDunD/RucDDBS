@@ -15,7 +15,7 @@
             "label": "make",
             "command": "make",
             "args": [
-                "--jobs=4"
+                "--jobs=8"
             ]
         },
         {

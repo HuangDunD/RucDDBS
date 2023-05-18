@@ -29,5 +29,5 @@ public:
         node_cnt = NodeSet.size();
     };
     ~Benchmark_Txn(){};
-    Transaction* Generate(int read_ratio);
+    Transaction* Generate(double read_ratio);
 };

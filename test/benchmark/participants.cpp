@@ -19,7 +19,7 @@ class BenchmarkTest : public ::testing::Test {
     void SetUp() override {
         ::testing::Test::SetUp();
 
-        lock_manager_ = std::make_unique<Lock_manager>(true);
+        lock_manager_ = std::make_unique<Lock_manager>(false);
         log_storage_ = std::make_unique<LogStorage>("benchmark_db");
         log_manager_ = std::make_unique<LogManager>(log_storage_.get());
         kv_ = std::make_unique<KVStore>(FLAGS_DIR, log_manager_.get());
@@ -89,50 +89,9 @@ class BenchmarkTest : public ::testing::Test {
 };
 
 TEST_F( BenchmarkTest, benchmark_test){
-    // 设置测试时间为五分钟
-    int testDurationInMinutes = 5;
-    
-    // 计算测试结束的时间点
-    std::chrono::steady_clock::time_point endTime = std::chrono::steady_clock::now() + std::chrono::minutes(testDurationInMinutes);
-    
-    std::atomic<int> total_transaction_cnt(0);
-    int last_trans_cnt = 0;
-
-    // 设置计时器，每隔5秒输出测试状态
-    auto timer = std::chrono::steady_clock::now();
-    std::thread res_ouput([&]{
-        while (std::chrono::steady_clock::now() < endTime+std::chrono::seconds(2)) {
-            if (std::chrono::steady_clock::now() - timer >= std::chrono::seconds(5)) {
-                std::cout << "Test is running..." ;
-                std::cout << "total_trasaction: " << total_transaction_cnt << "  current tps: " << (total_transaction_cnt-last_trans_cnt) / 5 << std::endl;
-                last_trans_cnt = total_transaction_cnt;
-                timer = std::chrono::steady_clock::now();
-            }
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        }
-        return;
-    });
-
-    // 创建测试工作线程的容器
-    std::vector<std::thread> threads;
-    for(int i=0; i<FLAGS_THREAD_NUM; i++){
-        threads.push_back(std::thread([&]{
-            while (std::chrono::steady_clock::now() < endTime) {
-                // 生成一个事务并执行
-                benchmark_txn_manager_->Generate(FLAGS_READ_RATIO);
-                total_transaction_cnt++;
-                // 每次创建线程后可以添加适当的延迟或休眠时间，模拟真实的负载
-                // std::this_thread::sleep_for(std::chrono::milliseconds(500));
-            }
-            std::this_thread::sleep_for(std::chrono::seconds(2));
-        }));
+    while(true){
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
-    // 等待所有线程执行完成
-    for (std::thread& thread : threads) {
-        thread.detach();
-    }
-    res_ouput.join();
-    ASSERT_EQ("", "");
 }
 
 int main(int argc, char **argv) {
@@ -140,8 +99,6 @@ int main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);
     std::this_thread::sleep_for(std::chrono::seconds(5));
     std::cout << "Init successfully" << std::endl;
-    std::cout << "press any key to continue" << std::endl;
-    getchar();
 
     return RUN_ALL_TESTS();
 }

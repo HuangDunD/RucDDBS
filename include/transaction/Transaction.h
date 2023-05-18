@@ -74,6 +74,7 @@ class TransactionAbortException : public std::exception {
         return "Transaction " + std::to_string(txn_id_) + " aborted because attempted to unlock but no lock held ";
       case AbortReason::DEAD_LOCK_PREVENT_NO_WAIT:
         return "Transaction " + std::to_string(txn_id_) + " aborted because attempted to lock but need to wait(deadlock prevent) ";
+        return "";
     }
     return "";
   }
