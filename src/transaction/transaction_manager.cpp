@@ -266,7 +266,8 @@ bool TransactionManager::Commit(Transaction * txn){
                 return true;
             }
             else{
-                return AbortSingle(txn);
+                AbortSingle(txn);
+                return false;
             }
         }
         else{
@@ -300,6 +301,7 @@ bool TransactionManager::Commit(Transaction * txn){
                     LOG(WARNING) << cntl.ErrorText();
                     return false;
                 }
+                return false;
             }
             return true;
         }
@@ -390,6 +392,7 @@ bool TransactionManager::Commit(Transaction * txn){
             //     futures_commit[i].get();
             // }
         }
+        return commit_flag;
     }
     return true;
 }
