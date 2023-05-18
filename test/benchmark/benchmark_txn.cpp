@@ -27,7 +27,7 @@ Transaction* Benchmark_Txn::Generate(double read_ratio){
     if(txn_node_cnt > 1){ 
         txn->set_is_distributed(true);
     }
-
+    
     while(index_set.size()<txn_node_cnt){ 
         int index = dis_index(gen);
         if(index_set.count(index)) 
@@ -65,7 +65,7 @@ Transaction* Benchmark_Txn::Generate(double read_ratio){
 
     brpc::Channel channel;
     brpc::ChannelOptions options;
-    options.timeout_ms = 200;
+    options.timeout_ms = 0x7fffffff;
     options.max_retry = 3;
 
     int cur_node_id = -1;
