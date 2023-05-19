@@ -18,10 +18,11 @@ public:
                 uint64_t txn_id = request->txn_id();
                 std::shared_lock<std::shared_mutex> l(transaction_manager_->txn_map_mutex);
                 Transaction *txn =nullptr;
-                if(transaction_manager_->txn_map.count(txn_id) != 0){
+                int cnt = transaction_manager_->txn_map.count(txn_id);
+                l.unlock();
+                if(cnt){
                     txn = transaction_manager_->txn_map[txn_id];
                 }else{
-                    l.unlock();
                     transaction_manager_->Begin(txn, txn_id);
                 }
                 
