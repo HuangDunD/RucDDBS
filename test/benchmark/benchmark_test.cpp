@@ -19,6 +19,7 @@ class BenchmarkTest : public ::testing::Test {
     void SetUp() override {
         ::testing::Test::SetUp();
 
+        enable_logging = false;
         lock_manager_ = std::make_unique<Lock_manager>(true);
         log_storage_ = std::make_unique<LogStorage>("benchmark_db");
         log_manager_ = std::make_unique<LogManager>(log_storage_.get());
