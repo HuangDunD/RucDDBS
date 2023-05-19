@@ -131,6 +131,9 @@ TEST_F( BenchmarkTest, benchmark_test){
     std::vector<std::thread> threads;
     for(int i=0; i<FLAGS_THREAD_NUM; i++){
         threads.push_back(std::thread([&]{
+            char name[15];
+            sprintf(name, "work thread %d", i);
+            pthread_setname_np(pthread_self(), name);
             while (std::chrono::steady_clock::now() < endTime) {
                 // 生成一个事务并执行
                 benchmark_txn_manager_->Generate(FLAGS_READ_RATIO);
