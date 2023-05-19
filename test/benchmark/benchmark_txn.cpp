@@ -65,7 +65,7 @@ Transaction* Benchmark_Txn::Generate(double read_ratio){
 
     brpc::Channel channel;
     brpc::ChannelOptions options;
-    options.timeout_ms = 0x7fffffff;
+    options.timeout_ms = 200;
     options.max_retry = 3;
 
     // 获取当前时间点
