@@ -22,7 +22,11 @@ class BenchmarkTest : public ::testing::Test {
         lock_manager_ = std::make_unique<Lock_manager>(false);
         log_storage_ = std::make_unique<LogStorage>("benchmark_db");
         log_manager_ = std::make_unique<LogManager>(log_storage_.get());
-        kv_ = std::make_unique<KVStore>(FLAGS_DIR, log_manager_.get());
+        // kv_ = std::make_unique<KVStore>(FLAGS_DIR, log_manager_.get());
+        kv_ = std::make_unique<KVStore>(log_manager_.get());
+        for (int i=0; i < FLAGS_BANCHMARK_NUM; i++){
+            kv_->put("key"+std::to_string(i), "value"+std::to_string(i));
+        }
         
         transaction_manager_ = std::make_unique<TransactionManager>(lock_manager_.get(), kv_.get(), log_manager_.get(), 
             ConcurrencyMode::TWO_PHASE_LOCKING);

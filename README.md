@@ -26,6 +26,6 @@
 ./benchmark_test -DIR ./data2 -SERVER_NAME server2 -SERVER_LISTEN_PORT 8012 -log_path /home/t500ttt/RucDDBS/data2/ -THREAD_NUM 16
 ./benchmark_test -DIR ./data3 -SERVER_NAME server3 -SERVER_LISTEN_PORT 8013 -log_path /home/t500ttt/RucDDBS/data3/ -THREAD_NUM 16
 
-./benchmark_test -DIR ./data1 -SERVER_NAME server1 -SERVER_LISTEN_PORT 8011 -log_path /root/RucDDBS/data1/ -META_SERVER_ADDR 192.168.0.210:8001 -THREAD_NUM 16 
-./benchmark_test -DIR ./data2 -SERVER_NAME server2 -SERVER_LISTEN_PORT 8012 -log_path /root/RucDDBS/data2/ -META_SERVER_ADDR 192.168.0.210:8001 -THREAD_NUM 16 
-./benchmark_test -DIR ./data3 -SERVER_NAME server3 -SERVER_LISTEN_PORT 8013 -log_path /root/RucDDBS/data3/ -META_SERVER_ADDR 192.168.0.210:8001 -THREAD_NUM 16 
+./benchmark_test -DIR ./data1 -SERVER_NAME server1 -SERVER_LISTEN_PORT 8011 -log_path /root/RucDDBS/data1/ -META_SERVER_ADDR 192.168.0.85:8001 -THREAD_NUM 16 
+./benchmark_test -DIR ./data2 -SERVER_NAME server2 -SERVER_LISTEN_PORT 8012 -log_path /root/RucDDBS/data2/ -META_SERVER_ADDR 192.168.0.85:8001 -THREAD_NUM 16 
+./benchmark_test -DIR ./data3 -SERVER_NAME server3 -SERVER_LISTEN_PORT 8013 -log_path /root/RucDDBS/data3/ -META_SERVER_ADDR 192.168.0.85:8001 -THREAD_NUM 16 

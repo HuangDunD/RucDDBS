@@ -38,7 +38,8 @@ public:
                         response->set_ok(false);
                         return;
                     }
-                    std::string value = transaction_manager_->getKVstore()->get(key).second;
+                    // std::string value = transaction_manager_->getKVstore()->get(key).second;
+                    std::string value = transaction_manager_->getKVstore()->get(key);
                 }
                 else if(request->op_type() == OperatorRequest_OP_TYPE::OperatorRequest_OP_TYPE_Put){
                     std::string key = request->key();
