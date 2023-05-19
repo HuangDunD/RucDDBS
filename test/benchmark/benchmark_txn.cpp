@@ -66,7 +66,7 @@ Transaction* Benchmark_Txn::Generate(double read_ratio){
     brpc::Channel channel;
     brpc::ChannelOptions options;
     // options.connection_type = "pooled";
-    options.timeout_ms = 10000;
+    options.timeout_ms = 1000;
     options.max_retry = 3;
 
     // 获取当前时间点
