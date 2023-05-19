@@ -7,4 +7,4 @@ DEFINE_string(DIR, "./data2", "data dir");
 DEFINE_int32(OP_MAX_NUM, 30, "max ops num in a txn");
 
 // std::vector<IP_Port> NodeSet = {{"127.0.0.1",8011},{"127.0.0.1",8012},{"127.0.0.1",8013}};
-std::vector<IP_Port> NodeSet = {{"192.168.0.196",8011},{"192.168.0.106",8012},{"192.168.0.13",8013}};
+std::vector<IP_Port> NodeSet = {{"192.168.0.160",8011},{"192.168.0.100",8012},{"192.168.0.15",8013}};
