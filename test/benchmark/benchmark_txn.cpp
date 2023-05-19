@@ -16,7 +16,7 @@ Transaction* Benchmark_Txn::Generate(double read_ratio){
     std::uniform_int_distribution<int> dis_txn_node_cnt(1, node_cnt);
     std::uniform_int_distribution<int> dis_index(0, node_cnt-1);
     std::uniform_real_distribution<double> dis_read_op(0.0, 1.0);
-    std::uniform_int_distribution<int> dis_op_num(5, 30);
+    std::uniform_int_distribution<int> dis_op_num(5, FLAGS_OP_MAX_NUM);
 
     uint32_t txn_node_cnt = dis_txn_node_cnt(gen); // 事务节点数量
     
@@ -68,6 +68,9 @@ Transaction* Benchmark_Txn::Generate(double read_ratio){
     options.timeout_ms = 0x7fffffff;
     options.max_retry = 3;
 
+    // 获取当前时间点
+    auto start = std::chrono::high_resolution_clock::now();
+
     int cur_node_id = -1;
     for(auto x: ops){
         if( x.node_id != cur_node_id){
@@ -108,7 +111,19 @@ Transaction* Benchmark_Txn::Generate(double read_ratio){
         if(response.ok() == false) break;
         cntl.Reset();
     }
-    transaction_manager_->Commit(txn);
+    
+    // 获取当前时间点
+    auto end = std::chrono::high_resolution_clock::now();
+    
+    // 计算代码执行时间
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+
+    latency_ms_ += duration.count();
+
+    if(transaction_manager_->Commit(txn))
+        commit_txn_cnt_++;
+    else
+        abort_txn_cnt_++;
 
     return txn;
 }

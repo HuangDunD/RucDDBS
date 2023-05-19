@@ -104,7 +104,14 @@ TEST_F( BenchmarkTest, benchmark_test){
         while (std::chrono::steady_clock::now() < endTime+std::chrono::seconds(2)) {
             if (std::chrono::steady_clock::now() - timer >= std::chrono::seconds(5)) {
                 std::cout << "Test is running..." ;
-                std::cout << "total_trasaction: " << total_transaction_cnt << "  current tps: " << (total_transaction_cnt-last_trans_cnt) / 5 << std::endl;
+                std::cout << "total_trasaction: " << total_transaction_cnt << "  current tps: " 
+                    << (total_transaction_cnt-last_trans_cnt) / 5  
+                    << " commit txn cnt: " << benchmark_txn_manager_->commit_txn_cnt_ 
+                    << " abort txn cnt: " << benchmark_txn_manager_->abort_txn_cnt_ 
+                    << " abort rate: " << 100.0 * benchmark_txn_manager_->abort_txn_cnt_ / (benchmark_txn_manager_->commit_txn_cnt_ + benchmark_txn_manager_->abort_txn_cnt_) <<  "% " 
+                    << " latency ms: " << 1.0 * benchmark_txn_manager_->latency_ms_ / (total_transaction_cnt-last_trans_cnt) << " ms. " 
+                    << std::endl;
+                benchmark_txn_manager_->latency_ms_.store(0);
                 last_trans_cnt = total_transaction_cnt;
                 timer = std::chrono::steady_clock::now();
             }
@@ -142,6 +149,6 @@ int main(int argc, char **argv) {
     std::cout << "Init successfully" << std::endl;
     std::cout << "press any key to continue" << std::endl;
     getchar();
-
+    std::this_thread::sleep_for(std::chrono::seconds(3));
     return RUN_ALL_TESTS();
 }
