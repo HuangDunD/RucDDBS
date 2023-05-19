@@ -13,7 +13,7 @@ std::shared_mutex TransactionManager::txn_map_mutex = {};
 uint64_t TransactionManager::getTimestampFromServer(){
     brpc::Channel channel;
     brpc::ChannelOptions options;
-    options.timeout_ms = 100;
+    options.timeout_ms = 10000;
     options.max_retry = 3;
 
     if (channel.Init(FLAGS_META_SERVER_ADDR.c_str(), &options) != 0) {
@@ -273,7 +273,7 @@ bool TransactionManager::Commit(Transaction * txn){
         else{
             // 非分布式事务，但数据不在协调者节点上
             brpc::ChannelOptions options;
-            options.timeout_ms = 100;
+            options.timeout_ms = 10000;
             options.max_retry = 3;
             brpc::Channel channel;
 

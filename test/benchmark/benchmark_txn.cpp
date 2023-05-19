@@ -65,7 +65,8 @@ Transaction* Benchmark_Txn::Generate(double read_ratio){
 
     brpc::Channel channel;
     brpc::ChannelOptions options;
-    options.timeout_ms = 200;
+    options.connection_type = "pooled";
+    options.timeout_ms = 10000;
     options.max_retry = 3;
 
     // 获取当前时间点
@@ -107,6 +108,7 @@ Transaction* Benchmark_Txn::Generate(double read_ratio){
         stub_oper.SendOperator(&cntl, &request, &response, NULL);
         if (cntl.Failed()) {
             LOG(WARNING) << cntl.ErrorText();
+            break;
         }
         if(response.ok() == false) break;
         cntl.Reset();
