@@ -135,7 +135,7 @@ TEST_F( BenchmarkTest, benchmark_test){
                 benchmark_txn_manager_->Generate(FLAGS_READ_RATIO);
                 total_transaction_cnt++;
                 // 每次创建线程后可以添加适当的延迟或休眠时间，模拟真实的负载
-                std::this_thread::sleep_for(std::chrono::milliseconds(5));
+                // std::this_thread::sleep_for(std::chrono::milliseconds(5));
             }
             std::this_thread::sleep_for(std::chrono::seconds(2));
         }));
