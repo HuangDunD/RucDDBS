@@ -388,9 +388,9 @@ bool TransactionManager::Commit(Transaction * txn){
                     // return response.ok();
                 }) );
             }
-            // for(size_t i=0; i<(*txn->get_distributed_node_set()).size(); i++){
-            //     futures_commit[i].get();
-            // }
+            for(size_t i=0; i<(*txn->get_distributed_node_set()).size(); i++){
+                futures_commit[i].get();
+            }
         }
         return commit_flag;
     }
