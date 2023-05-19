@@ -58,6 +58,8 @@ class BenchmarkTest : public ::testing::Test {
         }
 
         std::thread rpc_thread([&]{
+            
+            pthread_setname_np(pthread_self(), "rpc_thread");
             //启动事务brpc server
             brpc::Server server;
 
