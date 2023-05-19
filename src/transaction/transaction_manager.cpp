@@ -163,7 +163,7 @@ Transaction* TransactionManager::Begin(Transaction*& txn, IsolationLevel isolati
 }
 
 bool TransactionManager::AbortSingle(Transaction * txn){
-    // std::cout << txn->get_txn_id() << " " << "abort" << std::endl;
+    std::cout << txn->get_txn_id() << " " << "abort" << std::endl;
     auto write_set = txn->get_write_set();
     while (!write_set->empty()) {
         auto &item = write_set->back();
@@ -196,7 +196,7 @@ bool TransactionManager::AbortSingle(Transaction * txn){
 }
 
 bool TransactionManager::CommitSingle(Transaction * txn){
-    // std::cout << txn->get_txn_id() << " " << "commit" << std::endl;
+    std::cout << txn->get_txn_id() << " " << "commit" << std::endl;
     if(txn->get_state() == TransactionState::ABORTED){
         return false;
     }
@@ -398,7 +398,7 @@ bool TransactionManager::Commit(Transaction * txn){
 }
 
 bool TransactionManager::PrepareCommit(Transaction * txn){
-    // std::cout << txn->get_txn_id() << " " << "prepare commit" << std::endl;
+    std::cout << txn->get_txn_id() << " " << "prepare commit" << std::endl;
     if(txn->get_state() == TransactionState::ABORTED){
         return false;
     }
