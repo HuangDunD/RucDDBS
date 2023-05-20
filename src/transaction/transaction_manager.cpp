@@ -135,6 +135,8 @@ Transaction* TransactionManager::Begin(Transaction*& txn, txn_id_t txn_id, Isola
     }
 
     std::unique_lock<std::shared_mutex> l(txn_map_mutex);
+    if(txn_map.find(txn->get_txn_id()) != txn_map.end()) 
+        std::cout <<"******************************" << std::endl;
     txn_map[txn->get_txn_id()] = txn;
     return txn;
 }
