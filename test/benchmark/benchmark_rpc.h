@@ -9,12 +9,13 @@ namespace benchmark_service {
 class BenchmarkServiceImpl : public BenchmarkService{
 public:
     explicit BenchmarkServiceImpl(TransactionManager *transaction_manager):transaction_manager_(transaction_manager) {};
-    virtual void SendOperator(::google::protobuf::RpcController* controller,
-                       const ::benchmark_service::OperatorRequest* request,
-                       ::benchmark_service::OperatorResponse* response,
+    virtual void StartTxn(::google::protobuf::RpcController* controller,
+                       const ::benchmark_service::StartTxnRequest* request,
+                       ::benchmark_service::StartTxnResponse* response,
                        ::google::protobuf::Closure* done){
 
                 brpc::ClosureGuard done_guard(done);
+                
                 uint64_t txn_id = request->txn_id();
                 std::shared_lock<std::shared_mutex> l(transaction_manager_->txn_map_mutex);
                 Transaction *txn =nullptr;
@@ -25,6 +26,28 @@ public:
                 }else{
                     transaction_manager_->Begin(txn, txn_id);
                 }
+                response->set_ok(true);
+                return;
+    }
+
+    virtual void SendOperator(::google::protobuf::RpcController* controller,
+                       const ::benchmark_service::OperatorRequest* request,
+                       ::benchmark_service::OperatorResponse* response,
+                       ::google::protobuf::Closure* done){
+
+                brpc::ClosureGuard done_guard(done);
+                uint64_t txn_id = request->txn_id();
+                
+                Transaction* txn = transaction_manager_->getTransaction(txn_id);
+                
+                // std::shared_lock<std::shared_mutex> l(transaction_manager_->txn_map_mutex);
+                // int cnt = transaction_manager_->txn_map.count(txn_id);
+                // l.unlock();
+                // if(cnt){
+                //     txn = transaction_manager_->txn_map[txn_id];
+                // }else{
+                //     transaction_manager_->Begin(txn, txn_id);
+                // }
                 
                 // transaction_manager_->getLockManager()->LockTable(txn, LockMode::S_IX, 0);
                 // transaction_manager_->getLockManager()->LockPartition(txn, LockMode::S_IX, 0, 0);

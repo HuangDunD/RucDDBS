@@ -19,6 +19,16 @@ message OperatorRequest{
 message OperatorResponse{
     bool ok = 1;
 }
+
+message StartTxnRequest{
+    uint64 txn_id = 1;
+}
+
+message StartTxnResponse{
+    bool ok = 1;
+}
+
 service BenchmarkService {
     rpc SendOperator(OperatorRequest) returns (OperatorResponse);
+    rpc StartTxn(StartTxnRequest) returns(StartTxnResponse);
 };

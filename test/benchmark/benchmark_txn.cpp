@@ -63,7 +63,6 @@ Transaction* Benchmark_Txn::Generate(double read_ratio){
         }
     }// 生成分布式事务ip and port
 
-    brpc::Channel channel;
     brpc::ChannelOptions options;
     // options.connection_type = "pooled";
     options.timeout_ms = 1000;
@@ -72,7 +71,26 @@ Transaction* Benchmark_Txn::Generate(double read_ratio){
     // 获取当前时间点
     auto start = std::chrono::high_resolution_clock::now();
 
+    for(auto x: index_set){
+        brpc::Channel channel;
+        IP_Port ip = NodeSet[x];
+        if (channel.Init(ip.ip_addr.c_str(), ip.port, &options) != 0) {
+            LOG(ERROR) << "Fail to initialize channel";
+        }
+        benchmark_service::BenchmarkService_Stub stub_start(&channel);
+        benchmark_service::StartTxnRequest request;
+        benchmark_service::StartTxnResponse response;
+        request.set_txn_id(txn->get_txn_id());
+        brpc::Controller cntl;
+        stub_start.StartTxn(&cntl, &request, &response, NULL);
+        if (cntl.Failed()) {
+            // LOG(WARNING) << cntl.ErrorText();
+        }
+        cntl.Reset();
+    }
+
     int cur_node_id = -1;
+    brpc::Channel channel;
     for(auto x: ops){
         if( x.node_id != cur_node_id){
             IP_Port ip = txn->get_distributed_node_set()->at(x.node_id);
