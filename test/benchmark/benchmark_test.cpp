@@ -25,10 +25,11 @@ class BenchmarkTest : public ::testing::Test {
         log_manager_ = std::make_unique<LogManager>(log_storage_.get());
 
         // kv_ = std::make_unique<KVStore>(FLAGS_DIR, log_manager_.get());
-        kv_ = std::make_unique<KVStore>(log_manager_.get());
+        kv_ = std::make_unique<KVStore>( FLAGS_BANCHMARK_NUM ,log_manager_.get());
 
         for (int i=0; i < FLAGS_BANCHMARK_NUM; i++){
-            kv_->put("key"+std::to_string(i), "value"+std::to_string(i));
+            // kv_->put("key"+std::to_string(i), "value"+std::to_string(i));
+            kv_->put(i, "value"+std::to_string(i));
         }
 
         transaction_manager_ = std::make_unique<TransactionManager>(lock_manager_.get(), kv_.get(), log_manager_.get(), 
@@ -85,7 +86,7 @@ class BenchmarkTest : public ::testing::Test {
             }
 
             brpc::ServerOptions options;
-            options.method_max_concurrency = 8;
+            // options.method_max_concurrency = 8;
 
             if (server.Start(point,&options) != 0) {
                 LOG(ERROR) << "Fail to start Server";

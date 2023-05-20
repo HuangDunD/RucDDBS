@@ -82,7 +82,7 @@ add_library(config STATIC dbconfig.cc)
 aux_source_directory(${PROJECT_SOURCE_DIR}/src/storage STORAGE_SRC)
 aux_source_directory(${PROJECT_SOURCE_DIR}/src/transaction TRANSACTION_SRC)
 aux_source_directory(${PROJECT_SOURCE_DIR}/src/recovery RECOVERY_SRC)
-aux_source_directory(${PROJECT_SOURCE_DIR}/src/execution EXECUTION_SRC)
+# aux_source_directory(${PROJECT_SOURCE_DIR}/src/execution EXECUTION_SRC)
 
 # 添加依赖
 add_subdirectory(${PROJECT_SOURCE_DIR}/deps/snappy)

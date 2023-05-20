@@ -4,7 +4,8 @@
 #include "Lock_manager.h"
 #include "meta_service.pb.h"
 // #include "storage/KVStore.h"
-#include "Inmemory/KVStore.h"
+// #include "Inmemory/KVStore.h"
+#include "Inmemory/KVStore_vec.h"
 // #include "storage/KVStore.h"
 // #include "Inmemory/KVStore_new.h"
 

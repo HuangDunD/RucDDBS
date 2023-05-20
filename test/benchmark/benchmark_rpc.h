@@ -63,7 +63,7 @@ public:
                         return;
                     }
                     // std::string value = transaction_manager_->getKVstore()->get(key).second;
-                    std::string value = transaction_manager_->getKVstore()->get(key);
+                    std::string value = transaction_manager_->getKVstore()->get(row_id);
                 }
                 else if(request->op_type() == OperatorRequest_OP_TYPE::OperatorRequest_OP_TYPE_Put){
                     std::string key = request->key();
@@ -76,7 +76,7 @@ public:
                         response->set_ok(false);
                         return;
                     }
-                    transaction_manager_->getKVstore()->put(key, value, txn);
+                    transaction_manager_->getKVstore()->put(row_id, value, txn);
                 }
                 else if(request->op_type() == OperatorRequest_OP_TYPE::OperatorRequest_OP_TYPE_Del){
                     std::string key = request->key();
@@ -88,7 +88,7 @@ public:
                         response->set_ok(false);
                         return;
                     }
-                    transaction_manager_->getKVstore()->del(key, txn);
+                    transaction_manager_->getKVstore()->del(row_id, txn);
                 }
 
                 response->set_ok(true);
