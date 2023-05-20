@@ -85,7 +85,8 @@ class BenchmarkTest : public ::testing::Test {
             }
 
             brpc::ServerOptions options;
-            
+            options.method_max_concurrency = 8;
+
             if (server.Start(point,&options) != 0) {
                 LOG(ERROR) << "Fail to start Server";
             }
