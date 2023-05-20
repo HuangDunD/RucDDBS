@@ -47,7 +47,7 @@ class KVStore{
         memtable_.erase(key);
         return true;
     }
-    bool del(const std::string &key, Transaction *txn,  bool add_writeset = true){
+    bool del(const std::string &key, Transaction *txn,  bool add_writeset = false){
         if(memtable_.count(key) == 0){
             return false;
         }
