@@ -5,9 +5,9 @@
 #include "meta_service.pb.h"
 // #include "storage/KVStore.h"
 // #include "Inmemory/KVStore.h"
-#include "Inmemory/KVStore_vec.h"
+// #include "Inmemory/KVStore_vec.h"
 // #include "storage/KVStore.h"
-// #include "Inmemory/KVStore_new.h"
+#include "Inmemory/KVStore_new.h"
 
 #include <shared_mutex>
 

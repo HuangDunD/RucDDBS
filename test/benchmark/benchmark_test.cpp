@@ -24,13 +24,13 @@ class BenchmarkTest : public ::testing::Test {
         log_storage_ = std::make_unique<LogStorage>("benchmark_db");
         log_manager_ = std::make_unique<LogManager>(log_storage_.get());
 
-        // kv_ = std::make_unique<KVStore>(FLAGS_DIR, log_manager_.get());
-        kv_ = std::make_unique<KVStore>( FLAGS_BANCHMARK_NUM ,log_manager_.get());
+        kv_ = std::make_unique<KVStore>(FLAGS_DIR, log_manager_.get());
+        // kv_ = std::make_unique<KVStore>(log_manager_.get());
 
-        for (int i=0; i < FLAGS_BANCHMARK_NUM; i++){
-            // kv_->put("key"+std::to_string(i), "value"+std::to_string(i));
-            kv_->put(i, "value"+std::to_string(i));
-        }
+        // for (int i=0; i < FLAGS_BANCHMARK_NUM; i++){
+        //     kv_->put("key"+std::to_string(i), "value"+std::to_string(i));
+        //     // kv_->put(i, "value"+std::to_string(i));
+        // }
 
         transaction_manager_ = std::make_unique<TransactionManager>(lock_manager_.get(), kv_.get(), log_manager_.get(), 
             ConcurrencyMode::TWO_PHASE_LOCKING);
@@ -100,6 +100,11 @@ class BenchmarkTest : public ::testing::Test {
 };
 
 TEST_F( BenchmarkTest, benchmark_test){
+
+    std::cout << "press any key to continue" << std::endl;
+    getchar();
+    std::this_thread::sleep_for(std::chrono::seconds(3));
+
     // 设置测试时间为五分钟
     int testDurationInMinutes = 5;
     
@@ -161,8 +166,6 @@ int main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);
     std::this_thread::sleep_for(std::chrono::seconds(5));
     std::cout << "Init successfully" << std::endl;
-    std::cout << "press any key to continue" << std::endl;
-    getchar();
-    std::this_thread::sleep_for(std::chrono::seconds(3));
+
     return RUN_ALL_TESTS();
 }
