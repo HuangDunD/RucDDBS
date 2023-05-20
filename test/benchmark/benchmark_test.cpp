@@ -58,7 +58,7 @@ class BenchmarkTest : public ::testing::Test {
         }
 
         std::thread rpc_thread([&]{
-            
+
             pthread_setname_np(pthread_self(), "rpc_thread");
             //启动事务brpc server
             brpc::Server server;
@@ -132,7 +132,7 @@ TEST_F( BenchmarkTest, benchmark_test){
     // 创建测试工作线程的容器
     std::vector<std::thread> threads;
     for(int i=0; i<FLAGS_THREAD_NUM; i++){
-        threads.push_back(std::thread([&]{
+        threads.push_back(std::thread([i, endTime, this, &total_transaction_cnt]{
             char name[15];
             sprintf(name, "work thread %d", i);
             pthread_setname_np(pthread_self(), name);
