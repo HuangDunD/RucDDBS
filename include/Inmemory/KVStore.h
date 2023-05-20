@@ -15,7 +15,7 @@ class KVStore{
     void put(const std::string &key, const std::string &value){
         memtable_[key] = value;
     };
-    void put(const std::string &key, const std::string &value, Transaction *txn, bool add_writeset = false){
+    void put(const std::string &key, const std::string &value, Transaction *txn, bool add_writeset = true){
         if(enable_logging){
             //写Put日志
             LogRecord record (txn->get_txn_id(), txn->get_prev_lsn(), LogRecordType::INSERT,
@@ -47,7 +47,7 @@ class KVStore{
         memtable_.erase(key);
         return true;
     }
-    bool del(const std::string &key, Transaction *txn,  bool add_writeset = false){
+    bool del(const std::string &key, Transaction *txn,  bool add_writeset = true){
         if(memtable_.count(key) == 0){
             return false;
         }
