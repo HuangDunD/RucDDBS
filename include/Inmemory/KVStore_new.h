@@ -35,7 +35,6 @@ public:
     bool del(const std::string & key, Transaction *txn, bool add_writeset = true){
         std::unique_lock<std::mutex> l(mutex_);
         bool if_in_mem = memtable_.contains(key);
-        l.unlock();
         if(if_in_mem){
             if(enable_logging){
                 //写Del日志
@@ -49,7 +48,6 @@ public:
                 WriteRecord wr = WriteRecord(key, memtable_.get(key).second, WType::DELETE_TUPLE);
                 txn->get_write_set()->push_back(wr);
             }
-            l.lock();
             memtable_.del(key);
             return true;
         }
@@ -67,7 +65,6 @@ public:
                 WriteRecord wr = WriteRecord(key, result.second, WType::DELETE_TUPLE);
                 txn->get_write_set()->push_back(wr);
             }
-            l.lock();
             memtable_.put(key, "");
             return true;
         }else{
