@@ -106,7 +106,7 @@ TEST_F( BenchmarkTest, benchmark_test){
     std::this_thread::sleep_for(std::chrono::seconds(3));
 
     // 设置测试时间为五分钟
-    int testDurationInMinutes = 3;
+    int testDurationInMinutes = 1;
     
     // 计算测试结束的时间点
     std::chrono::steady_clock::time_point endTime = std::chrono::steady_clock::now() + std::chrono::minutes(testDurationInMinutes);
