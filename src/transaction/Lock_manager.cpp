@@ -457,7 +457,7 @@ auto Lock_manager::Unlock(Transaction *txn, const Lock_data_id &l_id) -> bool {
     }
     catch(TransactionAbortException& e){
         txn->set_transaction_state(TransactionState::ABORTED);
-        std::cerr << e.GetInfo() << '\n';
+        // std::cerr << e.GetInfo() << '\n';
         return false;
     }
 
