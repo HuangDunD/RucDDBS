@@ -130,7 +130,7 @@ TEST_F( BenchmarkTest, benchmark_test){
                     << (total_transaction_cnt-last_trans_cnt) / 5  
                     << " commit txn cnt: " << batch_commit_txn
                     << " abort txn cnt: " << batch_abort_txn
-                    << " abort rate: " << 100.0 * batch_commit_txn / (batch_commit_txn + batch_abort_txn) <<  "% " 
+                    << " abort rate: " << 100.0 * batch_abort_txn / (batch_commit_txn + batch_abort_txn) <<  "% " 
                     << " latency ms: " << 1.0 * benchmark_txn_manager_->latency_ms_ / (total_transaction_cnt-last_trans_cnt) << " ms. " 
                     << std::endl;
                 total_latency.store(total_latency + benchmark_txn_manager_->latency_ms_);
