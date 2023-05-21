@@ -106,28 +106,37 @@ TEST_F( BenchmarkTest, benchmark_test){
     std::this_thread::sleep_for(std::chrono::seconds(3));
 
     // 设置测试时间为五分钟
-    int testDurationInMinutes = 5;
+    int testDurationInMinutes = 3;
     
     // 计算测试结束的时间点
     std::chrono::steady_clock::time_point endTime = std::chrono::steady_clock::now() + std::chrono::minutes(testDurationInMinutes);
     
     std::atomic<int> total_transaction_cnt(0);
+    std::atomic<uint64_t> total_latency(0); 
+    std::atomic<int> last_commit_txn_cnt_(0);
+    std::atomic<int> last_abort_txn_cnt_(0); 
     int last_trans_cnt = 0;
 
     // 设置计时器，每隔5秒输出测试状态
     auto timer = std::chrono::steady_clock::now();
+    std::atomic<int> total_out_put_cny(0);
     std::thread res_ouput([&]{
         while (std::chrono::steady_clock::now() < endTime+std::chrono::seconds(2)) {
             if (std::chrono::steady_clock::now() - timer >= std::chrono::seconds(5)) {
+                int batch_commit_txn = benchmark_txn_manager_->commit_txn_cnt_ - last_commit_txn_cnt_ ;
+                int batch_abort_txn = benchmark_txn_manager_->abort_txn_cnt_ - last_abort_txn_cnt_ ;
                 std::cout << "Test is running..." ;
                 std::cout << "total_trasaction: " << total_transaction_cnt << "  current tps: " 
                     << (total_transaction_cnt-last_trans_cnt) / 5  
-                    << " commit txn cnt: " << benchmark_txn_manager_->commit_txn_cnt_ 
-                    << " abort txn cnt: " << benchmark_txn_manager_->abort_txn_cnt_ 
-                    << " abort rate: " << 100.0 * benchmark_txn_manager_->abort_txn_cnt_ / (benchmark_txn_manager_->commit_txn_cnt_ + benchmark_txn_manager_->abort_txn_cnt_) <<  "% " 
+                    << " commit txn cnt: " << batch_commit_txn
+                    << " abort txn cnt: " << batch_abort_txn
+                    << " abort rate: " << 100.0 * batch_commit_txn / (batch_commit_txn + batch_abort_txn) <<  "% " 
                     << " latency ms: " << 1.0 * benchmark_txn_manager_->latency_ms_ / (total_transaction_cnt-last_trans_cnt) << " ms. " 
                     << std::endl;
+                total_latency.store(benchmark_txn_manager_->latency_ms_);
                 benchmark_txn_manager_->latency_ms_.store(0);
+                last_commit_txn_cnt_.store(benchmark_txn_manager_->commit_txn_cnt_);
+                last_abort_txn_cnt_ .store(benchmark_txn_manager_->abort_txn_cnt_);
                 last_trans_cnt = total_transaction_cnt;
                 timer = std::chrono::steady_clock::now();
             }
@@ -158,6 +167,14 @@ TEST_F( BenchmarkTest, benchmark_test){
         thread.detach();
     }
     res_ouput.join();
+    std::cout << "Test is finished ! " ;
+    std::cout << "total_trasaction: " << total_transaction_cnt << "  total tps: " 
+        << (1.0 * total_transaction_cnt) / (testDurationInMinutes * 60)  
+        << " commit txn cnt: " << benchmark_txn_manager_->commit_txn_cnt_ 
+        << " abort txn cnt: " << benchmark_txn_manager_->abort_txn_cnt_ 
+        << " abort rate: " << 100.0 * benchmark_txn_manager_->abort_txn_cnt_ / (benchmark_txn_manager_->commit_txn_cnt_ + benchmark_txn_manager_->abort_txn_cnt_) <<  "% " 
+        << " latency ms: " << 1.0 * total_latency / total_transaction_cnt << " ms. " 
+        << std::endl;
     ASSERT_EQ("", "");
 }
 
