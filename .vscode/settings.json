@@ -68,7 +68,8 @@
         "codecvt": "cpp",
         "regex": "cpp",
         "future": "cpp",
-        "csignal": "cpp"
+        "csignal": "cpp",
+        "filesystem": "cpp"
     },
     "editor.tokenColorCustomizations": {
         "textMateRules": [
