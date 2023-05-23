@@ -27,22 +27,6 @@ lsn_t LogManager::AppendLogRecord(LogRecord &log_record) {
         memcpy(log_buffer_ + pos, log_record.GetValue(), log_record.GetValueSize());
         pos += log_record.GetValueSize();
     }
-    // else if(log_record.GetLogRecordType() == LogRecordType::UPDATE){
-    //     memcpy(log_buffer_ + pos, &log_record.GetKeySize(), sizeof(uint32_t));
-    //     pos += sizeof(uint32_t);
-    //     memcpy(log_buffer_ + pos, log_record.GetKey(), log_record.GetKeySize());
-    //     pos += log_record.GetKeySize();
-
-    //     memcpy(log_buffer_ + pos, &log_record.GetValueSize(), sizeof(uint32_t));
-    //     pos += sizeof(uint32_t);
-    //     memcpy(log_buffer_ + pos, log_record.GetValue(), log_record.GetValueSize());
-    //     pos += log_record.GetValueSize();
-
-    //     memcpy(log_buffer_ + pos, &log_record.GetOldValueSize(), sizeof(uint32_t));
-    //     pos += sizeof(uint32_t);
-    //     memcpy(log_buffer_ + pos, log_record.GetOldValue(), log_record.GetOldValueSize());
-    //     pos += log_record.GetOldValueSize();
-    // }
     log_buffer_write_offset_ = pos;
     return log_record.GetLsn();
 };

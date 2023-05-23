@@ -1,6 +1,11 @@
 #include "recovery_manager.h"
 #include <set>
 
+// Todo
+bool AskCoordinatorTxnRes(txn_id_t txn_id){
+
+}
+
 void RecoveryManager::ARIES() {
     Scan();
     Redo();
@@ -65,7 +70,10 @@ void RecoveryManager::RedoLog(LogRecord &log_record) {
     case LogRecordType::DROP_TABLE:
     case LogRecordType::PREPARED:{
         // TODO
-        // do nothing now
+        if(AskCoordinatorTxnRes(log_record.GetTxnId()) == true){
+            auto log = LogRecord(log_record.GetTxnId(), active_txn_[log_record.GetTxnId()], LogRecordType::COMMIT);
+            log_manager_->AppendLogRecord(log);
+        }
         break;
     }
     default:
