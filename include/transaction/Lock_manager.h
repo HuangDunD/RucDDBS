@@ -56,10 +56,6 @@ public:
 
     ~Lock_manager(){};
 
-    // inline auto get_enable_no_wait() ->std::atomic<bool> { return  enable_no_wait_;}
-
-    auto RunNoWaitDetection() -> bool; 
-
     /// @param txn 事务指针
     /// @param lock_mode 锁模式：读写、写锁、意向读锁、意向写锁、意象读写锁
     /// @param oid 表id
