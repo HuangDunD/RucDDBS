@@ -8,3 +8,4 @@ DECLARE_double(READ_RATIO);
 DECLARE_int32(THREAD_NUM);
 DECLARE_string(DIR);
 DECLARE_int32(OP_MAX_NUM);
+DECLARE_double(OP_Theta); //操作数目偏斜程度

@@ -52,43 +52,45 @@ public:
                 // transaction_manager_->getLockManager()->LockTable(txn, LockMode::S_IX, 0);
                 // transaction_manager_->getLockManager()->LockPartition(txn, LockMode::S_IX, 0, 0);
 
-                if(request->op_type() == OperatorRequest_OP_TYPE::OperatorRequest_OP_TYPE_Get){
-                    std::string key = request->key();
-                    int row_id = std::stoi(key.substr(3, key.length()-3));
-                    // std::cout << "txn_id: " << txn_id << "row_id: "<< row_id << std::endl; 
-                    // transaction_manager_->getLockManager()->LockTable(txn, LockMode::INTENTION_SHARED, 0);
-                    // transaction_manager_->getLockManager()->LockPartition(txn, LockMode::INTENTION_SHARED, 0, 0);
-                    if(transaction_manager_->getLockManager()->LockRow(txn, LockMode::SHARED, 0, 0, row_id) == false){
-                        response->set_ok(false);
-                        return;
+                for(auto op: request->ops()){
+                    if(op.op_type() == Operator_OP_TYPE::Operator_OP_TYPE_Get){
+                        std::string key = op.key();
+                        int row_id = std::stoi(key.substr(3, key.length()-3));
+                        // std::cout << "txn_id: " << txn_id << "row_id: "<< row_id << std::endl; 
+                        // transaction_manager_->getLockManager()->LockTable(txn, LockMode::INTENTION_SHARED, 0);
+                        // transaction_manager_->getLockManager()->LockPartition(txn, LockMode::INTENTION_SHARED, 0, 0);
+                        if(transaction_manager_->getLockManager()->LockRow(txn, LockMode::SHARED, 0, 0, row_id) == false){
+                            response->set_ok(false);
+                            return;
+                        }
+                        std::string value = transaction_manager_->getKVstore()->get(key).second;
+                        // std::string value = transaction_manager_->getKVstore()->get(row_id);
                     }
-                    std::string value = transaction_manager_->getKVstore()->get(key).second;
-                    // std::string value = transaction_manager_->getKVstore()->get(row_id);
-                }
-                else if(request->op_type() == OperatorRequest_OP_TYPE::OperatorRequest_OP_TYPE_Put){
-                    std::string key = request->key();
-                    std::string value = request->value();
-                    int row_id = std::stoi(key.substr(3, key.length()-3));
-                    // std::cout << "txn_id: " << txn_id << "row_id: "<< row_id << std::endl; 
-                    // transaction_manager_->getLockManager()->LockTable(txn, LockMode::INTENTION_EXCLUSIVE, 0);
-                    // transaction_manager_->getLockManager()->LockPartition(txn, LockMode::INTENTION_EXCLUSIVE, 0, 0);
-                    if(transaction_manager_->getLockManager()->LockRow(txn, LockMode::EXLUCSIVE, 0, 0, row_id)== false){
-                        response->set_ok(false);
-                        return;
+                    else if(op.op_type() == Operator_OP_TYPE::Operator_OP_TYPE_Put){
+                        std::string key = op.key();
+                        std::string value = op.value();
+                        int row_id = std::stoi(key.substr(3, key.length()-3));
+                        // std::cout << "txn_id: " << txn_id << "row_id: "<< row_id << std::endl; 
+                        // transaction_manager_->getLockManager()->LockTable(txn, LockMode::INTENTION_EXCLUSIVE, 0);
+                        // transaction_manager_->getLockManager()->LockPartition(txn, LockMode::INTENTION_EXCLUSIVE, 0, 0);
+                        if(transaction_manager_->getLockManager()->LockRow(txn, LockMode::EXLUCSIVE, 0, 0, row_id)== false){
+                            response->set_ok(false);
+                            return;
+                        }
+                        transaction_manager_->getKVstore()->put(key, value, txn);
                     }
-                    transaction_manager_->getKVstore()->put(key, value, txn);
-                }
-                else if(request->op_type() == OperatorRequest_OP_TYPE::OperatorRequest_OP_TYPE_Del){
-                    std::string key = request->key();
-                    int row_id = std::stoi(key.substr(3, key.length()-3));
-                    // std::cout << "txn_id: " << txn_id << "row_id: "<< row_id << std::endl; 
-                    // transaction_manager_->getLockManager()->LockTable(txn, LockMode::INTENTION_EXCLUSIVE, 0);
-                    // transaction_manager_->getLockManager()->LockPartition(txn, LockMode::INTENTION_EXCLUSIVE, 0, 0);
-                    if(transaction_manager_->getLockManager()->LockRow(txn, LockMode::EXLUCSIVE, 0, 0, row_id)== false){
-                        response->set_ok(false);
-                        return;
+                    else if(op.op_type() == Operator_OP_TYPE::Operator_OP_TYPE_Del){
+                        std::string key = op.key();
+                        int row_id = std::stoi(key.substr(3, key.length()-3));
+                        // std::cout << "txn_id: " << txn_id << "row_id: "<< row_id << std::endl; 
+                        // transaction_manager_->getLockManager()->LockTable(txn, LockMode::INTENTION_EXCLUSIVE, 0);
+                        // transaction_manager_->getLockManager()->LockPartition(txn, LockMode::INTENTION_EXCLUSIVE, 0, 0);
+                        if(transaction_manager_->getLockManager()->LockRow(txn, LockMode::EXLUCSIVE, 0, 0, row_id)== false){
+                            response->set_ok(false);
+                            return;
+                        }
+                        transaction_manager_->getKVstore()->del(key, txn);
                     }
-                    transaction_manager_->getKVstore()->del(key, txn);
                 }
 
                 response->set_ok(true);

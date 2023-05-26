@@ -14,7 +14,7 @@ public:
     txn_id_t txn_id;    
     std::string key;
     std::string value;
-    uint16_t node_id; 
+    // uint16_t node_id; 
     OP_TYPE op_type; 
 };
 
