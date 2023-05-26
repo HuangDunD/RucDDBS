@@ -13,7 +13,7 @@ std::shared_mutex TransactionManager::txn_map_mutex = {};
 uint64_t TransactionManager::getTimestampFromServer(){
     brpc::Channel channel;
     brpc::ChannelOptions options;
-    options.timeout_ms = 0xfffffff;
+    options.timeout_ms = 1000;
     options.max_retry = 3;
 
     if (channel.Init(FLAGS_META_SERVER_ADDR.c_str(), &options) != 0) {
@@ -226,7 +226,7 @@ bool TransactionManager::Abort(Transaction * txn){
     }
     else{
         brpc::ChannelOptions options;
-        options.timeout_ms = 0xfffffff;
+        options.timeout_ms = 1000;
         options.max_retry = 3;
         // 创建一个存储std::future对象的vector，用于搜集所有匿名函数的返回值
         std::vector<std::future<bool>> futures;
@@ -275,7 +275,7 @@ bool TransactionManager::Commit(Transaction * txn){
         else{
             // 非分布式事务，但数据不在协调者节点上
             brpc::ChannelOptions options;
-            options.timeout_ms = 0xfffffff;
+            options.timeout_ms = 1000;
             options.max_retry = 3;
             brpc::Channel channel;
 
@@ -311,7 +311,7 @@ bool TransactionManager::Commit(Transaction * txn){
     else {
         //分布式事务, 2PC两阶段提交
         brpc::ChannelOptions options;
-        options.timeout_ms = 0xfffffff;
+        options.timeout_ms = 1000;
         options.max_retry = 3;
         // 创建一个存储std::future对象的vector，用于搜集所有匿名函数的返回值
         std::vector<std::future<bool>> futures_prepare;
