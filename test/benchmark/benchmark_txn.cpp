@@ -83,7 +83,7 @@ Transaction* Benchmark_Txn::Generate(double read_ratio){
     brpc::ChannelOptions options;
     // options.connection_type = "pooled";
     options.timeout_ms = 10000;
-    options.max_retry = 3;
+    options.max_retry = 1;
 
     // 获取当前时间点
     auto start = std::chrono::high_resolution_clock::now();
@@ -101,8 +101,9 @@ Transaction* Benchmark_Txn::Generate(double read_ratio){
         brpc::Controller cntl;
         stub_start.StartTxn(&cntl, &request, &response, NULL);
         if (cntl.Failed()) {
-            // LOG(WARNING) << cntl.ErrorText();
+            LOG(WARNING) << cntl.ErrorText();
             transaction_manager_->Abort(txn);
+            return;
         }
         cntl.Reset();
     }
