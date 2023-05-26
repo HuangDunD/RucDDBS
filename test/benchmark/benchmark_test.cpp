@@ -149,7 +149,7 @@ TEST_F( BenchmarkTest, benchmark_test){
     std::vector<std::thread> threads;
     for(int i=0; i<FLAGS_THREAD_NUM; i++){
         threads.push_back(std::thread([i, endTime, this, &total_transaction_cnt]{
-            char name[15];
+            char name[20];
             sprintf(name, "work thread %d", i);
             pthread_setname_np(pthread_self(), name);
             while (std::chrono::steady_clock::now() < endTime) {
