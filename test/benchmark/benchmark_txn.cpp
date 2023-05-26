@@ -103,7 +103,7 @@ Transaction* Benchmark_Txn::Generate(double read_ratio){
         if (cntl.Failed()) {
             LOG(WARNING) << cntl.ErrorText();
             transaction_manager_->Abort(txn);
-            return;
+            return txn;
         }
         cntl.Reset();
     }
