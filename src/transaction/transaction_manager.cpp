@@ -192,6 +192,8 @@ bool TransactionManager::AbortSingle(Transaction * txn){
     // Remove txn from txn_map
     std::unique_lock<std::shared_mutex> l(txn_map_mutex);
     txn_map.erase(txn->get_txn_id() );
+    delete txn;
+    txn = nullptr;
     // Release the global transaction latch.
     global_txn_latch_.unlock_shared();
     return true;
@@ -214,6 +216,8 @@ bool TransactionManager::CommitSingle(Transaction * txn){
     // Remove txn from txn_map
     std::unique_lock<std::shared_mutex> l(txn_map_mutex);
     txn_map.erase(txn->get_txn_id() );
+    delete txn;
+    txn = nullptr;
     // Release the global transaction latch.
     global_txn_latch_.unlock_shared();
     return true;
