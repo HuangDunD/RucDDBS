@@ -45,6 +45,11 @@ Transaction* Benchmark_Txn::Generate(double read_ratio){
         op_partition_num[2] = operator_num - op_partition_num[0] - op_partition_num[1];
     }
 
+    for(auto x: op_partition_num) {
+        std::cout << x << std::endl; 
+    }
+
+    getchar();
     while(index_set.size()<txn_node_cnt){ 
         int index = dis_index(gen);
         if(index_set.count(index)) 
