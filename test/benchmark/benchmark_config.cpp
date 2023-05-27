@@ -8,4 +8,4 @@ DEFINE_int32(OP_MAX_NUM, 30, "max ops num in a txn");
 DEFINE_double(OP_Theta, 0, "The degree of skewness in the number of operations." ); //操作数目偏斜程度
 
 // std::vector<IP_Port> NodeSet = {{"127.0.0.1",8011},{"127.0.0.1",8012},{"127.0.0.1",8013}};
-std::vector<IP_Port> NodeSet = {{"192.168.0.191",8011},{"192.168.0.62",8012},{"192.168.0.13",8013}};
+std::vector<IP_Port> NodeSet = {{"172.22.168.26",8011},{"172.24.162.221",8012},{"172.27.163.66",8013}};
