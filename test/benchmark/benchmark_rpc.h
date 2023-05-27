@@ -17,10 +17,11 @@ public:
                 brpc::ClosureGuard done_guard(done);
                 
                 uint64_t txn_id = request->txn_id();
-                std::shared_lock<std::shared_mutex> l(transaction_manager_->txn_map_mutex);
+                // std::shared_lock<std::shared_mutex> l(transaction_manager_->txn_map_mutex);
+                std::unique_lock<std::shared_mutex> l(transaction_manager_->txn_map_mutex);
                 Transaction *txn =nullptr;
                 int cnt = transaction_manager_->txn_map.count(txn_id);
-                l.unlock();
+                // l.unlock();
                 if(cnt){
                     txn = transaction_manager_->txn_map[txn_id];
                 }else{
