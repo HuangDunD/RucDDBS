@@ -38,7 +38,7 @@ class BenchmarkTest : public ::testing::Test {
 
         brpc::Channel channel;
         brpc::ChannelOptions options;
-        options.timeout_ms = 100;
+        options.timeout_ms = 10000;
         options.max_retry = 3;
         
         if (channel.Init(FLAGS_META_SERVER_ADDR.c_str(), &options) != 0) {
