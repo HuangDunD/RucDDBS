@@ -14,7 +14,7 @@ uint64_t TransactionManager::getTimestampFromServer(){
     brpc::Channel channel;
     brpc::ChannelOptions options;
     options.timeout_ms = 10000;
-    options.max_retry = 1;
+    options.max_retry = 3;
 
     if (channel.Init(FLAGS_META_SERVER_ADDR.c_str(), &options) != 0) {
         LOG(ERROR) << "Fail to initialize channel";
@@ -227,7 +227,7 @@ bool TransactionManager::Abort(Transaction * txn){
     else{
         brpc::ChannelOptions options;
         options.timeout_ms = 10000;
-        options.max_retry = 1;
+        options.max_retry = 3;
         // 创建一个存储std::future对象的vector，用于搜集所有匿名函数的返回值
         std::vector<std::future<bool>> futures;
 
@@ -276,7 +276,7 @@ bool TransactionManager::Commit(Transaction * txn){
             // 非分布式事务，但数据不在协调者节点上
             brpc::ChannelOptions options;
             options.timeout_ms = 10000;
-            options.max_retry = 1;
+            options.max_retry = 3;
             brpc::Channel channel;
 
             auto node = *txn->get_distributed_node_set()->begin();
@@ -312,7 +312,7 @@ bool TransactionManager::Commit(Transaction * txn){
         //分布式事务, 2PC两阶段提交
         brpc::ChannelOptions options;
         options.timeout_ms = 10000;
-        options.max_retry = 1;
+        options.max_retry = 3;
         // 创建一个存储std::future对象的vector，用于搜集所有匿名函数的返回值
         std::vector<std::future<bool>> futures_prepare;
 

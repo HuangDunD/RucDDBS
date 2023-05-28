@@ -8,7 +8,10 @@
 namespace benchmark_service {
 class BenchmarkServiceImpl : public BenchmarkService{
 public:
-    explicit BenchmarkServiceImpl(TransactionManager *transaction_manager):transaction_manager_(transaction_manager) {};
+    explicit BenchmarkServiceImpl(TransactionManager *transaction_manager):transaction_manager_(transaction_manager) {
+        start_ms_ = 0;
+        exec_ms_ = 0;
+    };
     virtual void StartTxn(::google::protobuf::RpcController* controller,
                        const ::benchmark_service::StartTxnRequest* request,
                        ::benchmark_service::StartTxnResponse* response,
@@ -16,6 +19,9 @@ public:
 
                 brpc::ClosureGuard done_guard(done);
                 
+                // 获取当前时间点
+                auto start = std::chrono::high_resolution_clock::now();
+
                 uint64_t txn_id = request->txn_id();
                 // std::shared_lock<std::shared_mutex> l(transaction_manager_->txn_map_mutex);
                 std::unique_lock<std::shared_mutex> l(transaction_manager_->txn_map_mutex);
@@ -28,6 +34,12 @@ public:
                     transaction_manager_->Begin(txn, txn_id);
                 }
                 response->set_ok(true);
+
+                // 获取当前时间点
+                auto end = std::chrono::high_resolution_clock::now();
+                // 计算代码执行时间
+                start_ms_ += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+
                 return;
     }
 
@@ -37,6 +49,10 @@ public:
                        ::google::protobuf::Closure* done){
 
                 brpc::ClosureGuard done_guard(done);
+                
+                // 获取当前时间点
+                auto start = std::chrono::high_resolution_clock::now();
+
                 uint64_t txn_id = request->txn_id();
                 
                 Transaction* txn = transaction_manager_->getTransaction(txn_id);
@@ -62,6 +78,9 @@ public:
                         // transaction_manager_->getLockManager()->LockPartition(txn, LockMode::INTENTION_SHARED, 0, 0);
                         if(transaction_manager_->getLockManager()->LockRow(txn, LockMode::SHARED, 0, 0, row_id) == false){
                             response->set_ok(false);
+                            auto end = std::chrono::high_resolution_clock::now();
+                            // 计算代码执行时间
+                            exec_ms_ += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
                             return;
                         }
                         std::string value = transaction_manager_->getKVstore()->get(key).second;
@@ -76,6 +95,9 @@ public:
                         // transaction_manager_->getLockManager()->LockPartition(txn, LockMode::INTENTION_EXCLUSIVE, 0, 0);
                         if(transaction_manager_->getLockManager()->LockRow(txn, LockMode::EXLUCSIVE, 0, 0, row_id)== false){
                             response->set_ok(false);
+                            auto end = std::chrono::high_resolution_clock::now();
+                            // 计算代码执行时间
+                            exec_ms_ += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
                             return;
                         }
                         transaction_manager_->getKVstore()->put(key, value, txn);
@@ -88,6 +110,9 @@ public:
                         // transaction_manager_->getLockManager()->LockPartition(txn, LockMode::INTENTION_EXCLUSIVE, 0, 0);
                         if(transaction_manager_->getLockManager()->LockRow(txn, LockMode::EXLUCSIVE, 0, 0, row_id)== false){
                             response->set_ok(false);
+                            auto end = std::chrono::high_resolution_clock::now();
+                            // 计算代码执行时间
+                            exec_ms_ += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
                             return;
                         }
                         transaction_manager_->getKVstore()->del(key, txn);
@@ -95,8 +120,15 @@ public:
                 }
 
                 response->set_ok(true);
+
+                auto end = std::chrono::high_resolution_clock::now();
+                // 计算代码执行时间
+                exec_ms_ += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
                 return;
     }
+public:
+    std::atomic<uint64_t> start_ms_;
+    std::atomic<uint64_t> exec_ms_;
 private:
     TransactionManager *transaction_manager_;
 };

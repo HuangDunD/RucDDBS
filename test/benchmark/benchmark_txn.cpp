@@ -83,7 +83,7 @@ Transaction* Benchmark_Txn::Generate(double read_ratio){
     brpc::ChannelOptions options;
     // options.connection_type = "pooled";
     options.timeout_ms = 10000;
-    options.max_retry = 1;
+    options.max_retry = 3;
 
     // 获取当前时间点
     auto start = std::chrono::high_resolution_clock::now();
@@ -155,6 +155,9 @@ Transaction* Benchmark_Txn::Generate(double read_ratio){
     for(size_t i=0; i<(*txn->get_distributed_node_set()).size(); i++){
         futures[i].get();
     }
+    
+    // 获取当前时间点
+    auto exec_finish = std::chrono::high_resolution_clock::now();
     // int cur_node_id = -1;
     // brpc::Channel channel;
     // for(auto x: ops){
@@ -207,8 +210,14 @@ Transaction* Benchmark_Txn::Generate(double read_ratio){
     auto end = std::chrono::high_resolution_clock::now();
     // 计算代码执行时间
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    // 计算执行时间
+    auto exec_duration = std::chrono::duration_cast<std::chrono::milliseconds>(exec_finish - start);
+    // 计算提交时间
+    auto commit_duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - exec_finish);
 
     latency_ms_ += duration.count();
+    exec_ms_ += exec_duration.count();
+    commit_ms_ += commit_duration.count();
 
     return txn;
 }

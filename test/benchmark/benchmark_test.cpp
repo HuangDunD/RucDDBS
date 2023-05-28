@@ -14,6 +14,8 @@ class BenchmarkTest : public ::testing::Test {
     std::unique_ptr<KVStore> kv_;
     std::unique_ptr<TransactionManager> transaction_manager_;
     std::unique_ptr<Benchmark_Txn> benchmark_txn_manager_;
+    
+    std::unique_ptr<benchmark_service::BenchmarkServiceImpl> benchmark_service_impl_;
 
    public:
     void SetUp() override {
@@ -39,7 +41,7 @@ class BenchmarkTest : public ::testing::Test {
         brpc::Channel channel;
         brpc::ChannelOptions options;
         options.timeout_ms = 10000;
-        options.max_retry = 1;
+        options.max_retry = 3;
         
         if (channel.Init(FLAGS_META_SERVER_ADDR.c_str(), &options) != 0) {
             LOG(ERROR) << "Fail to initialize channel";
@@ -58,20 +60,20 @@ class BenchmarkTest : public ::testing::Test {
                 std::cout << "Register success! ip: " << cntl.local_side() << std::endl;
         }
 
+        benchmark_service_impl_ = std::make_unique<benchmark_service::BenchmarkServiceImpl>(transaction_manager_.get());
         std::thread rpc_thread([&]{
 
             pthread_setname_np(pthread_self(), "rpc_thread");
             //启动事务brpc server
             brpc::Server server;
-
+            
             transaction_manager::TransactionManagerImpl trans_manager_impl(transaction_manager_.get());
             if (server.AddService(&trans_manager_impl, 
                                     brpc::SERVER_DOESNT_OWN_SERVICE) != 0) {
                 LOG(ERROR) << "Fail to add service";
             }
-
-            benchmark_service::BenchmarkServiceImpl benchmark_service_impl(transaction_manager_.get());
-            if (server.AddService(&benchmark_service_impl, 
+    
+            if (server.AddService(benchmark_service_impl_.get(), 
                                     brpc::SERVER_DOESNT_OWN_SERVICE) != 0) {
                 LOG(ERROR) << "Fail to add service";
             }
@@ -174,7 +176,13 @@ TEST_F( BenchmarkTest, benchmark_test){
         << " abort txn cnt: " << benchmark_txn_manager_->abort_txn_cnt_ 
         << " abort rate: " << 100.0 * benchmark_txn_manager_->abort_txn_cnt_ / (benchmark_txn_manager_->commit_txn_cnt_ + benchmark_txn_manager_->abort_txn_cnt_) <<  "% " 
         << " latency ms: " << 1.0 * total_latency / total_transaction_cnt << " ms. " 
+        << " exec_total_ms(inclue network): " << 1.0 *  benchmark_txn_manager_ ->exec_ms_ / total_transaction_cnt << " ms. " 
+        << " commit_total_ms(inclue network): " << 1.0 *  benchmark_txn_manager_ ->commit_ms_ / total_transaction_cnt << " ms. " 
         << std::endl;
+                
+    std::cout << " start_total_ms(really work): " << benchmark_service_impl_->start_ms_ 
+    << " exec_total_ms(really work): " << benchmark_service_impl_->exec_ms_
+    << std::endl; 
     ASSERT_EQ("", "");
 }
 
