@@ -38,7 +38,7 @@ public:
                 // 获取当前时间点
                 auto end = std::chrono::high_resolution_clock::now();
                 // 计算代码执行时间
-                start_ms_.store(start_ms_+std::chrono::duration_cast<std::chrono::microseconds>(end - start).count());
+                start_ms_.store(start_ms_+std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
 
                 return;
     }
@@ -80,7 +80,7 @@ public:
                             response->set_ok(false);
                             auto end = std::chrono::high_resolution_clock::now();
                             // 计算代码执行时间
-                            exec_ms_.store(exec_ms_+std::chrono::duration_cast<std::chrono::microseconds>(end - start).count());
+                            exec_ms_.store(exec_ms_+std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
                             return;
                         }
                         std::string value = transaction_manager_->getKVstore()->get(key).second;
@@ -97,7 +97,7 @@ public:
                             response->set_ok(false);
                             auto end = std::chrono::high_resolution_clock::now();
                             // 计算代码执行时间
-                            exec_ms_.store(exec_ms_+std::chrono::duration_cast<std::chrono::microseconds>(end - start).count());
+                            exec_ms_.store(exec_ms_+std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
                             return;
                         }
                         transaction_manager_->getKVstore()->put(key, value, txn);
@@ -112,7 +112,7 @@ public:
                             response->set_ok(false);
                             auto end = std::chrono::high_resolution_clock::now();
                             // 计算代码执行时间
-                            exec_ms_.store(exec_ms_+std::chrono::duration_cast<std::chrono::microseconds>(end - start).count());
+                            exec_ms_.store(exec_ms_+std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
                             return;
                         }
                         transaction_manager_->getKVstore()->del(key, txn);
@@ -123,7 +123,7 @@ public:
 
                 auto end = std::chrono::high_resolution_clock::now();
                 // 计算代码执行时间
-                exec_ms_.store(exec_ms_+std::chrono::duration_cast<std::chrono::microseconds>(end - start).count());
+                exec_ms_.store(exec_ms_+std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
                 return;
     }
 public:

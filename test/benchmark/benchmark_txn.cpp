@@ -88,7 +88,7 @@ Transaction* Benchmark_Txn::Generate(double read_ratio){
     // 获取当前时间点
     auto start = std::chrono::high_resolution_clock::now();
 
-    std::vector<std::future<void>> futures_start;
+    std::vector<std::future<bool>> futures_start;
     for(auto x: index_set){
         futures_start.push_back(std::async(std::launch::async, [x, &options, &txn, this](){
             brpc::Channel channel;
@@ -105,13 +105,16 @@ Transaction* Benchmark_Txn::Generate(double read_ratio){
             if (cntl.Failed()) {
                 LOG(WARNING) << cntl.ErrorText();
                 transaction_manager_->Abort(txn);
-                // return txn;
+                return false;
             }
             cntl.Reset();
+            return true;
         }));
     }
     for(size_t i=0; i<(*txn->get_distributed_node_set()).size(); i++){
-        futures_start[i].get();
+        if(futures_start[i].get() == false){
+            return txn;
+        }
     }
 
     auto start_finish = std::chrono::high_resolution_clock::now();
