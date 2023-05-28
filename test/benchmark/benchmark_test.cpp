@@ -66,7 +66,7 @@ class BenchmarkTest : public ::testing::Test {
             pthread_setname_np(pthread_self(), "rpc_thread");
             //启动事务brpc server
             brpc::Server server;
-            
+
             transaction_manager::TransactionManagerImpl trans_manager_impl(transaction_manager_.get());
             if (server.AddService(&trans_manager_impl, 
                                     brpc::SERVER_DOESNT_OWN_SERVICE) != 0) {
@@ -176,6 +176,7 @@ TEST_F( BenchmarkTest, benchmark_test){
         << " abort txn cnt: " << benchmark_txn_manager_->abort_txn_cnt_ 
         << " abort rate: " << 100.0 * benchmark_txn_manager_->abort_txn_cnt_ / (benchmark_txn_manager_->commit_txn_cnt_ + benchmark_txn_manager_->abort_txn_cnt_) <<  "% " 
         << " latency ms: " << 1.0 * total_latency / total_transaction_cnt << " ms. " 
+        << " start_total_ms(inclue network): " << 1.0 *  benchmark_txn_manager_ ->start_ms_ / total_transaction_cnt << " ms. " 
         << " exec_total_ms(inclue network): " << 1.0 *  benchmark_txn_manager_ ->exec_ms_ / total_transaction_cnt << " ms. " 
         << " commit_total_ms(inclue network): " << 1.0 *  benchmark_txn_manager_ ->commit_ms_ / total_transaction_cnt << " ms. " 
         << std::endl;

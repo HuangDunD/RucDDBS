@@ -107,6 +107,7 @@ Transaction* Benchmark_Txn::Generate(double read_ratio){
         }
         cntl.Reset();
     }
+    auto start_finish = std::chrono::high_resolution_clock::now();
 
     std::vector<std::future<void>> futures;
     int ii = 0;
@@ -210,6 +211,8 @@ Transaction* Benchmark_Txn::Generate(double read_ratio){
     auto end = std::chrono::high_resolution_clock::now();
     // 计算代码执行时间
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    // 计算开始时间
+    auto start_duration = std::chrono::duration_cast<std::chrono::milliseconds>(start_finish - start);
     // 计算执行时间
     auto exec_duration = std::chrono::duration_cast<std::chrono::milliseconds>(exec_finish - start);
     // 计算提交时间
@@ -218,6 +221,6 @@ Transaction* Benchmark_Txn::Generate(double read_ratio){
     latency_ms_ += duration.count();
     exec_ms_ += exec_duration.count();
     commit_ms_ += commit_duration.count();
-
+    start_ms_ += start_duration.count();
     return txn;
 }
