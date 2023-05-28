@@ -88,25 +88,32 @@ Transaction* Benchmark_Txn::Generate(double read_ratio){
     // 获取当前时间点
     auto start = std::chrono::high_resolution_clock::now();
 
+    std::vector<std::future<void>> futures_start;
     for(auto x: index_set){
-        brpc::Channel channel;
-        IP_Port ip = NodeSet[x];
-        if (channel.Init(ip.ip_addr.c_str(), ip.port, &options) != 0) {
-            LOG(ERROR) << "Fail to initialize channel";
-        }
-        benchmark_service::BenchmarkService_Stub stub_start(&channel);
-        benchmark_service::StartTxnRequest request;
-        benchmark_service::StartTxnResponse response;
-        request.set_txn_id(txn->get_txn_id());
-        brpc::Controller cntl;
-        stub_start.StartTxn(&cntl, &request, &response, NULL);
-        if (cntl.Failed()) {
-            LOG(WARNING) << cntl.ErrorText();
-            transaction_manager_->Abort(txn);
-            return txn;
-        }
-        cntl.Reset();
+        futures_start.push_back(std::async(std::launch::async, [x, &options, &txn, this](){
+            brpc::Channel channel;
+            IP_Port ip = NodeSet[x];
+            if (channel.Init(ip.ip_addr.c_str(), ip.port, &options) != 0) {
+                LOG(ERROR) << "Fail to initialize channel";
+            }
+            benchmark_service::BenchmarkService_Stub stub_start(&channel);
+            benchmark_service::StartTxnRequest request;
+            benchmark_service::StartTxnResponse response;
+            request.set_txn_id(txn->get_txn_id());
+            brpc::Controller cntl;
+            stub_start.StartTxn(&cntl, &request, &response, NULL);
+            if (cntl.Failed()) {
+                LOG(WARNING) << cntl.ErrorText();
+                transaction_manager_->Abort(txn);
+                // return txn;
+            }
+            cntl.Reset();
+        }));
     }
+    for(size_t i=0; i<(*txn->get_distributed_node_set()).size(); i++){
+        futures_start[i].get();
+    }
+
     auto start_finish = std::chrono::high_resolution_clock::now();
 
     std::vector<std::future<void>> futures;
