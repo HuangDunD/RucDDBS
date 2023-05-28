@@ -214,7 +214,7 @@ Transaction* Benchmark_Txn::Generate(double read_ratio){
     // 计算开始时间
     auto start_duration = std::chrono::duration_cast<std::chrono::milliseconds>(start_finish - start);
     // 计算执行时间
-    auto exec_duration = std::chrono::duration_cast<std::chrono::milliseconds>(exec_finish - start);
+    auto exec_duration = std::chrono::duration_cast<std::chrono::milliseconds>(exec_finish - start_finish);
     // 计算提交时间
     auto commit_duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - exec_finish);
 
