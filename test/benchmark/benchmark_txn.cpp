@@ -12,7 +12,7 @@ Transaction* Benchmark_Txn::Generate(double read_ratio){
     // 设置随机数生成器
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_int_distribution<int> dis_txn_node_cnt(1, node_cnt);
+    std::uniform_int_distribution<int> dis_txn_node_cnt(2, node_cnt);
     std::uniform_int_distribution<int> dis_index(0, node_cnt-1);
     std::uniform_real_distribution<double> dis_read_op(0.0, 1.0);
     std::uniform_int_distribution<int> dis_op_num(5, FLAGS_OP_MAX_NUM);
