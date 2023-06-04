@@ -3,14 +3,15 @@
 #include <butil/time.h>
 #include <brpc/channel.h>
 #include <string>
+#include "engine.h"
 #include "session.pb.h"
 
 
 DEFINE_string(protocol, "baidu_std", "Protocol type. Defined in src/brpc/options.proto");
 DEFINE_string(connection_type, "", "Connection type. Available values: single, pooled, short");
-DEFINE_string(server, "0.0.0.0:8002", "IP Address of server");
+DEFINE_string(server, "0.0.0.0:8005", "IP Address of server");
 DEFINE_string(load_balancer, "", "The algorithm for load balancing");
-DEFINE_int32(timeout_ms, 100, "RPC timeout in milliseconds");
+DEFINE_int32(timeout_ms, 2000, "RPC timeout in milliseconds");
 DEFINE_int32(max_retry, 3, "Max retries(not including the first RPC)"); 
 DEFINE_int32(interval_ms, 1000, "Milliseconds between consecutive requests");
 
@@ -27,30 +28,37 @@ int main(){
 
     session::Session_Service_Stub stub(&channel);
     int log_id = 0;
-
-    while (!brpc::IsAskedToQuit()){
+    while(1){
         /* code */
         session::SQL_Request request;
         session::SQL_Response response;
         brpc::Controller cntl;
 
-        request.set_sql_statement("create table A (col1 int, col2 int);");
+        // request.set_sql_statement("create table A (col1 int, col2 int);");
+        cout << "rucdb >> "; 
+        std::string sql_str = "";
+        std::string sql_buf;
+        while(sql_str.back() != ';'){
+            std::getline(std::cin, sql_buf);
+            sql_str += sql_buf;
+        }
 
+        request.set_sql_statement(sql_str);
         cntl.set_log_id(log_id ++);
 
         stub.SQL_Transfer(&cntl, &request, &response, NULL);
-
+        
+        cout << response.txt() << endl;
+        
         if (!cntl.Failed()) {
             LOG(INFO) << "Received response from " << cntl.remote_side()
                 << " to " << cntl.local_side()
                 << " latency=" << cntl.latency_us() << "us";
-            break;
         } else {
             LOG(WARNING) << cntl.ErrorText();
         }
         usleep(FLAGS_interval_ms * 1000L);
     }
-    
     LOG(INFO) << "Client is going to quit";
     return 0;
 }

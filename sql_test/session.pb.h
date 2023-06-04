@@ -256,6 +256,34 @@ class Value : public ::google::protobuf::Message /* @@protoc_insertion_point(cla
 
   // accessors -------------------------------------------------------
 
+  // string tab_name = 1;
+  void clear_tab_name();
+  static const int kTabNameFieldNumber = 1;
+  const ::std::string& tab_name() const;
+  void set_tab_name(const ::std::string& value);
+  #if LANG_CXX11
+  void set_tab_name(::std::string&& value);
+  #endif
+  void set_tab_name(const char* value);
+  void set_tab_name(const char* value, size_t size);
+  ::std::string* mutable_tab_name();
+  ::std::string* release_tab_name();
+  void set_allocated_tab_name(::std::string* tab_name);
+
+  // string col_name = 2;
+  void clear_col_name();
+  static const int kColNameFieldNumber = 2;
+  const ::std::string& col_name() const;
+  void set_col_name(const ::std::string& value);
+  #if LANG_CXX11
+  void set_col_name(::std::string&& value);
+  #endif
+  void set_col_name(const char* value);
+  void set_col_name(const char* value, size_t size);
+  ::std::string* mutable_col_name();
+  ::std::string* release_col_name();
+  void set_allocated_col_name(::std::string* col_name);
+
   // sint32 value = 3;
   void clear_value();
   static const int kValueFieldNumber = 3;
@@ -266,6 +294,8 @@ class Value : public ::google::protobuf::Message /* @@protoc_insertion_point(cla
  private:
 
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
+  ::google::protobuf::internal::ArenaStringPtr tab_name_;
+  ::google::protobuf::internal::ArenaStringPtr col_name_;
   ::google::protobuf::int32 value_;
   mutable ::google::protobuf::internal::CachedSize _cached_size_;
   friend struct ::protobuf_session_2eproto::TableStruct;
@@ -381,6 +411,132 @@ class Tuple : public ::google::protobuf::Message /* @@protoc_insertion_point(cla
 };
 // -------------------------------------------------------------------
 
+class Col : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:session.Col) */ {
+ public:
+  Col();
+  virtual ~Col();
+
+  Col(const Col& from);
+
+  inline Col& operator=(const Col& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  #if LANG_CXX11
+  Col(Col&& from) noexcept
+    : Col() {
+    *this = ::std::move(from);
+  }
+
+  inline Col& operator=(Col&& from) noexcept {
+    if (GetArenaNoVirtual() == from.GetArenaNoVirtual()) {
+      if (this != &from) InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+  #endif
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const Col& default_instance();
+
+  static void InitAsDefaultInstance();  // FOR INTERNAL USE ONLY
+  static inline const Col* internal_default_instance() {
+    return reinterpret_cast<const Col*>(
+               &_Col_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    2;
+
+  void Swap(Col* other);
+  friend void swap(Col& a, Col& b) {
+    a.Swap(&b);
+  }
+
+  // implements Message ----------------------------------------------
+
+  inline Col* New() const final {
+    return CreateMaybeMessage<Col>(NULL);
+  }
+
+  Col* New(::google::protobuf::Arena* arena) const final {
+    return CreateMaybeMessage<Col>(arena);
+  }
+  void CopyFrom(const ::google::protobuf::Message& from) final;
+  void MergeFrom(const ::google::protobuf::Message& from) final;
+  void CopyFrom(const Col& from);
+  void MergeFrom(const Col& from);
+  void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input) final;
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const final;
+  ::google::protobuf::uint8* InternalSerializeWithCachedSizesToArray(
+      bool deterministic, ::google::protobuf::uint8* target) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(Col* other);
+  private:
+  inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
+    return NULL;
+  }
+  inline void* MaybeArenaPtr() const {
+    return NULL;
+  }
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // string tab_name = 1;
+  void clear_tab_name();
+  static const int kTabNameFieldNumber = 1;
+  const ::std::string& tab_name() const;
+  void set_tab_name(const ::std::string& value);
+  #if LANG_CXX11
+  void set_tab_name(::std::string&& value);
+  #endif
+  void set_tab_name(const char* value);
+  void set_tab_name(const char* value, size_t size);
+  ::std::string* mutable_tab_name();
+  ::std::string* release_tab_name();
+  void set_allocated_tab_name(::std::string* tab_name);
+
+  // string col_name = 2;
+  void clear_col_name();
+  static const int kColNameFieldNumber = 2;
+  const ::std::string& col_name() const;
+  void set_col_name(const ::std::string& value);
+  #if LANG_CXX11
+  void set_col_name(::std::string&& value);
+  #endif
+  void set_col_name(const char* value);
+  void set_col_name(const char* value, size_t size);
+  ::std::string* mutable_col_name();
+  ::std::string* release_col_name();
+  void set_allocated_col_name(::std::string* col_name);
+
+  // @@protoc_insertion_point(class_scope:session.Col)
+ private:
+
+  ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
+  ::google::protobuf::internal::ArenaStringPtr tab_name_;
+  ::google::protobuf::internal::ArenaStringPtr col_name_;
+  mutable ::google::protobuf::internal::CachedSize _cached_size_;
+  friend struct ::protobuf_session_2eproto::TableStruct;
+};
+// -------------------------------------------------------------------
+
 class Table : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:session.Table) */ {
  public:
   Table();
@@ -416,7 +572,7 @@ class Table : public ::google::protobuf::Message /* @@protoc_insertion_point(cla
                &_Table_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    2;
+    3;
 
   void Swap(Table* other);
   friend void swap(Table& a, Table& b) {
@@ -468,10 +624,10 @@ class Table : public ::google::protobuf::Message /* @@protoc_insertion_point(cla
 
   // accessors -------------------------------------------------------
 
-  // repeated .session.Tuple table = 1;
+  // repeated .session.Tuple table = 2;
   int table_size() const;
   void clear_table();
-  static const int kTableFieldNumber = 1;
+  static const int kTableFieldNumber = 2;
   ::session::Tuple* mutable_table(int index);
   ::google::protobuf::RepeatedPtrField< ::session::Tuple >*
       mutable_table();
@@ -525,7 +681,7 @@ class SQL_Request : public ::google::protobuf::Message /* @@protoc_insertion_poi
                &_SQL_Request_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    3;
+    4;
 
   void Swap(SQL_Request* other);
   friend void swap(SQL_Request& a, SQL_Request& b) {
@@ -636,7 +792,7 @@ class SQL_Response : public ::google::protobuf::Message /* @@protoc_insertion_po
                &_SQL_Response_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    4;
+    5;
 
   void Swap(SQL_Response* other);
   friend void swap(SQL_Response& a, SQL_Response& b) {
@@ -688,23 +844,25 @@ class SQL_Response : public ::google::protobuf::Message /* @@protoc_insertion_po
 
   // accessors -------------------------------------------------------
 
-  // .session.Table Sql_response = 1;
-  bool has_sql_response() const;
-  void clear_sql_response();
-  static const int kSqlResponseFieldNumber = 1;
-  private:
-  const ::session::Table& _internal_sql_response() const;
-  public:
-  const ::session::Table& sql_response() const;
-  ::session::Table* release_sql_response();
-  ::session::Table* mutable_sql_response();
-  void set_allocated_sql_response(::session::Table* sql_response);
+  // string txt = 1;
+  void clear_txt();
+  static const int kTxtFieldNumber = 1;
+  const ::std::string& txt() const;
+  void set_txt(const ::std::string& value);
+  #if LANG_CXX11
+  void set_txt(::std::string&& value);
+  #endif
+  void set_txt(const char* value);
+  void set_txt(const char* value, size_t size);
+  ::std::string* mutable_txt();
+  ::std::string* release_txt();
+  void set_allocated_txt(::std::string* txt);
 
   // @@protoc_insertion_point(class_scope:session.SQL_Response)
  private:
 
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
-  ::session::Table* sql_response_;
+  ::google::protobuf::internal::ArenaStringPtr txt_;
   mutable ::google::protobuf::internal::CachedSize _cached_size_;
   friend struct ::protobuf_session_2eproto::TableStruct;
 };
@@ -745,7 +903,7 @@ class Expression : public ::google::protobuf::Message /* @@protoc_insertion_poin
                &_Expression_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    5;
+    6;
 
   void Swap(Expression* other);
   friend void swap(Expression& a, Expression& b) {
@@ -816,132 +974,6 @@ class Expression : public ::google::protobuf::Message /* @@protoc_insertion_poin
 
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
   ::google::protobuf::internal::ArenaStringPtr str_expression_;
-  mutable ::google::protobuf::internal::CachedSize _cached_size_;
-  friend struct ::protobuf_session_2eproto::TableStruct;
-};
-// -------------------------------------------------------------------
-
-class Col : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:session.Col) */ {
- public:
-  Col();
-  virtual ~Col();
-
-  Col(const Col& from);
-
-  inline Col& operator=(const Col& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  #if LANG_CXX11
-  Col(Col&& from) noexcept
-    : Col() {
-    *this = ::std::move(from);
-  }
-
-  inline Col& operator=(Col&& from) noexcept {
-    if (GetArenaNoVirtual() == from.GetArenaNoVirtual()) {
-      if (this != &from) InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-  #endif
-  static const ::google::protobuf::Descriptor* descriptor();
-  static const Col& default_instance();
-
-  static void InitAsDefaultInstance();  // FOR INTERNAL USE ONLY
-  static inline const Col* internal_default_instance() {
-    return reinterpret_cast<const Col*>(
-               &_Col_default_instance_);
-  }
-  static constexpr int kIndexInFileMessages =
-    6;
-
-  void Swap(Col* other);
-  friend void swap(Col& a, Col& b) {
-    a.Swap(&b);
-  }
-
-  // implements Message ----------------------------------------------
-
-  inline Col* New() const final {
-    return CreateMaybeMessage<Col>(NULL);
-  }
-
-  Col* New(::google::protobuf::Arena* arena) const final {
-    return CreateMaybeMessage<Col>(arena);
-  }
-  void CopyFrom(const ::google::protobuf::Message& from) final;
-  void MergeFrom(const ::google::protobuf::Message& from) final;
-  void CopyFrom(const Col& from);
-  void MergeFrom(const Col& from);
-  void Clear() final;
-  bool IsInitialized() const final;
-
-  size_t ByteSizeLong() const final;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input) final;
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const final;
-  ::google::protobuf::uint8* InternalSerializeWithCachedSizesToArray(
-      bool deterministic, ::google::protobuf::uint8* target) const final;
-  int GetCachedSize() const final { return _cached_size_.Get(); }
-
-  private:
-  void SharedCtor();
-  void SharedDtor();
-  void SetCachedSize(int size) const final;
-  void InternalSwap(Col* other);
-  private:
-  inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
-    return NULL;
-  }
-  inline void* MaybeArenaPtr() const {
-    return NULL;
-  }
-  public:
-
-  ::google::protobuf::Metadata GetMetadata() const final;
-
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-
-  // string tab_name = 1;
-  void clear_tab_name();
-  static const int kTabNameFieldNumber = 1;
-  const ::std::string& tab_name() const;
-  void set_tab_name(const ::std::string& value);
-  #if LANG_CXX11
-  void set_tab_name(::std::string&& value);
-  #endif
-  void set_tab_name(const char* value);
-  void set_tab_name(const char* value, size_t size);
-  ::std::string* mutable_tab_name();
-  ::std::string* release_tab_name();
-  void set_allocated_tab_name(::std::string* tab_name);
-
-  // string col_name = 2;
-  void clear_col_name();
-  static const int kColNameFieldNumber = 2;
-  const ::std::string& col_name() const;
-  void set_col_name(const ::std::string& value);
-  #if LANG_CXX11
-  void set_col_name(::std::string&& value);
-  #endif
-  void set_col_name(const char* value);
-  void set_col_name(const char* value, size_t size);
-  ::std::string* mutable_col_name();
-  ::std::string* release_col_name();
-  void set_allocated_col_name(::std::string* col_name);
-
-  // @@protoc_insertion_point(class_scope:session.Col)
- private:
-
-  ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
-  ::google::protobuf::internal::ArenaStringPtr tab_name_;
-  ::google::protobuf::internal::ArenaStringPtr col_name_;
   mutable ::google::protobuf::internal::CachedSize _cached_size_;
   friend struct ::protobuf_session_2eproto::TableStruct;
 };
@@ -3217,6 +3249,112 @@ class Session_Service_Stub : public Session_Service {
 #endif  // __GNUC__
 // Value
 
+// string tab_name = 1;
+inline void Value::clear_tab_name() {
+  tab_name_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline const ::std::string& Value::tab_name() const {
+  // @@protoc_insertion_point(field_get:session.Value.tab_name)
+  return tab_name_.GetNoArena();
+}
+inline void Value::set_tab_name(const ::std::string& value) {
+  
+  tab_name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
+  // @@protoc_insertion_point(field_set:session.Value.tab_name)
+}
+#if LANG_CXX11
+inline void Value::set_tab_name(::std::string&& value) {
+  
+  tab_name_.SetNoArena(
+    &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
+  // @@protoc_insertion_point(field_set_rvalue:session.Value.tab_name)
+}
+#endif
+inline void Value::set_tab_name(const char* value) {
+  GOOGLE_DCHECK(value != NULL);
+  
+  tab_name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:session.Value.tab_name)
+}
+inline void Value::set_tab_name(const char* value, size_t size) {
+  
+  tab_name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:session.Value.tab_name)
+}
+inline ::std::string* Value::mutable_tab_name() {
+  
+  // @@protoc_insertion_point(field_mutable:session.Value.tab_name)
+  return tab_name_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline ::std::string* Value::release_tab_name() {
+  // @@protoc_insertion_point(field_release:session.Value.tab_name)
+  
+  return tab_name_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void Value::set_allocated_tab_name(::std::string* tab_name) {
+  if (tab_name != NULL) {
+    
+  } else {
+    
+  }
+  tab_name_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), tab_name);
+  // @@protoc_insertion_point(field_set_allocated:session.Value.tab_name)
+}
+
+// string col_name = 2;
+inline void Value::clear_col_name() {
+  col_name_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline const ::std::string& Value::col_name() const {
+  // @@protoc_insertion_point(field_get:session.Value.col_name)
+  return col_name_.GetNoArena();
+}
+inline void Value::set_col_name(const ::std::string& value) {
+  
+  col_name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
+  // @@protoc_insertion_point(field_set:session.Value.col_name)
+}
+#if LANG_CXX11
+inline void Value::set_col_name(::std::string&& value) {
+  
+  col_name_.SetNoArena(
+    &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
+  // @@protoc_insertion_point(field_set_rvalue:session.Value.col_name)
+}
+#endif
+inline void Value::set_col_name(const char* value) {
+  GOOGLE_DCHECK(value != NULL);
+  
+  col_name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:session.Value.col_name)
+}
+inline void Value::set_col_name(const char* value, size_t size) {
+  
+  col_name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:session.Value.col_name)
+}
+inline ::std::string* Value::mutable_col_name() {
+  
+  // @@protoc_insertion_point(field_mutable:session.Value.col_name)
+  return col_name_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline ::std::string* Value::release_col_name() {
+  // @@protoc_insertion_point(field_release:session.Value.col_name)
+  
+  return col_name_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void Value::set_allocated_col_name(::std::string* col_name) {
+  if (col_name != NULL) {
+    
+  } else {
+    
+  }
+  col_name_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), col_name);
+  // @@protoc_insertion_point(field_set_allocated:session.Value.col_name)
+}
+
 // sint32 value = 3;
 inline void Value::clear_value() {
   value_ = 0;
@@ -3263,212 +3401,6 @@ inline const ::google::protobuf::RepeatedPtrField< ::session::Value >&
 Tuple::tuple() const {
   // @@protoc_insertion_point(field_list:session.Tuple.tuple)
   return tuple_;
-}
-
-// -------------------------------------------------------------------
-
-// Table
-
-// repeated .session.Tuple table = 1;
-inline int Table::table_size() const {
-  return table_.size();
-}
-inline void Table::clear_table() {
-  table_.Clear();
-}
-inline ::session::Tuple* Table::mutable_table(int index) {
-  // @@protoc_insertion_point(field_mutable:session.Table.table)
-  return table_.Mutable(index);
-}
-inline ::google::protobuf::RepeatedPtrField< ::session::Tuple >*
-Table::mutable_table() {
-  // @@protoc_insertion_point(field_mutable_list:session.Table.table)
-  return &table_;
-}
-inline const ::session::Tuple& Table::table(int index) const {
-  // @@protoc_insertion_point(field_get:session.Table.table)
-  return table_.Get(index);
-}
-inline ::session::Tuple* Table::add_table() {
-  // @@protoc_insertion_point(field_add:session.Table.table)
-  return table_.Add();
-}
-inline const ::google::protobuf::RepeatedPtrField< ::session::Tuple >&
-Table::table() const {
-  // @@protoc_insertion_point(field_list:session.Table.table)
-  return table_;
-}
-
-// -------------------------------------------------------------------
-
-// SQL_Request
-
-// string Sql_statement = 1;
-inline void SQL_Request::clear_sql_statement() {
-  sql_statement_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-}
-inline const ::std::string& SQL_Request::sql_statement() const {
-  // @@protoc_insertion_point(field_get:session.SQL_Request.Sql_statement)
-  return sql_statement_.GetNoArena();
-}
-inline void SQL_Request::set_sql_statement(const ::std::string& value) {
-  
-  sql_statement_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:session.SQL_Request.Sql_statement)
-}
-#if LANG_CXX11
-inline void SQL_Request::set_sql_statement(::std::string&& value) {
-  
-  sql_statement_.SetNoArena(
-    &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
-  // @@protoc_insertion_point(field_set_rvalue:session.SQL_Request.Sql_statement)
-}
-#endif
-inline void SQL_Request::set_sql_statement(const char* value) {
-  GOOGLE_DCHECK(value != NULL);
-  
-  sql_statement_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:session.SQL_Request.Sql_statement)
-}
-inline void SQL_Request::set_sql_statement(const char* value, size_t size) {
-  
-  sql_statement_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-      ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:session.SQL_Request.Sql_statement)
-}
-inline ::std::string* SQL_Request::mutable_sql_statement() {
-  
-  // @@protoc_insertion_point(field_mutable:session.SQL_Request.Sql_statement)
-  return sql_statement_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-}
-inline ::std::string* SQL_Request::release_sql_statement() {
-  // @@protoc_insertion_point(field_release:session.SQL_Request.Sql_statement)
-  
-  return sql_statement_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-}
-inline void SQL_Request::set_allocated_sql_statement(::std::string* sql_statement) {
-  if (sql_statement != NULL) {
-    
-  } else {
-    
-  }
-  sql_statement_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), sql_statement);
-  // @@protoc_insertion_point(field_set_allocated:session.SQL_Request.Sql_statement)
-}
-
-// -------------------------------------------------------------------
-
-// SQL_Response
-
-// .session.Table Sql_response = 1;
-inline bool SQL_Response::has_sql_response() const {
-  return this != internal_default_instance() && sql_response_ != NULL;
-}
-inline void SQL_Response::clear_sql_response() {
-  if (GetArenaNoVirtual() == NULL && sql_response_ != NULL) {
-    delete sql_response_;
-  }
-  sql_response_ = NULL;
-}
-inline const ::session::Table& SQL_Response::_internal_sql_response() const {
-  return *sql_response_;
-}
-inline const ::session::Table& SQL_Response::sql_response() const {
-  const ::session::Table* p = sql_response_;
-  // @@protoc_insertion_point(field_get:session.SQL_Response.Sql_response)
-  return p != NULL ? *p : *reinterpret_cast<const ::session::Table*>(
-      &::session::_Table_default_instance_);
-}
-inline ::session::Table* SQL_Response::release_sql_response() {
-  // @@protoc_insertion_point(field_release:session.SQL_Response.Sql_response)
-  
-  ::session::Table* temp = sql_response_;
-  sql_response_ = NULL;
-  return temp;
-}
-inline ::session::Table* SQL_Response::mutable_sql_response() {
-  
-  if (sql_response_ == NULL) {
-    auto* p = CreateMaybeMessage<::session::Table>(GetArenaNoVirtual());
-    sql_response_ = p;
-  }
-  // @@protoc_insertion_point(field_mutable:session.SQL_Response.Sql_response)
-  return sql_response_;
-}
-inline void SQL_Response::set_allocated_sql_response(::session::Table* sql_response) {
-  ::google::protobuf::Arena* message_arena = GetArenaNoVirtual();
-  if (message_arena == NULL) {
-    delete sql_response_;
-  }
-  if (sql_response) {
-    ::google::protobuf::Arena* submessage_arena = NULL;
-    if (message_arena != submessage_arena) {
-      sql_response = ::google::protobuf::internal::GetOwnedMessage(
-          message_arena, sql_response, submessage_arena);
-    }
-    
-  } else {
-    
-  }
-  sql_response_ = sql_response;
-  // @@protoc_insertion_point(field_set_allocated:session.SQL_Response.Sql_response)
-}
-
-// -------------------------------------------------------------------
-
-// Expression
-
-// string str_expression = 1;
-inline void Expression::clear_str_expression() {
-  str_expression_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-}
-inline const ::std::string& Expression::str_expression() const {
-  // @@protoc_insertion_point(field_get:session.Expression.str_expression)
-  return str_expression_.GetNoArena();
-}
-inline void Expression::set_str_expression(const ::std::string& value) {
-  
-  str_expression_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:session.Expression.str_expression)
-}
-#if LANG_CXX11
-inline void Expression::set_str_expression(::std::string&& value) {
-  
-  str_expression_.SetNoArena(
-    &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
-  // @@protoc_insertion_point(field_set_rvalue:session.Expression.str_expression)
-}
-#endif
-inline void Expression::set_str_expression(const char* value) {
-  GOOGLE_DCHECK(value != NULL);
-  
-  str_expression_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:session.Expression.str_expression)
-}
-inline void Expression::set_str_expression(const char* value, size_t size) {
-  
-  str_expression_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-      ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:session.Expression.str_expression)
-}
-inline ::std::string* Expression::mutable_str_expression() {
-  
-  // @@protoc_insertion_point(field_mutable:session.Expression.str_expression)
-  return str_expression_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-}
-inline ::std::string* Expression::release_str_expression() {
-  // @@protoc_insertion_point(field_release:session.Expression.str_expression)
-  
-  return str_expression_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-}
-inline void Expression::set_allocated_str_expression(::std::string* str_expression) {
-  if (str_expression != NULL) {
-    
-  } else {
-    
-  }
-  str_expression_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), str_expression);
-  // @@protoc_insertion_point(field_set_allocated:session.Expression.str_expression)
 }
 
 // -------------------------------------------------------------------
@@ -3579,6 +3511,211 @@ inline void Col::set_allocated_col_name(::std::string* col_name) {
   }
   col_name_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), col_name);
   // @@protoc_insertion_point(field_set_allocated:session.Col.col_name)
+}
+
+// -------------------------------------------------------------------
+
+// Table
+
+// repeated .session.Tuple table = 2;
+inline int Table::table_size() const {
+  return table_.size();
+}
+inline void Table::clear_table() {
+  table_.Clear();
+}
+inline ::session::Tuple* Table::mutable_table(int index) {
+  // @@protoc_insertion_point(field_mutable:session.Table.table)
+  return table_.Mutable(index);
+}
+inline ::google::protobuf::RepeatedPtrField< ::session::Tuple >*
+Table::mutable_table() {
+  // @@protoc_insertion_point(field_mutable_list:session.Table.table)
+  return &table_;
+}
+inline const ::session::Tuple& Table::table(int index) const {
+  // @@protoc_insertion_point(field_get:session.Table.table)
+  return table_.Get(index);
+}
+inline ::session::Tuple* Table::add_table() {
+  // @@protoc_insertion_point(field_add:session.Table.table)
+  return table_.Add();
+}
+inline const ::google::protobuf::RepeatedPtrField< ::session::Tuple >&
+Table::table() const {
+  // @@protoc_insertion_point(field_list:session.Table.table)
+  return table_;
+}
+
+// -------------------------------------------------------------------
+
+// SQL_Request
+
+// string Sql_statement = 1;
+inline void SQL_Request::clear_sql_statement() {
+  sql_statement_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline const ::std::string& SQL_Request::sql_statement() const {
+  // @@protoc_insertion_point(field_get:session.SQL_Request.Sql_statement)
+  return sql_statement_.GetNoArena();
+}
+inline void SQL_Request::set_sql_statement(const ::std::string& value) {
+  
+  sql_statement_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
+  // @@protoc_insertion_point(field_set:session.SQL_Request.Sql_statement)
+}
+#if LANG_CXX11
+inline void SQL_Request::set_sql_statement(::std::string&& value) {
+  
+  sql_statement_.SetNoArena(
+    &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
+  // @@protoc_insertion_point(field_set_rvalue:session.SQL_Request.Sql_statement)
+}
+#endif
+inline void SQL_Request::set_sql_statement(const char* value) {
+  GOOGLE_DCHECK(value != NULL);
+  
+  sql_statement_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:session.SQL_Request.Sql_statement)
+}
+inline void SQL_Request::set_sql_statement(const char* value, size_t size) {
+  
+  sql_statement_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:session.SQL_Request.Sql_statement)
+}
+inline ::std::string* SQL_Request::mutable_sql_statement() {
+  
+  // @@protoc_insertion_point(field_mutable:session.SQL_Request.Sql_statement)
+  return sql_statement_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline ::std::string* SQL_Request::release_sql_statement() {
+  // @@protoc_insertion_point(field_release:session.SQL_Request.Sql_statement)
+  
+  return sql_statement_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void SQL_Request::set_allocated_sql_statement(::std::string* sql_statement) {
+  if (sql_statement != NULL) {
+    
+  } else {
+    
+  }
+  sql_statement_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), sql_statement);
+  // @@protoc_insertion_point(field_set_allocated:session.SQL_Request.Sql_statement)
+}
+
+// -------------------------------------------------------------------
+
+// SQL_Response
+
+// string txt = 1;
+inline void SQL_Response::clear_txt() {
+  txt_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline const ::std::string& SQL_Response::txt() const {
+  // @@protoc_insertion_point(field_get:session.SQL_Response.txt)
+  return txt_.GetNoArena();
+}
+inline void SQL_Response::set_txt(const ::std::string& value) {
+  
+  txt_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
+  // @@protoc_insertion_point(field_set:session.SQL_Response.txt)
+}
+#if LANG_CXX11
+inline void SQL_Response::set_txt(::std::string&& value) {
+  
+  txt_.SetNoArena(
+    &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
+  // @@protoc_insertion_point(field_set_rvalue:session.SQL_Response.txt)
+}
+#endif
+inline void SQL_Response::set_txt(const char* value) {
+  GOOGLE_DCHECK(value != NULL);
+  
+  txt_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:session.SQL_Response.txt)
+}
+inline void SQL_Response::set_txt(const char* value, size_t size) {
+  
+  txt_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:session.SQL_Response.txt)
+}
+inline ::std::string* SQL_Response::mutable_txt() {
+  
+  // @@protoc_insertion_point(field_mutable:session.SQL_Response.txt)
+  return txt_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline ::std::string* SQL_Response::release_txt() {
+  // @@protoc_insertion_point(field_release:session.SQL_Response.txt)
+  
+  return txt_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void SQL_Response::set_allocated_txt(::std::string* txt) {
+  if (txt != NULL) {
+    
+  } else {
+    
+  }
+  txt_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), txt);
+  // @@protoc_insertion_point(field_set_allocated:session.SQL_Response.txt)
+}
+
+// -------------------------------------------------------------------
+
+// Expression
+
+// string str_expression = 1;
+inline void Expression::clear_str_expression() {
+  str_expression_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline const ::std::string& Expression::str_expression() const {
+  // @@protoc_insertion_point(field_get:session.Expression.str_expression)
+  return str_expression_.GetNoArena();
+}
+inline void Expression::set_str_expression(const ::std::string& value) {
+  
+  str_expression_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
+  // @@protoc_insertion_point(field_set:session.Expression.str_expression)
+}
+#if LANG_CXX11
+inline void Expression::set_str_expression(::std::string&& value) {
+  
+  str_expression_.SetNoArena(
+    &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
+  // @@protoc_insertion_point(field_set_rvalue:session.Expression.str_expression)
+}
+#endif
+inline void Expression::set_str_expression(const char* value) {
+  GOOGLE_DCHECK(value != NULL);
+  
+  str_expression_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:session.Expression.str_expression)
+}
+inline void Expression::set_str_expression(const char* value, size_t size) {
+  
+  str_expression_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:session.Expression.str_expression)
+}
+inline ::std::string* Expression::mutable_str_expression() {
+  
+  // @@protoc_insertion_point(field_mutable:session.Expression.str_expression)
+  return str_expression_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline ::std::string* Expression::release_str_expression() {
+  // @@protoc_insertion_point(field_release:session.Expression.str_expression)
+  
+  return str_expression_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void Expression::set_allocated_str_expression(::std::string* str_expression) {
+  if (str_expression != NULL) {
+    
+  } else {
+    
+  }
+  str_expression_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), str_expression);
+  // @@protoc_insertion_point(field_set_allocated:session.Expression.str_expression)
 }
 
 // -------------------------------------------------------------------

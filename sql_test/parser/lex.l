@@ -55,6 +55,12 @@ single_op ";"|"("|")"|","|"*"|"="|">"|"<"|"."
 {white_space} { /* ignore white space */ }
 {new_line} { /* ignore new line */ }
     /* keywords */
+"EXPLAIN" { return EXPLAIN; }    
+"PARTITION" { return PARTITION; }
+"BY" { return BY; }
+"RANGE" { return RANGE; }
+"LESS" { return LESS; }
+"THAN" { return THAN; }
 "SHOW" { return SHOW; }
 "BEGIN" { return TXN_BEGIN; }
 "COMMIT" { return TXN_COMMIT; }

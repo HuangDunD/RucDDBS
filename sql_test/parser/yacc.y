@@ -23,6 +23,7 @@ using namespace ast;
 // keywords
 %token SHOW TABLES CREATE TABLE DROP DESC INSERT INTO VALUES DELETE FROM
 WHERE UPDATE SET SELECT INT CHAR FLOAT INDEX AND JOIN EXIT HELP TXN_BEGIN TXN_COMMIT TXN_ABORT TXN_ROLLBACK
+PARTITION BY RANGE LESS THAN EXPLAIN
 // non-keywords
 %token LEQ NEQ GEQ T_EOF
 
@@ -35,6 +36,9 @@ WHERE UPDATE SET SELECT INT CHAR FLOAT INDEX AND JOIN EXIT HELP TXN_BEGIN TXN_CO
 %type <sv_node> stmt dbStmt ddl dml txnStmt
 %type <sv_field> field
 %type <sv_fields> fieldList
+%type <sv_paropt> paropt
+%type <sv_part> part
+%type <sv_parts> parlist
 %type <sv_type_len> type
 %type <sv_comp_op> op
 %type <sv_expr> expr
@@ -54,6 +58,12 @@ start:
         stmt ';'
     {
         parse_tree = $1;
+        YYACCEPT;
+    }
+    |
+        EXPLAIN stmt ';'
+    {
+        parse_tree = std::make_shared<Explain>($2);
         YYACCEPT;
     }
     |   HELP
@@ -104,13 +114,18 @@ dbStmt:
     {
         $$ = std::make_shared<ShowTables>();
     }
+    |   SHOW PARTITION
+    {
+        $$ = std::make_shared<ShowPartitions>();
+    }
     ;
 
 ddl:
-        CREATE TABLE tbName '(' fieldList ')'
+        CREATE TABLE tbName '(' fieldList ')' paropt
     {
-        $$ = std::make_shared<CreateTable>($3, $5);
+        $$ = std::make_shared<CreateTable>($3, $5, $7);
     }
+
     |   DROP TABLE tbName
     {
         $$ = std::make_shared<DropTable>($3);
@@ -129,6 +144,30 @@ ddl:
     }
     ;
 
+paropt:
+        /* epsilon */ { /* ignore*/ }
+    |    
+        PARTITION BY RANGE '(' colName ')' '(' parlist ')'
+    {
+        $$ = std::make_shared<ParOpt>($5, $8);
+    } 
+    ;
+parlist:
+        part
+    {
+        $$ = std::vector<std::shared_ptr<Part>>{$1};
+    }
+    |   parlist ',' part
+    {
+        $$.push_back($3);
+    }
+    ;
+part:
+        PARTITION LESS THAN '(' VALUE_INT ')'
+    {
+        $$ = std::make_shared<Part>($5);
+    }
+    ;
 dml:
         INSERT INTO tbName VALUES '(' valueList ')'
     {

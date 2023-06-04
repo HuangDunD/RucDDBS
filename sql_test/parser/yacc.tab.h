@@ -34,8 +34,8 @@
 /* Undocumented macros, especially those whose name start with YY_,
    are private implementation details.  Do not rely on them.  */
 
-#ifndef YY_YY_HOME_XHC_CODE_RUCDDBS_SQL_TEST_PARSER_YACC_TAB_H_INCLUDED
-# define YY_YY_HOME_XHC_CODE_RUCDDBS_SQL_TEST_PARSER_YACC_TAB_H_INCLUDED
+#ifndef YY_YY_HOME_XHC_CODE_SQL_ETCD_PARSER_YACC_TAB_H_INCLUDED
+# define YY_YY_HOME_XHC_CODE_SQL_ETCD_PARSER_YACC_TAB_H_INCLUDED
 /* Debug traces.  */
 #ifndef YYDEBUG
 # define YYDEBUG 0
@@ -76,14 +76,20 @@ extern int yydebug;
     TXN_COMMIT = 282,
     TXN_ABORT = 283,
     TXN_ROLLBACK = 284,
-    LEQ = 285,
-    NEQ = 286,
-    GEQ = 287,
-    T_EOF = 288,
-    IDENTIFIER = 289,
-    VALUE_STRING = 290,
-    VALUE_INT = 291,
-    VALUE_FLOAT = 292
+    PARTITION = 285,
+    BY = 286,
+    RANGE = 287,
+    LESS = 288,
+    THAN = 289,
+    EXPLAIN = 290,
+    LEQ = 291,
+    NEQ = 292,
+    GEQ = 293,
+    T_EOF = 294,
+    IDENTIFIER = 295,
+    VALUE_STRING = 296,
+    VALUE_INT = 297,
+    VALUE_FLOAT = 298
   };
 #endif
 
@@ -107,4 +113,4 @@ struct YYLTYPE
 
 int yyparse (void);
 
-#endif /* !YY_YY_HOME_XHC_CODE_RUCDDBS_SQL_TEST_PARSER_YACC_TAB_H_INCLUDED  */
+#endif /* !YY_YY_HOME_XHC_CODE_SQL_ETCD_PARSER_YACC_TAB_H_INCLUDED  */

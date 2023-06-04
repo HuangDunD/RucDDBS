@@ -1,44 +1,12 @@
 //demo distsql engine
 #include "engine.h"
-#include "../session.pb.h"
 #include <gflags/gflags.h>
 #include <butil/logging.h>
 #include <butil/time.h>
 #include <brpc/channel.h>
 using namespace std;
-using namespace ast;
 
-void test_init_0(vector<shared_ptr<record>> &ret){
-    for(int i = 0; i < 10; i++){
-        shared_ptr<record> rec(new record);
-        for(int j = 0; j < 1;j++){
-            shared_ptr<value> val(new value);
-            val->tab_name = "A";
-            val->col_name = "id";
-            val->str = i;
-            rec->row.push_back(val);
-        }
-        rec->pt_row();
-        cout << endl;
-        ret.push_back(rec);
-    }
-}
-
-void test_init_1(vector<shared_ptr<record>> &ret){
-    for(int i = 10; i < 20; i++){
-        shared_ptr<record> rec(new record);
-        for(int j = 0; j < 1;j++){
-            shared_ptr<value> val(new value);
-            val->tab_name = "A";
-            val->col_name = "id";
-            val->str = i;
-            rec->row.push_back(val);
-        }
-        rec->pt_row();
-        cout << endl;
-        ret.push_back(rec);
-    }
-}
+std::map<string, string> nodes_name{{"0.0.0.0:8005", "server1"},{"0.0.0.0:8006", "server2"}};
 
 shared_ptr<value> interp_value(const std::shared_ptr<ast::Value> &sv_val) {
     shared_ptr<value> val(new value);
@@ -52,63 +20,67 @@ shared_ptr<value> interp_value(const std::shared_ptr<ast::Value> &sv_val) {
     return val;
 }
 
-vector<shared_ptr<record>> get_res(session::Table &response){
-        vector<shared_ptr<record>> ret_table;
-        for(auto i: response.table()){
-            shared_ptr<record> rec(new record);
-            for(auto j: i.tuple()){
-                shared_ptr<value> val(new value);
-                val->str = j.value();
-                rec->row.push_back(val);
-            }
-            ret_table.push_back(rec);
+int get_res(const session::Table &response, vector<shared_ptr<record>>& ret_table){
+    for(auto i: response.table()){
+        shared_ptr<record> rec = make_shared<record>();
+        for(auto j: i.tuple()){
+            shared_ptr<value> val = make_shared<value>();
+            val->str = j.value();
+            val->col_name = j.col_name();
+            val->tab_name = j.tab_name();
+            rec->row.push_back(val);
         }
-        return ret_table;
+        ret_table.push_back(rec);
     }
+    return ret_table.size();
+}
 
-vector<shared_ptr<record>> send_plan(string target_address, shared_ptr<Operators> node_plan){
+int send_plan(string target_address, shared_ptr<Operators> node_plan, vector<shared_ptr<record>>& res){
     brpc::Channel channel;
     brpc::ChannelOptions options;
     session::RemotePlan request;
     session::Table response;
     brpc::Controller cntl;
-    session::ChildPlan child_plan;
+    session::ChildPlan* child_plan = new session::ChildPlan;
     string address = target_address;
 
     // 将我们构造好的执行计划，转成rpc通信用的message类
     // 根据我们目前的plan构造
     // 只有insert, delete, update, select，table_scan需要实现
-    shared_ptr<session::ChildPlan> cur_plan(&child_plan);
+    cout << "send_plan: " << endl;
+    auto cur_plan = child_plan;
     while(node_plan != nullptr){
         if (auto table_scan = dynamic_pointer_cast<op_tablescan>(node_plan)) {
-            shared_ptr<session::SeqScanPlan> seq_scan_plan(new session::SeqScanPlan); 
+            cout << "table_scan " << endl;
+            auto seq_scan_plan = new session::SeqScanPlan;
+
             seq_scan_plan->set_db_name(DB_NAME);
             seq_scan_plan->set_tab_name(table_scan->tabs);
             seq_scan_plan->set_par_id(table_scan->par);
-            cur_plan->set_allocated_seq_scan_plan(seq_scan_plan.get());
-            cur_plan.reset(seq_scan_plan->add_child());
+
+            cur_plan->set_allocated_seq_scan_plan(seq_scan_plan);
+            cur_plan = seq_scan_plan->add_child();
         }
         else if (auto insert_message = dynamic_pointer_cast<op_insert>(node_plan)) {
             // 实现insert到message构造
-            shared_ptr<session::InsertPlan> insert_plan(new session::InsertPlan);
+            cout << "insert_plan " << endl;
+            auto insert_plan = new session::InsertPlan;
             insert_plan->set_db_name(DB_NAME);
             insert_plan->set_tab_name(insert_message->tab_name);
             insert_plan->set_par_id(insert_message->par);
-
-            for (auto col : insert_message->rec->row) {
-                insert_plan->add_col_name(col->col_name);
-            }
+            
 
             for (auto val : insert_message->rec->row) {
-                    insert_plan->add_val(val->str);
+                insert_plan->add_col_name(val->col_name);
+                insert_plan->add_val(val->str);
             }
-
-            cur_plan->set_allocated_insert_plan(insert_plan.get());
-            cur_plan.reset(insert_plan->add_child());
+            cur_plan->set_allocated_insert_plan(insert_plan);
+            cur_plan = insert_plan->add_child();
         }
         else if(auto update_message = dynamic_pointer_cast<op_update>(node_plan)){
+            cout << "update_plan " << endl;
             // 实现update到message构造
-            shared_ptr<session::UpdatePlan> update_plan(new session::UpdatePlan);
+            auto update_plan = new session::UpdatePlan;
             update_plan->set_db_name(DB_NAME);
             update_plan->set_tab_name(update_message->tab_name);
             update_plan->set_par_id(update_message->par);
@@ -118,52 +90,60 @@ vector<shared_ptr<record>> send_plan(string target_address, shared_ptr<Operators
             }
 
             for(auto col : update_message->set_val){
-                update_plan->add_set_col_index(col->str);
+                update_plan->add_set_val(col->str);
             }
 
-            cur_plan->set_allocated_update_plan(update_plan.get());
-            cur_plan.reset(update_plan->add_child());
+            cur_plan->set_allocated_update_plan(update_plan);
+            cur_plan = update_plan->add_child();
         }
         else if(auto delete_message = dynamic_pointer_cast<op_delete>(node_plan)){
             // 实现delete到message构造
-            shared_ptr<session::DeletePlan> delete_plan(new session::DeletePlan);
+            cout << "delete_plan " << endl;
+            auto delete_plan = new session::DeletePlan;
+
             delete_plan->set_db_name(DB_NAME);
             delete_plan->set_tab_name(delete_message->tab_name);
             delete_plan->set_par_id(delete_message->par);
 
-            cur_plan->set_allocated_delete_plan(delete_plan.get());
-            cur_plan.reset(delete_plan->add_child());
+            cur_plan->set_allocated_delete_plan(delete_plan);
+            cur_plan = delete_plan->add_child();
         }
         else if(auto select_message = dynamic_pointer_cast<op_selection>(node_plan)){
             // 实现select到message构造
-            shared_ptr<session::FilterPlan> select_plan(new session::FilterPlan);
-            shared_ptr<session::BinaryMessage> cond_msg(new session::BinaryMessage);
+            cout << "select_plan " << endl;
+            auto select_plan = new session::FilterPlan;
+            auto cond_msg = new session::BinaryMessage;
 
-            shared_ptr<session::Col> col_msg(new session::Col);
+            auto col_msg = new session::Col;
 
             // Set the values for the Col message
             col_msg->set_tab_name(select_message->conds->lhs->tab_name);
             col_msg->set_col_name(select_message->conds->lhs->col_name);
-
-            // Set the values for the BinaryMessage message
+            cond_msg->set_allocated_col(col_msg);
+            
             cond_msg->set_op(select_message->conds->op);
-
-            shared_ptr<session::Expr> right(new session::Expr);
-            if(auto x = dynamic_pointer_cast<Col>(select_message->conds->rhs)){
-                shared_ptr<session::Col> col_right_msg(new session::Col);
+            
+            auto right = new session::Expr;
+            if(auto x = dynamic_pointer_cast<ast::Col>(select_message->conds->rhs)){
+                auto col_right_msg = new session::Col;
                 col_right_msg->set_tab_name(x->tab_name);
                 col_right_msg->set_col_name(x->col_name);
-                right->set_allocated_col(col_right_msg.get());
+                right->set_allocated_col(col_right_msg);
             }
             else if(auto x = dynamic_pointer_cast<ast::Value>(select_message->conds->rhs)){
                 auto val = interp_value(x);
-                shared_ptr<session::Value> col_right_msg(new session::Value);
+                auto col_right_msg = new session::Value;
                 col_right_msg->set_value(val->str);
-                right->set_allocated_val(col_right_msg.get());
+                right->set_allocated_val(col_right_msg);
             }
-            cur_plan->set_allocated_filter_plan(select_plan.get());
-            cur_plan.reset(select_plan->add_child());
+            cond_msg->set_allocated_exp(right);
+
+            select_plan->set_allocated_conds(cond_msg);
+            cur_plan->set_allocated_filter_plan(select_plan);
+            cur_plan = select_plan->add_child();
         }
+
+        node_plan = node_plan->next_node;
     }
 
     options.timeout_ms = 100;
@@ -176,9 +156,8 @@ vector<shared_ptr<record>> send_plan(string target_address, shared_ptr<Operators
     session::Session_Service_Stub stub(&channel);
     int log_id = 0;
     /* code */
-    request.set_allocated_child(&child_plan);
+    request.set_allocated_child(child_plan);
     cntl.set_log_id(log_id ++);
-            
     stub.SendRemotePlan(&cntl, &request, &response, NULL);
             
     if(cntl.Failed()) {
@@ -186,116 +165,37 @@ vector<shared_ptr<record>> send_plan(string target_address, shared_ptr<Operators
     }
     LOG(INFO) << "Client is going to quit";
     
-    return get_res(response);
+    get_res(response, res);
+    return res.size();
 }
 
 void parser_sql(string str){
-    YY_BUFFER_STATE buf = yy_scan_string(str.c_str());
+    // YY_BUFFER_STATE buf = yy_scan_string(str.c_str());
+    yy_scan_string(str.c_str());
 }
 
-int GetTableInfo(string tab_name, Column_info &ret){
-    brpc::Channel channel;
-    brpc::ChannelOptions options;
-    options.timeout_ms = 100;
-    options.max_retry = 3;
-
-    if (channel.Init(FLAGS_META_SERVER_ADDR.c_str(), &options) != 0) {
-        LOG(ERROR) << "Fail to initialize channel";
-        return -1;
+bool create_table(shared_ptr<ast::CreateTable> create_table){
+    auto tab_name = create_table->tab_name;
+    shared_ptr<Column_info> cols_info(new Column_info);
+    vector<int> par_vals;
+    for (auto &field : create_table->fields) {
+        if (auto parser_col_def = std::dynamic_pointer_cast<ast::ColDef>(field)) {
+            cols_info->column_name.push_back(parser_col_def->col_name);
+            cols_info->column_type.push_back(ColType(int(parser_col_def->type_len->type)));
+        } else {
+            cout << "Unexpected field type" << endl;
+        }
     }
-    meta_service::MetaService_Stub stub(&channel);
-    brpc::Controller cntl;
-    meta_service::GetTableInfoRequest request;
-    meta_service::GetTableInfoResponse response;
-    
-    request.set_tab_name(DB_NAME);
-    request.set_tab_name(tab_name);
-
-    stub.GetTableInfo(&cntl, &request, &response, NULL);
-
-    if(cntl.Failed()) {
-        LOG(WARNING) << cntl.ErrorText();
-    }
-    LOG(INFO) << "Client is going to quit";
-
-    for(int i = 0; i < response.col_name_size(); i++){
-        ret.column_name.push_back(response.col_name()[i]);
-        ret.column_type.push_back(ColType(response.col_type()[i]));
-    }
-
-    return 1;
-}
-
-map<int,string> GetTableIp(string tab_name, string partition_key_name, string min_range = "0", string max_range = "1000000"){
-    map<int,string> res;// 分区，ip
-    brpc::Channel channel;
-    brpc::ChannelOptions options;
-    options.timeout_ms = 100;
-    options.max_retry = 3;
-
-    if (channel.Init(FLAGS_META_SERVER_ADDR.c_str(), &options) != 0) {
-        LOG(ERROR) << "Fail to initialize channel";
-        return res;
-    }
-    meta_service::MetaService_Stub stub(&channel);
-    brpc::Controller cntl;
-    meta_service::PartitionLocationRequest request;
-    meta_service::PartitionLocationResponse response;
-    meta_service::PartitionLocationRequest_StringRange range;
-    
-    request.set_tab_name(DB_NAME);
-    request.set_tab_name(tab_name);
-    request.set_partition_key_name(partition_key_name);
-    range.set_min_range(min_range);
-    range.set_max_range(max_range);
-    
-
-    stub.GetPartitionLocation(&cntl, &request, &response, NULL);
-
-    if(cntl.Failed()) {
-        LOG(WARNING) << cntl.ErrorText();
-    }
-    LOG(INFO) << "Client is going to quit";
-
-    auto ret = response.pid_partition_location();
-    for(auto iter = ret.begin(); iter != ret.end(); iter++){
-        res[iter->first] = iter->second.ip_addr() + ":" +to_string(iter->second.port());
-    }
+    par_vals.push_back(par_min);
+    if(create_table->par_opt != nullptr)
+        for (auto &par_val : create_table->par_opt->parts){
+            par_vals.push_back(par_val->val);
+        }
+    par_vals.push_back(par_max);
+    auto res = create_par_table(tab_name, cols_info, par_vals);
     return res;
 }
 
-int create_table(string tab_name, std::vector<ColDef> col_defs){
-    brpc::Channel channel;
-    brpc::ChannelOptions options;
-    options.timeout_ms = 100;
-    options.max_retry = 3;
-
-    if (channel.Init(FLAGS_META_SERVER_ADDR.c_str(), &options) != 0) {
-        LOG(ERROR) << "Fail to initialize channel";
-        return -1;
-    }
-    meta_service::MetaService_Stub stub(&channel);
-    brpc::Controller cntl;
-    meta_service::CreateTableRequest request;
-    meta_service::CreateTableResponse response;
-    
-    request.set_tab_name(DB_NAME);
-    request.set_tab_name(tab_name);
-    for(auto col: col_defs){
-        request.add_col_name(col.col_name);
-        request.add_col_type(col.type_len->type);
-    }
-
-    stub.CreateTable(&cntl, &request, &response, NULL);
-
-    if(cntl.Failed()) {
-        LOG(WARNING) << cntl.ErrorText();
-    }
-    LOG(INFO) << "Client is going to quit";
-
-    
-    return response.success();
-}
 
 void build_insert_plan(shared_ptr<ast::InsertStmt> insert_tree, std::shared_ptr<op_executor> exec_plan){
     // 构造insert算子
@@ -304,8 +204,8 @@ void build_insert_plan(shared_ptr<ast::InsertStmt> insert_tree, std::shared_ptr<
     insert_plan->rec.reset(new record);
     auto iter = insert_plan->rec;
     Column_info col_info;
-    GetTableInfo(insert_tree->tab_name, col_info);
-    for(int i = 0; i < insert_tree->vals.size(); i++){
+    GetColInfo(insert_tree->tab_name, col_info);
+    for(int i = 0; i < int(insert_tree->vals.size()); i++){
         auto in_val = interp_value(insert_tree->vals[i]);
         in_val->tab_name = insert_tree->tab_name;
         in_val->col_name = col_info.column_name[i];
@@ -328,19 +228,19 @@ void build_delete_plan(shared_ptr<ast::DeleteStmt> delete_tree, std::shared_ptr<
     shared_ptr<Operators> cur_node = exec_plan;
     // 针对不同ip构造不同delete_plan,发个不同节点
     Column_info col_info;
-    GetTableInfo(delete_tree->tab_name, col_info);
+    GetColInfo(delete_tree->tab_name, col_info);
     auto tab_name = delete_tree->tab_name;
     // 默认第一列为主键
     auto par_ips = GetTableIp(tab_name, col_info.column_name[0], to_string(0), to_string(10000000));
     shared_ptr<op_distribution> distribution_plan(new op_distribution);
+    cur_node->next_node = distribution_plan;
     for(auto iter: par_ips){
         shared_ptr<op_delete> delete_plan(new op_delete);
         delete_plan->tab_name = tab_name;
         delete_plan->par = iter.first;
-        cur_node->next_node = delete_plan;
-        cur_node = cur_node->next_node;
+        cur_node = delete_plan;
         // 筛选
-        for(int i = 0; i < delete_tree->conds.size(); i++){
+        for(int i = 0; i < int(delete_tree->conds.size()); i++){
             if(delete_tree->conds.size()){
                 shared_ptr<op_selection> selection_plan(new op_selection);
                 selection_plan->conds = delete_tree->conds[i];
@@ -363,20 +263,23 @@ void build_update_plan(shared_ptr<ast::UpdateStmt> update_tree, std::shared_ptr<
     shared_ptr<Operators> cur_node = exec_plan;
     // 针对不同ip构造不同delete_plan,发个不同节点
     Column_info col_info;
-    GetTableInfo(update_tree->tab_name, col_info);
+    GetColInfo(update_tree->tab_name, col_info);
     auto tab_name = update_tree->tab_name;
     // 默认第一列为主键
     auto par_ips = GetTableIp(tab_name, col_info.column_name[0]);
     shared_ptr<op_distribution> distribution_plan(new op_distribution);
+    cur_node->next_node = distribution_plan;
+    cur_node = distribution_plan;
     for(auto iter: par_ips){
         shared_ptr<op_update> update_plan(new op_update);
-        cur_node->next_node = update_plan;
-        cur_node = cur_node->next_node;
+        cur_node = update_plan;
         // 构造
         update_plan->par = iter.first;
         update_plan->tab_name = tab_name;
         for(auto set_col: update_tree->set_clauses){
-            for(int i = 0; i < col_info.column_name.size(); i++){
+            // cout << set_col->col_name << endl;
+            for(int i = 0; i < int(col_info.column_name.size()); i++){ 
+                // cout << col_info.column_name[i] << endl;
                 if(set_col->col_name == col_info.column_name[i]){
                     update_plan->set_col_index.push_back(i);
                     update_plan->set_val.push_back(interp_value(set_col->val));
@@ -384,7 +287,7 @@ void build_update_plan(shared_ptr<ast::UpdateStmt> update_tree, std::shared_ptr<
             }
         }
         // 筛选
-        for(int i = 0; i < update_tree->conds.size(); i++){
+        for(int i = 0; i < int(update_tree->conds.size()); i++){
             if(update_tree->conds.size()){
                 shared_ptr<op_selection> selection_plan(new op_selection);
                 selection_plan->conds = update_tree->conds[i];
@@ -409,7 +312,10 @@ void build_select_plan(std::shared_ptr<ast::SelectStmt> select_tree, std::shared
     // 处理投影操作
     if (select_tree->cols.size()) {
         std::shared_ptr<op_projection> projection_plan(new op_projection);
-        projection_plan->cols = select_tree->cols;
+        for(auto iter: select_tree->cols){
+            shared_ptr<ast::Col> col(new ast::Col(iter->tab_name,iter->col_name));
+            projection_plan->cols.push_back(col);
+        }
         cur_node->next_node = projection_plan;
         cur_node = cur_node->next_node;
     }
@@ -428,7 +334,7 @@ void build_select_plan(std::shared_ptr<ast::SelectStmt> select_tree, std::shared
         std::shared_ptr<op_join> join_plan(new op_join);
         for (auto& tab : select_tree->tabs) {
             Column_info col_info;
-            GetTableInfo(tab, col_info);
+            GetColInfo(tab, col_info);
             auto par_ips = GetTableIp(tab, col_info.column_name[0]);
             // 构造分布查询
             if(par_ips.empty()){
@@ -450,7 +356,7 @@ void build_select_plan(std::shared_ptr<ast::SelectStmt> select_tree, std::shared
         cur_node = cur_node->next_node;
     } else if (select_tree->tabs.size() == 1){
         Column_info col_info;
-        GetTableInfo(select_tree->tabs[0], col_info);
+        GetColInfo(select_tree->tabs[0], col_info);
         auto par_ips = GetTableIp(select_tree->tabs[0], col_info.column_name[0]);
         // 构造分布查询
         if(par_ips.empty()){
@@ -483,34 +389,185 @@ void prt_plan(shared_ptr<Operators> exec_plan){
     cout << "over_plan" << endl;
 }
 
+void prt_plan(shared_ptr<Operators> exec_plan, vector<vector<string>> &res_txt, string offset, string node){
+    auto tmp = exec_plan;
+    vector<string> row;
+    string op = offset + typeid(*tmp).name();
+    cout << op << endl;
+    row.push_back(op);
+    row.push_back(node);
+    res_txt.push_back(row);
+    offset += "  ";
+    if(auto x  = std::dynamic_pointer_cast<op_distribution>(tmp)){
+        int nums = x->nodes_plan.size();
+        for(int i = 0; i < nums; i++){
+            prt_plan(x->nodes_plan[i], res_txt, offset, nodes_name[x->target_address[i]]);
+        }
+    } else if(auto x = std::dynamic_pointer_cast<op_join>(tmp)){
+        int nums = x->tables_get.size();
+        for(int i = 0; i < nums; i++){
+            prt_plan(x->tables_get[i], res_txt, offset, node);
+        }
+    } else if(auto x = tmp->next_node){
+        if(x == nullptr){
+            return;
+        }
+        prt_plan(x, res_txt, offset, node);
+    } else {
+        return;
+    }
+}
 
-vector<shared_ptr<record>> Sql_execute(string str){
+bool form_stream(stringstream &str_out, int val_len, int col_nums){
+    for(int i = 0; i < col_nums; i++){
+        str_out << '+';
+        for(int j = 0; j < val_len -1; j++){
+            str_out << '-';
+        }
+    }
+    str_out << '+' << endl;
+    return 1;
+}
+
+bool table_to_string(vector<shared_ptr<record>> &table, string &str){
+    stringstream str_out;
+    int val_len = 20;
+    int col_nums = table[0]->row.size();
+
+    form_stream(str_out, val_len, col_nums);
+
+    auto cols = table[0]->row;
+    for(int i = 0; i < col_nums; i++){
+        string tmp = "| " + cols[i]->col_name;
+        str_out << setiosflags(ios::left) << setw(val_len) << tmp;
+    }
+    str_out << '|' << endl;
+
+    form_stream(str_out, val_len, col_nums);
+
+    for(auto row: table){
+        for(int i = 0; i < col_nums; i++){
+            string tmp = "| " + to_string(row->row[i]->str);
+            str_out << setiosflags(ios::left) << setw(val_len) << tmp;
+        }
+        str_out << '|' << endl;
+    }
+
+    form_stream(str_out, val_len, col_nums);
+
+    string out;
+    while(getline(str_out, out)){
+        str.append(out + "\n");
+    }
+    return 1;
+}
+
+bool txt_to_string(vector<vector<string>> &res_txt, string &str){
+    stringstream str_out;
+    int val_len = 25;
+    int col_nums = res_txt[0].size();
+    form_stream(str_out, val_len, col_nums);
+
+    auto cols = res_txt[0];
+    for(int i = 0; i < col_nums; i++){
+        string tmp = "| " + cols[i];
+        str_out << setiosflags(ios::left) << setw(val_len) << tmp;
+    }
+    str_out << '|' << endl;
+
+    form_stream(str_out, val_len, col_nums);
+
+    for(int i = 1; i < int(res_txt.size()); i++){
+        auto row = res_txt[i];
+        for(auto col: row){
+            string tmp = "| " + col;
+            str_out << setiosflags(ios::left) << setw(val_len) << tmp;
+        }
+        str_out << '|' << endl;
+    }
+
+    form_stream(str_out, val_len, col_nums);
+
+    string out;
+    while(getline(str_out, out)){
+        str.append(out + "\n");
+    }
+    return 1;
+}
+
+bool showTables(vector<vector<string>> &res_txt){
+    vector<string> col_name;
+    col_name.push_back("Tables");
+    res_txt.push_back(col_name);
+
+    GetTables(res_txt);
+    return true;
+}
+
+bool showPartitions(vector<vector<string>> &res_txt){
+    vector<string> col_name;
+    col_name.push_back("Table_Name");
+    col_name.push_back("Partition_Key");
+    col_name.push_back("Partition_Num");
+    col_name.push_back("Ip_address");
+    col_name.push_back("Range");
+    res_txt.push_back(col_name);
+
+    GetPartitions(res_txt);
+
+    return true;
+}
+
+bool showPlan(std::shared_ptr<ast::Explain> explain_tree, vector<vector<string>> &res_txt){
+    auto stmt = explain_tree->stmt;
+    shared_ptr<op_executor> exec_plan(new op_executor);
+    if (ast::parse_tree != nullptr) {
+        auto root = stmt;
+        if (auto x = std::dynamic_pointer_cast<ast::SelectStmt>(root)) {
+            build_select_plan(x, exec_plan);
+        } else if (auto x = std::dynamic_pointer_cast<ast::InsertStmt>(root)) {
+            build_insert_plan(x, exec_plan);
+        } else if (auto x = std::dynamic_pointer_cast<ast::DeleteStmt>(root)) {
+            build_delete_plan(x, exec_plan);
+        } else if (auto x = std::dynamic_pointer_cast<ast::UpdateStmt>(root)) {
+            build_update_plan(x, exec_plan);
+        }
+    }
+    vector<string> col_name;
+    col_name.push_back("Operators");
+    col_name.push_back("Node"); 
+    res_txt.push_back(col_name);
+    prt_plan(exec_plan, res_txt, "", "server1");
+    
+    return true;
+}
+
+string Sql_execute_client(string str){
     parser_sql(str);
     vector<shared_ptr<record>> res;
+    vector<vector<string>> res_txt;
+    string ok_txt = "";
     if (yyparse() == 0) {
         ast::TreePrinter::print(ast::parse_tree);
         if (ast::parse_tree != nullptr) {
             auto root = ast::parse_tree;
-            if (auto x = std::dynamic_pointer_cast<ast::SelectStmt>(root)) {
+            if (auto x = std::dynamic_pointer_cast<ast::ShowTables>(root)){
+                showTables(res_txt);
+            } else if (auto x = std::dynamic_pointer_cast<ast::ShowPartitions>(root)) {
+                showPartitions(res_txt);
+            } else if (auto x = std::dynamic_pointer_cast<ast::Explain>(root)) {
+                showPlan(x, res_txt);
+            }else if (auto x = std::dynamic_pointer_cast<ast::SelectStmt>(root)) {
                 shared_ptr<op_executor> exec_plan(new op_executor);
                 build_select_plan(x, exec_plan);
                 res = exec_plan->exec_op();
                 // prt_plan(exec_plan);
             } else if(auto x = std::dynamic_pointer_cast<ast::CreateTable>(ast::parse_tree)){
-                std::vector<ColDef> col_defs;
-                for (auto &field : x->fields) {
-                    if (auto parser_col_def = std::dynamic_pointer_cast<ast::ColDef>(field)) {
-                        ColDef col_def;
-                        col_def.col_name = parser_col_def->col_name;
-                        col_def.type_len.reset(new TypeLen(parser_col_def->type_len->type,parser_col_def->type_len->len));
-                        col_defs.push_back(col_def);
-                    } else {
-                        cout << "Unexpected field type" << endl;
-                    }
-                }
-                if(create_table(x->tab_name, col_defs)){
+                if(create_table(x)){
+                    ok_txt = "OK";
                     cout << "create table " << x->tab_name << endl;
                 } else{
+                    ok_txt = "error";
                     cout << "fail create table" << endl;
                 }
             } else if (auto x = std::dynamic_pointer_cast<ast::InsertStmt>(root)) {
@@ -520,23 +577,32 @@ vector<shared_ptr<record>> Sql_execute(string str){
                 shared_ptr<op_executor> exec_plan(new op_executor);
                 build_insert_plan(x, exec_plan);
                 res = exec_plan->exec_op();
+                ok_txt = "OK";
             } else if (auto x = std::dynamic_pointer_cast<ast::DeleteStmt>(root)) {
                 // delete;
                 shared_ptr<op_executor> exec_plan(new op_executor);
                 build_delete_plan(x, exec_plan);
                 res = exec_plan->exec_op();
+                ok_txt = "OK";
             } else if (auto x = std::dynamic_pointer_cast<ast::UpdateStmt>(root)) {
-                // update;
-                // std::vector<Condition> conds = interp_where_clause(x->conds);
-                // std::vector<SetClause> set_clauses;
-                // for (auto &sv_set_clause : x->set_clauses) {
-                //     SetClause set_clause = {.lhs = {.tab_name = "", .col_name = sv_set_clause->col_name},
-                //                             .rhs = interp_sv_value(sv_set_clause->val)};
-                //     set_clauses.push_back(set_clause);
-                // }
-                // SetTransaction(txn_id, context);
-                // ql_manager_->update_set(x->tab_name, set_clauses, conds, context);
+                shared_ptr<op_executor> exec_plan(new op_executor);
+                build_update_plan(x, exec_plan);
+                res = exec_plan->exec_op();
+                ok_txt = "OK";
+            }
         }
     }
-    return res;
+    string cli_str;
+    if (ok_txt != ""){
+        cli_str = ok_txt;
+    }
+    else if(int(res.size()) != 0){
+        table_to_string(res, cli_str);
+    } else if(int (res_txt.size()) > 1){
+        txt_to_string(res_txt, cli_str);
+    }
+    else {
+        cli_str = "empty set \n";
+    }
+    return cli_str;
 }

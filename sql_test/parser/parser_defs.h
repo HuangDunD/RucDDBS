@@ -1,6 +1,7 @@
 #pragma once
 
-#include "defs.h"
+#include <iostream>
+#include <map>
 
 int yyparse();
 

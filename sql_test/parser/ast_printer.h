@@ -70,11 +70,25 @@ private:
             std::cout << "HELP\n";
         } else if (auto x = std::dynamic_pointer_cast<ShowTables>(node)) {
             std::cout << "SHOW_TABLES\n";
+        } else if (auto x = std::dynamic_pointer_cast<ShowPartitions>(node)){
+            std::cout << "SHOW_PATITIONS\n";
+        } else if (auto x = std::dynamic_pointer_cast<Explain>(node)) {
+            std::cout << "EXPLAIN_PLAN\n";
+            print_node(x->stmt, offset);
         } else if (auto x = std::dynamic_pointer_cast<CreateTable>(node)) {
             std::cout << "CREATE_TABLE\n";
             print_val(x->tab_name, offset);
             print_node_list(x->fields, offset);
-        } else if (auto x = std::dynamic_pointer_cast<DropTable>(node)) {
+            if(x->par_opt != nullptr)
+                print_node(x->par_opt, offset);
+        } else if (auto x = std::dynamic_pointer_cast<ParOpt>(node)){
+            std::cout << "ParOpt\n";
+            print_val(x->par_key, offset);
+            print_node_list(x->parts, offset);
+        } else if (auto x = std::dynamic_pointer_cast<Part>(node)) {
+            std::cout << "Part\n";
+            print_val(x->val, offset);
+        }else if (auto x = std::dynamic_pointer_cast<DropTable>(node)) {
             std::cout << "DROP_TABLE\n";
             print_val(x->tab_name, offset);
         } else if (auto x = std::dynamic_pointer_cast<DescTable>(node)) {

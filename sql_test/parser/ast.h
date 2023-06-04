@@ -25,6 +25,15 @@ struct Help : public TreeNode {
 struct ShowTables : public TreeNode {
 };
 
+struct ShowPartitions : public TreeNode{
+};
+
+struct Explain : public TreeNode {
+    std::shared_ptr<TreeNode> stmt;
+    Explain(std::shared_ptr<TreeNode> stmt_) :
+            stmt(std::move(stmt_)) {}
+};
+
 struct TxnBegin : public TreeNode {
 };
 
@@ -55,12 +64,27 @@ struct ColDef : public Field {
             col_name(std::move(col_name_)), type_len(std::move(type_len_)) {}
 };
 
+struct Part : public TreeNode{
+    int val;
+    Part(int val_) :
+        val(val_) {}
+};
+
+struct ParOpt : public TreeNode{
+    std::string par_key;
+    std::vector<std::shared_ptr<Part>> parts;
+
+    ParOpt(std::string col_, std::vector<std::shared_ptr<Part>> parts_) :
+            par_key(std::move(col_)),  parts(std::move(parts_)) {}
+};
+
 struct CreateTable : public TreeNode {
     std::string tab_name;
     std::vector<std::shared_ptr<Field>> fields;
+    std::shared_ptr<ParOpt> par_opt;
 
-    CreateTable(std::string tab_name_, std::vector<std::shared_ptr<Field>> fields_) :
-            tab_name(std::move(tab_name_)), fields(std::move(fields_)) {}
+    CreateTable(std::string tab_name_, std::vector<std::shared_ptr<Field>> fields_, std::shared_ptr<ParOpt> par_opt_) :
+            tab_name(std::move(tab_name_)), fields(std::move(fields_)), par_opt(std::move(par_opt_)) {}
 };
 
 struct DropTable : public TreeNode {
@@ -193,6 +217,10 @@ struct SemValue {
 
     std::shared_ptr<Field> sv_field;
     std::vector<std::shared_ptr<Field>> sv_fields;
+
+    std::shared_ptr<ParOpt> sv_paropt;
+    std::shared_ptr<Part> sv_part;
+    std::vector<std::shared_ptr<Part>> sv_parts;
 
     std::shared_ptr<Expr> sv_expr;
 

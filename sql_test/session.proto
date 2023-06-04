@@ -5,7 +5,10 @@ option cc_generic_services = true;
 
 // 客户和节点之间通信
 // 客户将sql发给节点，节点处理后返回一个关系表
+
 message Value{
+    string tab_name = 1;
+    string col_name = 2;
     sint32 value = 3;
 };
 
@@ -13,8 +16,13 @@ message Tuple{
     repeated Value tuple = 1;
 }
 
+message Col{
+    string tab_name = 1;
+    string col_name = 2;
+}
+
 message Table{
-    repeated Tuple table = 1;
+    repeated Tuple table = 2;
 }
 
 message SQL_Request{
@@ -22,18 +30,13 @@ message SQL_Request{
 };
 
 message SQL_Response{
-    Table Sql_response = 1;
+    string txt = 1;
 };
 
 // 节点和节点通信
 // 节点收到一个执行计划，节点执行后，将结果返回
 message Expression {
     string str_expression = 1;
-}
-
-message Col{
-    string tab_name = 1;
-    string col_name = 2;
 }
 
 message Expr{

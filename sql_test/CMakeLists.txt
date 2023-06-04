@@ -1,9 +1,15 @@
 cmake_minimum_required(VERSION 3.2)
 
-project(test_rpc)
+project(sql_etcd)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "-Wall")
+
+include_directories(engine)
+include_directories(parser)
+include_directories(build)
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/../../)
 
 include(FindThreads)
 include(FindProtobuf)
@@ -63,7 +69,7 @@ set(DYNAMIC_LIB
     ${THRIFTNB_LIB}
     dl
     )
-
+    
 add_subdirectory(engine)
 add_subdirectory(parser)
 add_executable(client client.cpp ${PROTO_SRC} ${PROTO_HEADER})

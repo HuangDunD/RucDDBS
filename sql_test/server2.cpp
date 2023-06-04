@@ -5,11 +5,12 @@
 #include "server.h"
 #include "engine/engine.h"
 
-DEFINE_int32(port, 8003, "TCP Port of this server");
+DEFINE_int32(port, 8006, "TCP Port of this server");
 DEFINE_string(listen_addr, "", "Server listen address, may be IPV4/IPV6/UDS."
             " If this is set, the flag port will be ignored");
 DEFINE_int32(idle_timeout_s, -1, "Connection will be closed if there is no "
              "read/write operations during the last `idle_timeout_s'");
+DEFINE_string(store_path, "/home/xhc/code/RucDDBS/data/data2", "server2 store");
 
 int main(){
     brpc::Server server;
