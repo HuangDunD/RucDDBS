@@ -76,7 +76,7 @@ set(STORAGE_DIR ${PROJECT_SOURCE_DIR}/include/storage/)
 set(TRANSACTION_DIR ${PROJECT_SOURCE_DIR}/include/transaction/)
 set(IMMEMORY_DIR ${PROJECT_SOURCE_DIR}/include/Inmemory/)
 set(RECOVERY_DIR ${PROJECT_SOURCE_DIR}/include/recovery/)
-# set(EXECUTION_DIR ${PROJECT_SOURCE_DIR}/src/execution)
+set(EXECUTION_DIR ${PROJECT_SOURCE_DIR}/src/execution)
 set(ENGINE_DIR ${PROJECT_SOURCE_DIR}/include/engine/)
 set(PARSER_DIR ${PROJECT_SOURCE_DIR}/include/parser/)
 
