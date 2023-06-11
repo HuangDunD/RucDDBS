@@ -33,9 +33,11 @@ public:
 
     // del(key)
     bool del(const std::string & key, Transaction *txn, bool add_writeset = true){
-        if(memtable_.contains(key)){
+        std::unique_lock<std::mutex> l(mutex_);
+        bool if_in_mem = memtable_.contains(key);
+        if(if_in_mem){
             if(enable_logging){
-                //写Put日志
+                //写Del日志
                 LogRecord record (txn->get_txn_id(), txn->get_prev_lsn(), LogRecordType::DELETE,
                             key.size(), key.c_str() ,memtable_.get(key).second.size(), memtable_.get(key).second.c_str());
                 auto lsn = log_manager_->AppendLogRecord(record);
@@ -52,7 +54,7 @@ public:
         auto result = diskstorage_.search(key);
         if(result.first && result.second != ""){
             if(enable_logging){
-                //写Put日志
+                //写Del日志
                 LogRecord record (txn->get_txn_id(), txn->get_prev_lsn(), LogRecordType::DELETE,
                             key.size(), key.c_str() , result.second.size(), result.second.c_str());
                 auto lsn = log_manager_->AppendLogRecord(record);

@@ -14,6 +14,7 @@ KVStore_beta::~KVStore_beta() {
 // put(key, value)
 void KVStore_beta::put(const std::string & key, const std::string &value){
     // TODO
+    std::unique_lock<std::mutex> l(mutex_);
     memtable_.put(key, value);
     if(memtable_.space() > Option::SSTABLE_SPACE){
         diskstorage_.add(memtable_);
@@ -25,9 +26,11 @@ void KVStore_beta::put(const std::string & key, const std::string &value){
 // value = get(key)
 std::pair<bool, std::string> KVStore_beta::get(const std::string & key){
     std::pair<bool, std::string> result;
+    std::unique_lock<std::mutex> l(mutex_);
     if(memtable_.contains(key)){
         result = memtable_.get(key);
     }else {
+        l.unlock();
         result = diskstorage_.search(key);
     }
     if(result.first && result.second != "") {
@@ -38,12 +41,15 @@ std::pair<bool, std::string> KVStore_beta::get(const std::string & key){
 
 // del(key)
 bool KVStore_beta::del(const std::string & key){
+    std::unique_lock<std::mutex> l(mutex_);
     if(memtable_.contains(key)){
         memtable_.del(key);
         return true;
     }
+    l.unlock();
     auto result = diskstorage_.search(key);
     if(result.first && result.second != ""){
+        l.lock();
         memtable_.put(key, "");
         return true;
     }else{

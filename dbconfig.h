@@ -11,6 +11,7 @@ static const std::string META_SERVER_FILE_NAME = "META_SERVER.meta";
 static const int META_SERVER_PORT = 8001; // maybe not used
 static const std::string META_SERVER_LISTEN_ADDR = "0.0.0.0:8001";
 static const int idle_timeout_s = -1;
+static bool enable_logging(true);
 
 DECLARE_string(META_SERVER_ADDR);
 

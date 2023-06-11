@@ -20,7 +20,7 @@ int main(){
         }
         std::cout << "now: " << now << "last:" << last << std::endl;
         last = now;
-        std::this_thread::sleep_for(std::chrono::seconds(10));
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
         // if(count % 10000 == 0){
         //     std::cout << count << std::endl;
         // }

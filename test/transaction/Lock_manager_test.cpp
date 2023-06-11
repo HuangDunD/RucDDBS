@@ -10,7 +10,7 @@ class LockManagerTest : public ::testing::Test {
    public:
     void SetUp() override {
         ::testing::Test::SetUp();
-        lock_manager_ = std::make_unique<Lock_manager>(true);
+        lock_manager_ = std::make_unique<Lock_manager>(false);
     }
 };
 
@@ -45,7 +45,7 @@ TEST_F(LockManagerTest, TransactionStateTest) {
     t1.join();
 }
 
-// test shared lock on tuple under REPEATABLE_READ
+// // test shared lock on tuple under REPEATABLE_READ
 TEST_F(LockManagerTest, BasicTest1_SHARED_TABLE) {
     std::vector<row_id_t> row_vec;
     std::vector<Transaction *> txns;
@@ -515,6 +515,9 @@ TEST_F(LockManagerTest, UpgradeTest2_muti_upgrade){
         threads[i].join();
     }
 
+
+}
+TEST_F(LockManagerTest, NO_WAIT_TEST){
 
 }
 

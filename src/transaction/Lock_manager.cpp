@@ -117,10 +117,10 @@ auto Lock_manager::checkSameTxnLockRequest(Transaction *txn, LockRequestQueue *r
                     iter->lock_mode_ = target_lock_mode;
                     iter->granted_ = false;
                     request_queue->cv_.wait(queue_lock, [&request_queue, &iter, &txn]{
-                        //TODO deadlock
                         if(Lock_manager::enable_no_wait_==false)
                             return Lock_manager::checkQueueCompatible(request_queue, iter) || 
                                 txn->get_state()==TransactionState::ABORTED;
+                        // deadlock prevent
                         if(Lock_manager::checkQueueCompatible(request_queue,iter)==true)
                             return true;
                         else{
@@ -141,7 +141,7 @@ auto Lock_manager::checkSameTxnLockRequest(Transaction *txn, LockRequestQueue *r
     }
     catch(TransactionAbortException &e){
         txn->set_transaction_state(TransactionState::ABORTED);
-        std::cerr << e.GetInfo() << std::endl;
+        // std::cerr << e.GetInfo() << std::endl;
         return true;
     }
 }
@@ -202,17 +202,21 @@ auto Lock_manager::LockTable(Transaction *txn, LockMode lock_mode, const table_o
         //             });
 
         request_queue->cv_.wait(queue_lock, [&request_queue, &lock_request, &txn]{
-                        //TODO deadlock
-                        if(Lock_manager::enable_no_wait_==false)
-                            return Lock_manager::checkQueueCompatible(request_queue, lock_request) || 
-                                txn->get_state()==TransactionState::ABORTED;
-                        if(Lock_manager::checkQueueCompatible(request_queue,lock_request)==true)
-                            return true;
-                        else{
-                            txn->set_transaction_state(TransactionState::ABORTED);
-                            return true;
-                        }
-                    });
+            // 如果不使用NO-Wait算法，则检查队列锁请求兼容情况和事务状态，
+            // 如果可以锁请求兼容或事务已经回滚，则返回true，跳出等待
+            if(Lock_manager::enable_no_wait_==false)
+                return Lock_manager::checkQueueCompatible(request_queue, lock_request) || 
+                    txn->get_state()==TransactionState::ABORTED;
+            // 如果使用No-Wait算法， 如果当前请求与锁请求队列兼容
+            // 那么返回true，跳出等待
+            if(Lock_manager::checkQueueCompatible(request_queue,lock_request)==true)
+                return true;
+            // 否则，当前事务回滚，跳出等待
+            else{
+                txn->set_transaction_state(TransactionState::ABORTED);
+                return true;
+            }
+        });
         if(txn->get_state()==TransactionState::ABORTED) 
             throw TransactionAbortException (txn->get_txn_id(), AbortReason::DEAD_LOCK_PREVENT_NO_WAIT) ;
 
@@ -245,18 +249,19 @@ auto Lock_manager::LockPartition(Transaction *txn, LockMode lock_mode, const tab
         Lock_data_id l_id(oid, p_id, Lock_data_type::PARTITION);
         Lock_data_id parent_table_l_id(oid, Lock_data_type::TABLE);
 
-        if(lock_mode == LockMode::SHARED || lock_mode == LockMode::INTENTION_SHARED){
-            //检查父节点是否上IS锁
-            if(txn->get_table_IS_lock_set()->count(parent_table_l_id)==0){
-                throw TransactionAbortException(txn->get_txn_id(), AbortReason::TABLE_LOCK_NOT_PRESENT);
-            }
-        } 
-        else if(lock_mode == LockMode::EXLUCSIVE || lock_mode == LockMode::INTENTION_EXCLUSIVE || lock_mode == LockMode::S_IX){
-            //检查父节点是否上IX锁
-            if(txn->get_table_IX_lock_set()->count(parent_table_l_id)==0){
-                throw TransactionAbortException(txn->get_txn_id(), AbortReason::TABLE_LOCK_NOT_PRESENT);
-            }
-        }
+        // for benchmark debug
+        // if(lock_mode == LockMode::SHARED || lock_mode == LockMode::INTENTION_SHARED){
+        //     //检查父节点是否上IS锁
+        //     if(txn->get_table_IS_lock_set()->count(parent_table_l_id)==0){
+        //         throw TransactionAbortException(txn->get_txn_id(), AbortReason::TABLE_LOCK_NOT_PRESENT);
+        //     }
+        // } 
+        // else if(lock_mode == LockMode::EXLUCSIVE || lock_mode == LockMode::INTENTION_EXCLUSIVE || lock_mode == LockMode::S_IX){
+        //     //检查父节点是否上IX锁
+        //     if(txn->get_table_IX_lock_set()->count(parent_table_l_id)==0){
+        //         throw TransactionAbortException(txn->get_txn_id(), AbortReason::TABLE_LOCK_NOT_PRESENT);
+        //     }
+        // }
         
         //通过mutex申请全局锁表
         std::unique_lock<std::mutex> Latch(latch_);
@@ -314,6 +319,7 @@ auto Lock_manager::LockRow(Transaction *txn, LockMode lock_mode, const table_oid
         } 
 
         if(txn->get_state() != TransactionState::GROWING){
+            // std :: cout << static_cast<int>(txn->get_state()) << "*********" << std::endl;
             throw TransactionAbortException (txn->get_txn_id(), AbortReason::LOCK_ON_SHRINKING);
         }
         if(lock_mode != LockMode::SHARED && lock_mode != LockMode::EXLUCSIVE){
@@ -323,18 +329,19 @@ auto Lock_manager::LockRow(Transaction *txn, LockMode lock_mode, const table_oid
         Lock_data_id l_id(oid, p_id, row_id, Lock_data_type::ROW);
         Lock_data_id parent_partition_l_id(oid, p_id, Lock_data_type::PARTITION);
 
-        if(lock_mode == LockMode::SHARED || lock_mode == LockMode::INTENTION_SHARED){
-            //检查父节点是否上IS锁
-            if(txn->get_partition_IS_lock_set()->count(parent_partition_l_id)==0){
-                throw TransactionAbortException(txn->get_txn_id(), AbortReason::PARTITION_LOCK_NOT_PRESENT);
-            }
-        } 
-        else if(lock_mode == LockMode::EXLUCSIVE || lock_mode == LockMode::INTENTION_EXCLUSIVE || lock_mode == LockMode::S_IX){
-            //检查父节点是否上IX锁
-            if(txn->get_partition_IX_lock_set()->count(parent_partition_l_id)==0){
-                throw TransactionAbortException(txn->get_txn_id(), AbortReason::PARTITION_LOCK_NOT_PRESENT);
-            }
-        }
+        // 暂时注释，for benchmark
+        // if(lock_mode == LockMode::SHARED || lock_mode == LockMode::INTENTION_SHARED){
+        //     //检查父节点是否上IS锁
+        //     if(txn->get_partition_IS_lock_set()->count(parent_partition_l_id)==0){
+        //         throw TransactionAbortException(txn->get_txn_id(), AbortReason::PARTITION_LOCK_NOT_PRESENT);
+        //     }
+        // } 
+        // else if(lock_mode == LockMode::EXLUCSIVE || lock_mode == LockMode::INTENTION_EXCLUSIVE || lock_mode == LockMode::S_IX){
+        //     //检查父节点是否上IX锁
+        //     if(txn->get_partition_IX_lock_set()->count(parent_partition_l_id)==0){
+        //         throw TransactionAbortException(txn->get_txn_id(), AbortReason::PARTITION_LOCK_NOT_PRESENT);
+        //     }
+        // }
 
         //通过mutex申请全局锁表
         std::unique_lock<std::mutex> Latch(latch_);
@@ -378,7 +385,7 @@ auto Lock_manager::LockRow(Transaction *txn, LockMode lock_mode, const table_oid
     catch(TransactionAbortException &e)
     {
         txn->set_transaction_state(TransactionState::ABORTED);
-        std::cerr << e.GetInfo() << '\n';
+        // std::cerr << e.GetInfo() << '\n';
         return false;
     }
 }
@@ -450,7 +457,7 @@ auto Lock_manager::Unlock(Transaction *txn, const Lock_data_id &l_id) -> bool {
     }
     catch(TransactionAbortException& e){
         txn->set_transaction_state(TransactionState::ABORTED);
-        std::cerr << e.GetInfo() << '\n';
+        // std::cerr << e.GetInfo() << '\n';
         return false;
     }
 

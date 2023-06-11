@@ -8,7 +8,7 @@ option(RUCDDBS_TEST "build rucddbs test" OFF)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED true)
-set(CMAKE_CXX_FLAGS "-Wall")
+set(CMAKE_CXX_FLAGS "-Wall -ggdb -O0")
 
 IF(NOT CMAKE_BUILD_TYPE)
   SET(CMAKE_BUILD_TYPE Release)
@@ -97,6 +97,7 @@ IF(RUCDDBS_TEST)
   add_subdirectory(${PROJECT_SOURCE_DIR}/test/storage)
   add_subdirectory(${PROJECT_SOURCE_DIR}/test/recovery)
   add_subdirectory(${PROJECT_SOURCE_DIR}/test/transaction)
+  add_subdirectory(${PROJECT_SOURCE_DIR}/test/benchmark)
 endif()
 
 if(RUCDDBS_STORAGE)

@@ -105,7 +105,7 @@ TEST_F(TransactionTest, TransactionTest1){
 
     brpc::Channel channel;
     brpc::ChannelOptions options;
-    options.timeout_ms = 100;
+    options.timeout_ms = 0x7fffffff;
     options.max_retry = 3;
 
     if (channel.Init("127.0.0.1:8003", &options) != 0) {

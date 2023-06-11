@@ -4,7 +4,7 @@
 lsn_t LogManager::AppendLogRecord(LogRecord &log_record) {
     std::unique_lock<std::mutex> l(latch_);
     // for debug
-    std::cout << "append log record: " << static_cast<int>(log_record.GetLogRecordType()) << std::endl;
+    // std::cout << "append log record: " << static_cast<int>(log_record.GetLogRecordType()) << std::endl;
 
     if (log_buffer_write_offset_ + log_record.GetSize() >= LOG_BUFFER_SIZE) {
         needFlush_ = true;
