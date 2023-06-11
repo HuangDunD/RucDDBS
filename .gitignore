@@ -10,3 +10,5 @@ data3/
 bin/
 rpc_data/
 .VSCodeCounter/
+src/parser/yacc.tab.cpp
+src/parser/yacc.tab.h
