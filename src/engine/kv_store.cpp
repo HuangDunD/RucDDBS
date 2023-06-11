@@ -1,5 +1,5 @@
 #include "kv_store.h"
-
+KVStore_beta store("./data");
 namespace kv_store{
     bool get(string key, shared_ptr<record> &val){
         std::cout << "get : " << key << std::endl;
@@ -20,6 +20,11 @@ namespace kv_store{
         std::cout << "put : " << key << std::endl;
         string str = val->rec_to_string();
         std::cout << "val : " << str << std::endl;
+        
+        store.put(key, str);
+        auto result = store.get(key);
+        std::cout << "result.first = " << result.first << ", result.second = " << result.second << std::endl;
+        
         return etcd_put(key, str);
     }
     bool get_par(string tab_name, int par, vector<shared_ptr<record>> &res){
