@@ -84,3 +84,11 @@ delete from T1 where T1.id = 2;
 
 select * from T1;
 select * from T2;
+
+事务
+多client的处理
+client端：负责构建事务id
+server端：根据事务id创建新事务或者继承原有事务
+    id = -1，为一条SQL语句，处理完可以直接commit
+    获取begin时，创建非负的事务id，处理完不commit
+    获取end时，进行提交，处理完重置事务id

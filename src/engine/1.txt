@@ -1,4 +1,0 @@
-dis---节点
-    update
-        select
-            table_scan

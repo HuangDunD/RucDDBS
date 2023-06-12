@@ -558,6 +558,7 @@ string Sql_execute_client(string str){
             } else if (auto x = std::dynamic_pointer_cast<ast::Explain>(root)) {
                 showPlan(x, res_txt);
             }else if (auto x = std::dynamic_pointer_cast<ast::SelectStmt>(root)) {
+                
                 shared_ptr<op_executor> exec_plan(new op_executor);
                 build_select_plan(x, exec_plan);
                 res = exec_plan->exec_op();
