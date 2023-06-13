@@ -2,8 +2,9 @@ cmake_minimum_required(VERSION 3.2)
 
 project(RUCDDBS)
 
-option(RUCDDBS_STORAGE "if build kv_storage" OFF)
+option(RUCDDBS_STORAGE "if build kv_storage" ON)
 option(RUCDDBS_TRANSACTION "if build transaction" OFF)
+option(RUCDDBS_RAFT "if build raft" ON)
 option(RUCDDBS_TEST "build rucddbs test" OFF)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -52,6 +53,14 @@ if ((NOT LEVELDB_INCLUDE_PATH) OR (NOT LEVELDB_LIB))
 endif()
 include_directories(${LEVELDB_INCLUDE_PATH})
 
+# find_path(JACKSON_INCLUDE_PATH NAMES jackson/Value.h)
+# message(${JACKSON_INCLUDE_PATH})
+# find_library(JACKSON_LIB NAMES jackson)
+# if ((NOT JACKSON_INCLUDE_PATH) OR (NOT JACKSON_LIB))
+#     message(FATAL_ERROR "Fail to find jackson")
+# endif()
+# include_directories(${JACKSON_INCLUDE_PATH})
+
 find_package(OpenSSL)
 include_directories(${OPENSSL_INCLUDE_DIR})
 
@@ -67,15 +76,19 @@ set(DYNAMIC_LIB
     dl
     )
 
+
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/meta_server/)
 include_directories(${PROJECT_SOURCE_DIR}/meta_server/build)
+
+
 
 set(INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include/)
 set(STORAGE_DIR ${PROJECT_SOURCE_DIR}/include/storage/)
 set(TRANSACTION_DIR ${PROJECT_SOURCE_DIR}/include/transaction/)
 set(IMMEMORY_DIR ${PROJECT_SOURCE_DIR}/include/Inmemory/)
 set(RECOVERY_DIR ${PROJECT_SOURCE_DIR}/include/recovery/)
+set(RAFT_DIR ${PROJECT_SOURCE_DIR}/include/raft/)
 # set(EXECUTION_DIR ${PROJECT_SOURCE_DIR}/src/execution)
 set(ENGINE_DIR ${PROJECT_SOURCE_DIR}/include/engine/)
 set(PARSER_DIR ${PROJECT_SOURCE_DIR}/include/parser/)
@@ -85,10 +98,14 @@ aux_source_directory(${PROJECT_SOURCE_DIR}/src/storage STORAGE_SRC)
 aux_source_directory(${PROJECT_SOURCE_DIR}/src/transaction TRANSACTION_SRC)
 aux_source_directory(${PROJECT_SOURCE_DIR}/src/recovery RECOVERY_SRC)
 # aux_source_directory(${PROJECT_SOURCE_DIR}/src/execution EXECUTION_SRC)
+aux_source_directory(${PROJECT_SOURCE_DIR}/src/raft RAFT_SRC)
 aux_source_directory(${PROJECT_SOURCE_DIR}/src/engine ENGINE_SRC)
 aux_source_directory(${PROJECT_SOURCE_DIR}/src/parser PARSER_SRC)
 # 添加依赖
 add_subdirectory(${PROJECT_SOURCE_DIR}/deps/snappy)
+# add_subdirectory(${PROJECT_SOURCE_DIR}/deps/jackson)
+# add_subdirectory(${PROJECT_SOURCE_DIR}/deps/tinyev)
+add_subdirectory(${PROJECT_SOURCE_DIR}/deps/jrpc)
 add_subdirectory(${PROJECT_SOURCE_DIR}/include/proto)
 
 IF(RUCDDBS_TEST)
@@ -112,16 +129,50 @@ if(RUCDDBS_TRANSACTION)
   add_subdirectory(${PROJECT_SOURCE_DIR}/src/transaction)
 endif()
 
-message("build rucddbs engine & store")
-add_subdirectory(${PROJECT_SOURCE_DIR}/src/storage)
-add_subdirectory(${PROJECT_SOURCE_DIR}/src/engine)
-add_subdirectory(${PROJECT_SOURCE_DIR}/src/parser)
-add_executable(storage_example ${PROJECT_SOURCE_DIR}/storage_example.cpp)
-add_executable(client ${PROJECT_SOURCE_DIR}/client.cpp)
-add_executable(server1 ${PROJECT_SOURCE_DIR}/server1.cpp)
-add_executable(server2 ${PROJECT_SOURCE_DIR}/server2.cpp)
+if(RUCDDBS_RAFT)
+  message("build rucddbs store with raft")
+  # include_directories(
+  #     deps/jrpc
+  #     deps/jrpc/3rd/jackson
+  #     deps/jrpc/3rd/tinyev
+  #     /include/raft
+  #     ${PROJECT_SOURCE_DIR}
+  # ${PROJECT_BINARY_DIR}
+  # )
+  # add_subdirectory(deps/jrpc)
+  # add_subdirectory(${PROJECT_SOURCE_DIR}/src/raft)
+  
+  add_executable(raftTest ${PROJECT_SOURCE_DIR}/raftTest.cpp)
+  add_executable(raftTest2 ${PROJECT_SOURCE_DIR}/raftTest2.cpp)
+  target_link_libraries(raftTest RAFT_BETA)
+  target_link_libraries(raftTest2 RAFT_BETA)
+  # add_executable(raftExample ${PROJECT_SOURCE_DIR}/raftExample.cpp)
+  # target_link_libraries(raftExample RAFT_EXAMPLE)
 
-target_link_libraries(storage_example KV_STORAGE_BETA)
-target_link_libraries(client proto engine parser)
-target_link_libraries(server1 proto engine parser)
-target_link_libraries(server2 proto engine parser)
+  set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
+  set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
+
+  include_directories(
+          raft
+          deps/jrpc
+          deps/jrpc/3rd/tinyev
+          deps/jrpc/3rd/jackson
+          ${PROJECT_SOURCE_DIR}
+          ${PROJECT_BINARY_DIR})
+  add_subdirectory(${PROJECT_SOURCE_DIR}/src/raft)
+
+endif()
+
+# add_subdirectory(${PROJECT_SOURCE_DIR}/include/try)
+# add_subdirectory(${PROJECT_SOURCE_DIR}/src/storage)
+# add_subdirectory(${PROJECT_SOURCE_DIR}/src/engine)
+# add_subdirectory(${PROJECT_SOURCE_DIR}/src/parser)
+# add_executable(storage_example ${PROJECT_SOURCE_DIR}/storage_example.cpp)
+# add_executable(client ${PROJECT_SOURCE_DIR}/client.cpp)
+# add_executable(server1 ${PROJECT_SOURCE_DIR}/server1.cpp)
+# add_executable(server2 ${PROJECT_SOURCE_DIR}/server2.cpp)
+
+# target_link_libraries(storage_example KV_STORAGE_BETA)
+# target_link_libraries(client proto engine parser)
+# target_link_libraries(server1 proto engine parser)
+# target_link_libraries(server2 proto engine parser)
