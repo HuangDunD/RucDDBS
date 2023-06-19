@@ -1,6 +1,8 @@
 #include "meta_data.h"
 
 std::vector<std::string> ips_{"0.0.0.0:8005", "0.0.0.0:8006"};
+std::unordered_map<std::string, int32_t> table_name_id_map;
+std::shared_mutex table_name_id_map_mutex;
 
 // cnt str
 std::string vec_to_string(std::vector<std::string> vec){

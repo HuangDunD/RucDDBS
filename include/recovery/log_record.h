@@ -70,7 +70,7 @@ public:
 
     // LogRecord DeserializeFrom(const char* storage);
     static LogRecord DeserializeFrom(const char* storage){
-        int32_t size = *reinterpret_cast<const int32_t *>(storage);
+        // int32_t size = *reinterpret_cast<const int32_t *>(storage);
         storage += sizeof(int32_t);
         lsn_t lsn = *reinterpret_cast<const lsn_t *>(storage);
         storage += sizeof(lsn_t);
@@ -114,7 +114,7 @@ public:
         }
 
         res.SetLsn(lsn);
-        assert(size == res.GetSize());
+        assert(*reinterpret_cast<const int32_t *>(storage) == res.GetSize());
         return res;
     }
 

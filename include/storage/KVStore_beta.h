@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <string>
+#include <mutex>
 
 #include "KVStoreAPI.h"
 #include "SkipList.h"
@@ -29,6 +30,7 @@ public:
    void flush();
    
 protected:
+   std::mutex mutex_;
    SkipList memtable_;
    DiskStorage diskstorage_;
 };

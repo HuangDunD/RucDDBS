@@ -13,7 +13,7 @@ std::shared_mutex TransactionManager::txn_map_mutex = {};
 uint64_t TransactionManager::getTimestampFromServer(){
     brpc::Channel channel;
     brpc::ChannelOptions options;
-    options.timeout_ms = 100;
+    options.timeout_ms = 10000;
     options.max_retry = 3;
 
     if (channel.Init(FLAGS_META_SERVER_ADDR.c_str(), &options) != 0) {
@@ -134,13 +134,15 @@ Transaction* TransactionManager::Begin(Transaction*& txn, txn_id_t txn_id, Isola
         txn->set_prev_lsn(lsn);
     }
 
-    std::unique_lock<std::shared_mutex> l(txn_map_mutex);
+    // std::unique_lock<std::shared_mutex> l(txn_map_mutex);
+    if(txn_map.find(txn->get_txn_id()) != txn_map.end()) 
+        std::cout <<"******************************" << std::endl;
     txn_map[txn->get_txn_id()] = txn;
     return txn;
 }
 
 Transaction* TransactionManager::Begin(Transaction*& txn, IsolationLevel isolation_level){
-    // Todo:
+
     // 1. 判断传入事务参数是否为空指针
     // 2. 如果为空指针，创建新事务
     // 3. 把开始事务加入到全局事务表中
@@ -163,7 +165,7 @@ Transaction* TransactionManager::Begin(Transaction*& txn, IsolationLevel isolati
 }
 
 bool TransactionManager::AbortSingle(Transaction * txn){
-    std::cout << txn->get_txn_id() << " " << "abort" << std::endl;
+    // std::cout << txn->get_txn_id() << " " << "abort" << std::endl;
     auto write_set = txn->get_write_set();
     while (!write_set->empty()) {
         auto &item = write_set->back();
@@ -196,7 +198,7 @@ bool TransactionManager::AbortSingle(Transaction * txn){
 }
 
 bool TransactionManager::CommitSingle(Transaction * txn){
-    std::cout << txn->get_txn_id() << " " << "commit" << std::endl;
+    // std::cout << txn->get_txn_id() << " " << "commit" << std::endl;
     if(txn->get_state() == TransactionState::ABORTED){
         return false;
     }
@@ -224,7 +226,7 @@ bool TransactionManager::Abort(Transaction * txn){
     }
     else{
         brpc::ChannelOptions options;
-        options.timeout_ms = 0x7fffffff;
+        options.timeout_ms = 10000;
         options.max_retry = 3;
         // 创建一个存储std::future对象的vector，用于搜集所有匿名函数的返回值
         std::vector<std::future<bool>> futures;
@@ -259,12 +261,57 @@ bool TransactionManager::Abort(Transaction * txn){
 
 bool TransactionManager::Commit(Transaction * txn){
     if(txn->get_is_distributed() == false){
-        return CommitSingle(txn);
+        if((*txn->get_distributed_node_set()->begin()).ip_addr == FLAGS_SERVER_LISTEN_ADDR &&
+                (*txn->get_distributed_node_set()->begin()).port == FLAGS_SERVER_LISTEN_PORT ){
+            // 本地事务 无需rpc直接可以调用本地函数
+            if(CommitSingle(txn) == true){
+                return true;
+            }
+            else{
+                AbortSingle(txn);
+                return false;
+            }
+        }
+        else{
+            // 非分布式事务，但数据不在协调者节点上
+            brpc::ChannelOptions options;
+            options.timeout_ms = 10000;
+            options.max_retry = 3;
+            brpc::Channel channel;
+
+            auto node = *txn->get_distributed_node_set()->begin();
+            if (channel.Init(node.ip_addr.c_str(), node.port , &options) != 0) {
+                LOG(ERROR) << "Fail to initialize channel";
+                return false;
+            }
+            transaction_manager::TransactionManagerService_Stub stub(&channel);
+            brpc::Controller cntl;
+            transaction_manager::CommitRequest request;
+            transaction_manager::CommitResponse response;
+            request.set_txn_id(txn->get_txn_id());
+            stub.CommitTransaction(&cntl, &request, &response, NULL);
+            if(cntl.Failed()) {
+                LOG(WARNING) << cntl.ErrorText();
+            }
+            if(response.ok()==false){
+                cntl.Reset();
+                transaction_manager::AbortRequest abort_request;
+                transaction_manager::AbortResponse abort_response;
+                abort_request.set_txn_id(txn->get_txn_id());
+                stub.AbortTransaction(&cntl, &abort_request, &abort_response, NULL);
+                if(cntl.Failed()) {
+                    LOG(WARNING) << cntl.ErrorText();
+                    return false;
+                }
+                return false;
+            }
+            return true;
+        }
     }
     else {
         //分布式事务, 2PC两阶段提交
         brpc::ChannelOptions options;
-        options.timeout_ms = 0x7fffffff;
+        options.timeout_ms = 10000;
         options.max_retry = 3;
         // 创建一个存储std::future对象的vector，用于搜集所有匿名函数的返回值
         std::vector<std::future<bool>> futures_prepare;
@@ -283,6 +330,21 @@ bool TransactionManager::Commit(Transaction * txn){
                 transaction_manager::PrepareRequest request;
                 transaction_manager::PrepareResponse response;
                 request.set_txn_id(txn->get_txn_id());
+                
+                // hcydebugfault
+                // 设置协调者监听ip
+                // transaction_manager::PrepareRequest_IP_Port t;
+                // t.set_ip_addr(FLAGS_SERVER_LISTEN_ADDR);
+                // t.set_port(FLAGS_SERVER_LISTEN_PORT);
+                // request.set_allocated_coor_ip(&t);
+
+                // // 为了容错, 将事务涉及到的所有节点发送给每一个参与者
+                // for(auto x : *txn->get_distributed_node_set() ){
+                //     transaction_manager::PrepareRequest_IP_Port* t = request.add_ips();
+                //     t->set_ip_addr(x.ip_addr.c_str());
+                //     t->set_port(x.port);
+                // }
+                
                 stub.PrepareTransaction(&cntl, &request, &response, NULL);
                 if(cntl.Failed()) {
                     LOG(WARNING) << cntl.ErrorText();
@@ -299,6 +361,7 @@ bool TransactionManager::Commit(Transaction * txn){
             }
         }
         //TODO: write Coordinator backup
+        
         //提交阶段
         if(commit_flag == false){
             //abort all
@@ -327,18 +390,22 @@ bool TransactionManager::Commit(Transaction * txn){
                     // return response.ok();
                 }) );
             }
-            // for(size_t i=0; i<(*txn->get_distributed_node_set()).size(); i++){
-            //     futures_commit[i].get();
-            // }
+            for(size_t i=0; i<(*txn->get_distributed_node_set()).size(); i++){
+                futures_commit[i].get();
+            }
         }
+        return commit_flag;
     }
     return true;
 }
 
 bool TransactionManager::PrepareCommit(Transaction * txn){
-    std::cout << txn->get_txn_id() << " " << "prepare commit" << std::endl;
+    // std::cout << txn->get_txn_id() << " " << "prepare commit" << std::endl;
     if(txn->get_state() == TransactionState::ABORTED){
         return false;
+    }
+    if(txn->get_state() == TransactionState::PREPARED){
+        return true;
     }
     if(enable_logging){
         //写Prepared日志

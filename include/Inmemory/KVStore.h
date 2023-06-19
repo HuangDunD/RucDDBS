@@ -33,10 +33,19 @@ class KVStore{
 
     // value = get(key)
     std::string get(const std::string &key){
-        if(memtable_.count(key) == 0){
+        // if(memtable_.count(key) == 0){
+        //     return "";
+        // }
+        // return memtable_[key];
+        auto iter = memtable_.find(key);
+        if (iter != memtable_.end()) {
+            // 找到了元素
+            std::string value = iter->second;
+            return value;
+        } else {
+            // 没有找到元素
             return "";
         }
-        return memtable_[key];
     }
 
     // del(key)
@@ -48,7 +57,11 @@ class KVStore{
         return true;
     }
     bool del(const std::string &key, Transaction *txn,  bool add_writeset = true){
-        if(memtable_.count(key) == 0){
+        // if(memtable_.count(key) == 0){
+        //     return false;
+        // }
+        auto iter = memtable_.find(key);
+        if (iter == memtable_.end()) {
             return false;
         }
         if(enable_logging){
