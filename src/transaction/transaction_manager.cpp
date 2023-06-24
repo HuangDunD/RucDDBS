@@ -186,6 +186,8 @@ bool TransactionManager::AbortSingle(Transaction * txn){
         LogRecord record(txn->get_txn_id(), txn->get_prev_lsn(), LogRecordType::ABORT);
         auto lsn = log_manager_->AppendLogRecord(record);
         txn->set_prev_lsn(lsn);
+        // force log
+        log_manager_->Flush(lsn, true);
     }
     // Release all the locks.
     ReleaseLocks(txn);
@@ -207,6 +209,8 @@ bool TransactionManager::CommitSingle(Transaction * txn){
         LogRecord record(txn->get_txn_id(), txn->get_prev_lsn(), LogRecordType::COMMIT);
         auto lsn = log_manager_->AppendLogRecord(record);
         txn->set_prev_lsn(lsn);
+        // force log
+        log_manager_->Flush(lsn, true);
     }
     // Release all locks
     ReleaseLocks(txn);
@@ -410,11 +414,14 @@ bool TransactionManager::PrepareCommit(Transaction * txn){
     if(enable_logging){
         //写Prepared日志
         LogRecord record(txn->get_txn_id(), txn->get_prev_lsn(), LogRecordType::PREPARED);
-        //TODO: 此处在kv层写redo/undo log, raft返回同步结果
-
+        //TODO: 此处在写raft log, 并返回同步结果
+        
+        
         auto lsn = log_manager_->AppendLogRecord(record);
         if(lsn == INVALID_LSN) return false;
         txn->set_prev_lsn(lsn);
+        // force log
+        log_manager_->Flush(lsn, true);
     }
     txn->set_transaction_state(TransactionState::PREPARED);
     return true;

@@ -11,7 +11,7 @@ using txn_id_t = uint64_t;
 static constexpr int INVALID_TXN_ID = 0;                                     // invalid transaction id
 static constexpr int INVALID_LSN = -1;                                        // invalid log sequence number
 
-enum class LogRecordType { INVALID = 0, CREATE_TABLE, DROP_TABLE, INSERT, 
+enum class LogRecordType: std::int32_t{ INVALID = 0, CREATE_TABLE, DROP_TABLE, INSERT, 
                                  DELETE, BEGIN, COMMIT, ABORT, PREPARED};
 
 static std::string log_record_type[15] = {"INVALID", "CREATE_TABLE", "DROP_TABLE", "INSERT", 
@@ -88,7 +88,8 @@ public:
         switch (type) {
         case LogRecordType::COMMIT:
         case LogRecordType::ABORT:
-        case LogRecordType::BEGIN: {
+        case LogRecordType::BEGIN:
+        case LogRecordType::PREPARED: {
             res = LogRecord(txn_id, prev_lsn, type);
             break;
         }

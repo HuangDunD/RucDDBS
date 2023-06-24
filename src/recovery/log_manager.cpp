@@ -1,5 +1,6 @@
 #include "log_manager.h"
 #include <iostream>
+#include "include/raft/node.h"
 
 lsn_t LogManager::AppendLogRecord(LogRecord &log_record) {
     std::unique_lock<std::mutex> l(latch_);
@@ -81,6 +82,7 @@ void LogManager::SwapBuffer() {
 }
 
 void LogManager::Flush(lsn_t lsn, bool force) {
+    if( persistent_lsn_ <= lsn) return;
     if (force) {
         needFlush_ = true;
         // notify flush thread to start flushing the log

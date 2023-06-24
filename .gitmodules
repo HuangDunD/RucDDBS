@@ -7,3 +7,9 @@
 [submodule "deps/snappy"]
 	path = deps/snappy
 	url = git@github.com:HuangDunD/snappy.git
+[submodule "deps/jackson"]
+	path = deps/jackson
+	url = https://github.com/nlohmann/json
+[submodule "deps/tinyev"]
+	path = deps/tinyev
+	url = git@github.com:guangqianpeng/tinyev.git
