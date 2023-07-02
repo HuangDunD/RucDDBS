@@ -144,6 +144,16 @@ message getTimeStampResponse{
     uint64 timestamp = 1;
 }
 
+// for fault tolerance
+message getNewCoorRequest{
+    string fault_ip = 1;
+    uint32 port = 2;
+}
+message getNowCoorResponse{
+    string new_coor_ip = 1;
+    uint32 port = 2;
+}
+
 service MetaService {
     rpc GetPartitionKey(PartionkeyNameRequest) returns (PartionkeyNameResponse);
     rpc GetPartitionLocation(PartitionLocationRequest) returns (PartitionLocationResponse);
@@ -154,4 +164,5 @@ service MetaService {
     rpc UpdateLeader(UpdateLeaderRequest) returns (UpdateLeaderResponse);
     rpc GetTimeStamp(getTimeStampRequest) returns (getTimeStampResponse);
     rpc GetTableInfo(GetTableInfoRequest) returns (GetTableInfoResponse);
+    rpc GetNewCoordinator(getNewCoorRequest) returns (getNowCoorResponse);
 };

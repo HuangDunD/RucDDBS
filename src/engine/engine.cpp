@@ -558,10 +558,11 @@ string Sql_execute_client(string str){
             } else if (auto x = std::dynamic_pointer_cast<ast::Explain>(root)) {
                 showPlan(x, res_txt);
             }else if (auto x = std::dynamic_pointer_cast<ast::SelectStmt>(root)) {
-                
+                // 开始事务
                 shared_ptr<op_executor> exec_plan(new op_executor);
                 build_select_plan(x, exec_plan);
                 res = exec_plan->exec_op();
+                // 结束事务
                 // prt_plan(exec_plan);
             } else if(auto x = std::dynamic_pointer_cast<ast::CreateTable>(ast::parse_tree)){
                 if(create_table(x)){
@@ -590,6 +591,10 @@ string Sql_execute_client(string str){
                 build_update_plan(x, exec_plan);
                 res = exec_plan->exec_op();
                 ok_txt = "OK";
+            } else if (auto x = std::dynamic_pointer_cast<ast::TxnBegin>(root)) {
+                // begin;
+            } else if (auto x = std::dynamic_pointer_cast<ast::TxnCommit>(root)) {
+                // commit;
             }
         }
     }

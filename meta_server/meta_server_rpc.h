@@ -124,6 +124,28 @@ public:
             response->add_col_type(int(Col.column_type[i]));
         }
     }
+    // 确定性获取新协调者, 同一个错误的协调者一定返回相同的新协调者
+    virtual void GetNewCoordinator(::google::protobuf::RpcController* controller,
+                       const ::meta_service::getNewCoorRequest* request,
+                       ::meta_service::getNowCoorResponse* response,
+                       ::google::protobuf::Closure* done){
+        brpc::ClosureGuard done_guard(done);
+
+        std::shared_lock<std::shared_mutex> l(meta_server_->get_mutex());
+        for(auto iter= meta_server_->mutable_ip_node_map().begin(); 
+                iter != meta_server_->mutable_ip_node_map().end(); ++iter){
+            if(iter->second->ip_addr == request->fault_ip() && iter->second->port == request->port()){
+                // find the fault node, return the next node
+                ++iter;
+                if(iter == meta_server_->mutable_ip_node_map().end()){
+                    iter = meta_server_->mutable_ip_node_map().begin();
+                }
+                response->set_new_coor_ip(iter->second->ip_addr.c_str());
+                response->set_port(iter->second->port);
+                return;
+            }
+        }
+    }
 private: 
     MetaServer *meta_server_;
 };

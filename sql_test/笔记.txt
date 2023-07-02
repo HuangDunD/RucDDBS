@@ -87,7 +87,7 @@ select * from T2;
 
 事务
 多client的处理
-client端：负责构建事务id
+client端：负责构建事务id--发送到server端
 server端：根据事务id创建新事务或者继承原有事务
     id = -1，为一条SQL语句，处理完可以直接commit
     获取begin时，创建非负的事务id，处理完不commit
