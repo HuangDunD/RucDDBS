@@ -33,91 +33,9 @@ uint64_t TransactionManager::getTimestampFromServer(){
 }
 
 void TransactionManager::ReleaseLocks(Transaction *txn){
-
-    for(auto iter = txn->get_row_S_lock_set()->begin(); iter != txn->get_row_S_lock_set()->end();){
-        auto o_id = iter->oid_;
-        auto p_id = iter->p_id_;
-        auto r_id = iter->row_id_;
-        auto next_iter = ++iter;
-        lock_manager_->UnLockRow(txn, o_id, p_id, r_id);
-        iter = next_iter;
+    for(auto iter = txn->get_lock_set()->begin(); iter != txn->get_lock_set()->end(); ++iter){
+        lock_manager_->Unlock(txn, *iter);
     }
-    for(auto iter = txn->get_row_X_lock_set()->begin(); iter != txn->get_row_X_lock_set()->end();){
-        auto o_id = iter->oid_;
-        auto p_id = iter->p_id_;
-        auto r_id = iter->row_id_;
-        auto next_iter = ++iter;
-        lock_manager_->UnLockRow(txn, o_id, p_id, r_id);
-        iter = next_iter;
-    }
-
-    for(auto iter = txn->get_partition_S_lock_set()->begin(); iter != txn->get_partition_S_lock_set()->end();){
-        auto o_id = iter->oid_;
-        auto p_id = iter->p_id_;
-        auto next_iter = ++iter;
-        lock_manager_->UnLockPartition(txn, o_id, p_id);
-        iter = next_iter;
-    }
-    for(auto iter = txn->get_partition_IS_lock_set()->begin(); iter != txn->get_partition_IS_lock_set()->end();){
-        auto o_id = iter->oid_;
-        auto p_id = iter->p_id_;
-        auto next_iter = ++iter;
-        lock_manager_->UnLockPartition(txn, o_id, p_id);
-        iter = next_iter;
-    }
-    for(auto iter = txn->get_partition_IX_lock_set()->begin(); iter != txn->get_partition_IX_lock_set()->end();){
-        auto o_id = iter->oid_;
-        auto p_id = iter->p_id_;
-        auto next_iter = ++iter;
-        lock_manager_->UnLockPartition(txn, o_id, p_id);
-        iter = next_iter;
-    }
-    for(auto iter = txn->get_partition_SIX_lock_set()->begin(); iter != txn->get_partition_SIX_lock_set()->end();){
-        auto o_id = iter->oid_;
-        auto p_id = iter->p_id_;
-        auto next_iter = ++iter;
-        lock_manager_->UnLockPartition(txn, o_id, p_id);
-        iter = next_iter;
-    }
-    for(auto iter = txn->get_partition_X_lock_set()->begin(); iter != txn->get_partition_X_lock_set()->end();){
-        auto o_id = iter->oid_;
-        auto p_id = iter->p_id_;
-        auto next_iter = ++iter;
-        lock_manager_->UnLockPartition(txn, o_id, p_id);
-        iter = next_iter;
-    }
-
-    for(auto iter = txn->get_table_S_lock_set()->begin(); iter != txn->get_table_S_lock_set()->end();){
-        auto o_id = iter->oid_;
-        auto next_iter = ++iter;
-        lock_manager_->UnLockTable(txn, o_id);
-        iter = next_iter;
-    }
-    for(auto iter = txn->get_table_IS_lock_set()->begin(); iter != txn->get_table_IS_lock_set()->end();){
-        auto o_id = iter->oid_;
-        auto next_iter = ++iter;
-        lock_manager_->UnLockTable(txn, o_id);
-        iter = next_iter;
-    }
-    for(auto iter = txn->get_table_IX_lock_set()->begin(); iter != txn->get_table_IX_lock_set()->end();){
-        auto o_id = iter->oid_;
-        auto next_iter = ++iter;
-        lock_manager_->UnLockTable(txn, o_id);
-        iter = next_iter;
-    }
-    for(auto iter = txn->get_table_SIX_lock_set()->begin(); iter != txn->get_table_SIX_lock_set()->end();){
-        auto o_id = iter->oid_;
-        auto next_iter = ++iter;
-        lock_manager_->UnLockTable(txn, o_id);
-        iter = next_iter;
-    }
-    for(auto iter = txn->get_table_X_lock_set()->begin(); iter != txn->get_table_X_lock_set()->end();){
-        auto o_id = iter->oid_;
-        auto next_iter = ++iter;
-        lock_manager_->UnLockTable(txn, o_id);
-        iter = next_iter;
-    }
-    
     return ;
 }
 
@@ -186,6 +104,8 @@ bool TransactionManager::AbortSingle(Transaction * txn){
         LogRecord record(txn->get_txn_id(), txn->get_prev_lsn(), LogRecordType::ABORT);
         auto lsn = log_manager_->AppendLogRecord(record);
         txn->set_prev_lsn(lsn);
+        // force log
+        log_manager_->Flush(lsn, true);
     }
     // Release all the locks.
     ReleaseLocks(txn);
@@ -207,6 +127,8 @@ bool TransactionManager::CommitSingle(Transaction * txn){
         LogRecord record(txn->get_txn_id(), txn->get_prev_lsn(), LogRecordType::COMMIT);
         auto lsn = log_manager_->AppendLogRecord(record);
         txn->set_prev_lsn(lsn);
+        // force log
+        log_manager_->Flush(lsn, true);
     }
     // Release all locks
     ReleaseLocks(txn);
@@ -410,11 +332,14 @@ bool TransactionManager::PrepareCommit(Transaction * txn){
     if(enable_logging){
         //写Prepared日志
         LogRecord record(txn->get_txn_id(), txn->get_prev_lsn(), LogRecordType::PREPARED);
-        //TODO: 此处在kv层写redo/undo log, raft返回同步结果
-
+        //TODO: 此处在写raft log, 并返回同步结果
+        
+        
         auto lsn = log_manager_->AppendLogRecord(record);
         if(lsn == INVALID_LSN) return false;
         txn->set_prev_lsn(lsn);
+        // force log
+        log_manager_->Flush(lsn, true);
     }
     txn->set_transaction_state(TransactionState::PREPARED);
     return true;

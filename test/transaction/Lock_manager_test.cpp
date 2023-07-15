@@ -26,7 +26,7 @@ TEST_F(LockManagerTest, TransactionStateTest) {
         EXPECT_EQ(res, true);
         EXPECT_EQ(txn0.get_state(), TransactionState::GROWING);
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        lock_manager_->UnLockTable(&txn0, oid);
+        lock_manager_->Unlock(&txn0, lock_data_id);
         EXPECT_EQ(txn0.get_state(), TransactionState::SHRINKING);
     });
 
@@ -37,7 +37,7 @@ TEST_F(LockManagerTest, TransactionStateTest) {
         bool res = lock_manager_->LockTable(&txn1, LockMode::SHARED, oid);
         EXPECT_EQ(res, true);
         EXPECT_EQ(txn1.get_state(), TransactionState::GROWING);
-        lock_manager_->UnLockTable(&txn1, oid);
+        lock_manager_->Unlock(&txn1, lock_data_id);
         EXPECT_EQ(txn1.get_state(), TransactionState::SHRINKING);
     });
 
@@ -58,8 +58,10 @@ TEST_F(LockManagerTest, BasicTest1_SHARED_TABLE) {
         EXPECT_EQ(i, txns[i]->get_txn_id());
     }
 
-    auto task = [&](int txn_id) {
-        
+    auto task = [&](int txn_id) {  
+        Lock_data_id lock_table_id(0, Lock_data_type::TABLE);
+        Lock_data_id lock_par_id(0, 0, Lock_data_type::PARTITION);
+
         std::this_thread::sleep_for(std::chrono::milliseconds(rand()%500));
 
         bool res;
@@ -83,19 +85,20 @@ TEST_F(LockManagerTest, BasicTest1_SHARED_TABLE) {
         }
 
         for(const row_id_t &row : row_vec) {
-            res = lock_manager_->UnLockRow(txns[txn_id], 0, 0, row);
+            Lock_data_id lock_data_id(0, 0, row, Lock_data_type::ROW);
+            res = lock_manager_->Unlock(txns[txn_id], lock_data_id);
             EXPECT_TRUE(res);
-            std::cout << "txn_id : " << txn_id << "UnLockRow S row_id: (" << row << ")" << std::endl;
+            std::cout << "txn_id : " << txn_id << "Unlock S row_id: (" << row << ")" << std::endl;
             EXPECT_EQ(txns[txn_id]->get_state(), TransactionState::SHRINKING);
         }
-        res = lock_manager_->UnLockPartition(txns[txn_id], 0, 0);
+        res = lock_manager_->Unlock(txns[txn_id], lock_par_id);
         EXPECT_TRUE(res);
-        std::cout << "txn_id : " << txn_id << "UnLockPartition p_id: 0";
+        std::cout << "txn_id : " << txn_id << "Unlock p_id: 0";
         EXPECT_EQ(txns[txn_id]->get_state(), TransactionState::SHRINKING);
 
-        res = lock_manager_->UnLockTable(txns[txn_id], 0);
+        res = lock_manager_->Unlock(txns[txn_id], lock_table_id);
         EXPECT_TRUE(res);
-        std::cout << "txn_id : " << txn_id << "UnLockTable o_id: 0" << std::endl;
+        std::cout << "txn_id : " << txn_id << "Unlock o_id: 0" << std::endl;
         EXPECT_EQ(txns[txn_id]->get_state(), TransactionState::SHRINKING);
 
         //TODO
@@ -134,7 +137,9 @@ TEST_F(LockManagerTest, BasicTest2_EXCLUSIVE_TUPLE) {
     }
 
     auto task = [&](int txn_id) {
-        
+        Lock_data_id lock_table_id(0, Lock_data_type::TABLE);
+        Lock_data_id lock_par_id(0, 0, Lock_data_type::PARTITION);
+
         std::this_thread::sleep_for(std::chrono::milliseconds(rand()%500));
 
         bool res;
@@ -158,20 +163,21 @@ TEST_F(LockManagerTest, BasicTest2_EXCLUSIVE_TUPLE) {
         }
 
         for(const row_id_t &row : row_vec) {
-            res = lock_manager_->UnLockRow(txns[txn_id], 0, 0, row);
+            Lock_data_id lock_data_id(0, 0, row, Lock_data_type::ROW);
+            res = lock_manager_->Unlock(txns[txn_id], lock_data_id);
             EXPECT_TRUE(res);
             std::this_thread::sleep_for(std::chrono::milliseconds(rand()%200));
-            std::cout << "txn_id : " << txn_id << " UnLockRow X row_id: (" << row << ")" << std::endl;
+            std::cout << "txn_id : " << txn_id << " Unlock X row_id: (" << row << ")" << std::endl;
             EXPECT_EQ(txns[txn_id]->get_state(), TransactionState::SHRINKING);
         }
-        res = lock_manager_->UnLockPartition(txns[txn_id], 0, 0);
+        res = lock_manager_->Unlock(txns[txn_id], lock_par_id);
         EXPECT_TRUE(res);
-        std::cout << "txn_id : " << txn_id << "UnLockPartition p_id: 0";
+        std::cout << "txn_id : " << txn_id << "Unlock p_id: 0";
         EXPECT_EQ(txns[txn_id]->get_state(), TransactionState::SHRINKING);
 
-        res = lock_manager_->UnLockTable(txns[txn_id], 0);
+        res = lock_manager_->Unlock(txns[txn_id], lock_table_id);
         EXPECT_TRUE(res);
-        std::cout << "txn_id : " << txn_id << "UnLockTable o_id: 0" << std::endl;
+        std::cout << "txn_id : " << txn_id << "Unlock o_id: 0" << std::endl;
         EXPECT_EQ(txns[txn_id]->get_state(), TransactionState::SHRINKING);
 
         //TODO
@@ -211,6 +217,7 @@ TEST_F(LockManagerTest, BasicTest3_EXCLUSIVE_Partition) {
     }
 
     auto task = [&](int txn_id) {
+        Lock_data_id lock_tab_id(0, Lock_data_type::TABLE);
         
         std::this_thread::sleep_for(std::chrono::milliseconds(rand()%500));
 
@@ -230,16 +237,17 @@ TEST_F(LockManagerTest, BasicTest3_EXCLUSIVE_Partition) {
         }
 
         for(const row_id_t &p : p_vec) {
-            res = lock_manager_->UnLockPartition(txns[txn_id], 0, p);
+            Lock_data_id lock_data_id(0, 0, p, Lock_data_type::ROW);
+            res = lock_manager_->Unlock(txns[txn_id], lock_data_id);
             EXPECT_TRUE(res);
             std::this_thread::sleep_for(std::chrono::milliseconds(rand()%200));
-            std::cout << "txn_id : " << txn_id << " UnLockPartition X p_id: (" << p << ")" << std::endl;
+            std::cout << "txn_id : " << txn_id << " Unlock X p_id: (" << p << ")" << std::endl;
             EXPECT_EQ(txns[txn_id]->get_state(), TransactionState::SHRINKING);
         }
 
-        res = lock_manager_->UnLockTable(txns[txn_id], 0);
+        res = lock_manager_->Unlock(txns[txn_id], lock_tab_id);
         EXPECT_TRUE(res);
-        std::cout << "txn_id : " << txn_id << "UnLockTable o_id: 0" << std::endl;
+        std::cout << "txn_id : " << txn_id << "Unlock o_id: 0" << std::endl;
         EXPECT_EQ(txns[txn_id]->get_state(), TransactionState::SHRINKING);
 
         //TODO
@@ -287,15 +295,19 @@ TEST_F(LockManagerTest, BasicTest4_INTENTION_SHARED) {
 
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         operation.push_back(0);
-        res = lock_manager_->UnLockRow(&txn0, 0, 0, row_id);
+        
+        Lock_data_id lock_data_id(0, 0, row_id, Lock_data_type::ROW);
+        res = lock_manager_->Unlock(&txn0, lock_data_id);
         EXPECT_EQ(res, true);
         EXPECT_EQ(txn0.get_state(), TransactionState::SHRINKING);
 
-        res = lock_manager_->UnLockPartition(&txn0, 0, 0);
+        Lock_data_id lock_par_id(0, 0, Lock_data_type::PARTITION);
+        res = lock_manager_->Unlock(&txn0, lock_par_id);
         EXPECT_EQ(res, true);
         EXPECT_EQ(txn0.get_state(), TransactionState::SHRINKING);
-        
-        res = lock_manager_->UnLockTable(&txn0, 0);
+
+        Lock_data_id lock_tab_id(0, Lock_data_type::TABLE);
+        res = lock_manager_->Unlock(&txn0, lock_tab_id);
         EXPECT_EQ(res, true);
         EXPECT_EQ(txn0.get_state(), TransactionState::SHRINKING);
     });
@@ -309,7 +321,8 @@ TEST_F(LockManagerTest, BasicTest4_INTENTION_SHARED) {
        EXPECT_EQ(res, true);
        EXPECT_EQ(txn1.get_state(), TransactionState::GROWING);
 
-       res = lock_manager_->UnLockTable(&txn1, 0);
+       Lock_data_id lock_tab_id(0, Lock_data_type::TABLE);
+       res = lock_manager_->Unlock(&txn1, lock_tab_id);
        EXPECT_EQ(res, true);
        EXPECT_EQ(txn1.get_state(), TransactionState::SHRINKING);
     });
@@ -349,15 +362,19 @@ TEST_F(LockManagerTest, BasicTest5_INTENTION_EXLUCSIVE) {
 
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         operation.push_back(0);
-        res = lock_manager_->UnLockRow(&txn0, 0, 0, row_id);
+
+        Lock_data_id lock_data_id(0, 0, row_id, Lock_data_type::ROW);
+        res = lock_manager_->Unlock(&txn0, lock_data_id);
         EXPECT_EQ(res, true);
         EXPECT_EQ(txn0.get_state(), TransactionState::SHRINKING);
 
-        res = lock_manager_->UnLockPartition(&txn0, 0, 0);
+        Lock_data_id lock_par_id(0, 0, Lock_data_type::PARTITION);
+        res = lock_manager_->Unlock(&txn0, lock_par_id);
         EXPECT_EQ(res, true);
         EXPECT_EQ(txn0.get_state(), TransactionState::SHRINKING);
         
-        res = lock_manager_->UnLockTable(&txn0, 0);
+        Lock_data_id lock_tab_id(0, Lock_data_type::TABLE);
+        res = lock_manager_->Unlock(&txn0, lock_tab_id);
         EXPECT_EQ(res, true);
         EXPECT_EQ(txn0.get_state(), TransactionState::SHRINKING);
     });
@@ -365,15 +382,16 @@ TEST_F(LockManagerTest, BasicTest5_INTENTION_EXLUCSIVE) {
     std::thread t1([&] {
         std::this_thread::sleep_for(std::chrono::milliseconds (500));
 
-       Transaction txn1(1);
-       bool res = lock_manager_->LockTable(&txn1, LockMode::SHARED, 0);
-       operation.push_back(1);
-       EXPECT_EQ(res, true);
-       EXPECT_EQ(txn1.get_state(), TransactionState::GROWING);
+        Transaction txn1(1);
+        bool res = lock_manager_->LockTable(&txn1, LockMode::SHARED, 0);
+        operation.push_back(1);
+        EXPECT_EQ(res, true);
+        EXPECT_EQ(txn1.get_state(), TransactionState::GROWING);
 
-       res = lock_manager_->UnLockTable(&txn1, 0);
-       EXPECT_EQ(res, true);
-       EXPECT_EQ(txn1.get_state(), TransactionState::SHRINKING);
+        Lock_data_id lock_tab_id(0, Lock_data_type::TABLE);
+        res = lock_manager_->Unlock(&txn1, lock_tab_id);
+        EXPECT_EQ(res, true);
+        EXPECT_EQ(txn1.get_state(), TransactionState::SHRINKING);
     });
 
     t0.join();
@@ -396,7 +414,8 @@ TEST_F(LockManagerTest, Test_Lock_UnLock_Lock){
         EXPECT_EQ(res, true);
         EXPECT_EQ(txn0.get_state(), TransactionState::GROWING);
 
-        lock_manager_->UnLockTable(&txn0, 0);
+        Lock_data_id lock_tab_id(0, Lock_data_type::TABLE);
+        lock_manager_->Unlock(&txn0, lock_tab_id);
         EXPECT_EQ(txn0.get_state(), TransactionState::SHRINKING);
 
         res = lock_manager_->LockTable(&txn0, LockMode::INTENTION_SHARED, 0);
@@ -437,13 +456,17 @@ TEST_F(LockManagerTest, UpgradeTest1_upgrade_SToX){
         EXPECT_EQ(txn0.get_state(), TransactionState::GROWING);
 
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        lock_manager_->UnLockRow(&txn0, 0, 0, 0);
+
+        Lock_data_id lock_row_id(0, 0, 0, Lock_data_type::ROW);
+        lock_manager_->Unlock(&txn0, lock_row_id);
         EXPECT_EQ(txn0.get_state(), TransactionState::SHRINKING);
 
-        lock_manager_->UnLockPartition(&txn0, 0, 0);
+        Lock_data_id lock_par_id(0, 0, Lock_data_type::PARTITION);
+        lock_manager_->Unlock(&txn0, lock_par_id);
         EXPECT_EQ(txn0.get_state(), TransactionState::SHRINKING);
 
-        lock_manager_->UnLockTable(&txn0, 0);
+        Lock_data_id lock_tab_id(0, Lock_data_type::TABLE);
+        lock_manager_->Unlock(&txn0, lock_tab_id);
         EXPECT_EQ(txn0.get_state(), TransactionState::SHRINKING);
 
     });
@@ -489,16 +512,20 @@ TEST_F(LockManagerTest, UpgradeTest2_muti_upgrade){
         // EXPECT_EQ(txn0.get_state(), TransactionState::GROWING);
 
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        lock_manager_->UnLockRow(&txn0, 0, 0, 0);
-        std::cout << txn_id << " : UnLockRow res: " << res << std::endl; 
+
+        Lock_data_id lock_row_id(0, 0, 0, Lock_data_type::ROW);
+        lock_manager_->Unlock(&txn0, lock_row_id);
+        std::cout << txn_id << " : Unlock res: " << res << std::endl; 
         // EXPECT_EQ(txn0.get_state(), TransactionState::SHRINKING);
 
-        lock_manager_->UnLockPartition(&txn0, 0, 0);
-        std::cout << txn_id << " : UnLockPartition res: " << res << std::endl; 
+        Lock_data_id lock_par_id(0, 0, Lock_data_type::PARTITION);
+        lock_manager_->Unlock(&txn0, lock_par_id);
+        std::cout << txn_id << " : Unlock res: " << res << std::endl; 
         // EXPECT_EQ(txn0.get_state(), TransactionState::SHRINKING);
-
-        lock_manager_->UnLockTable(&txn0, 0);
-        std::cout << txn_id << " : UnLockTable res: " << res << std::endl; 
+        
+        Lock_data_id lock_tab_id(0, Lock_data_type::TABLE);
+        lock_manager_->Unlock(&txn0, lock_tab_id);
+        std::cout << txn_id << " : Unlock res: " << res << std::endl; 
         // EXPECT_EQ(txn0.get_state(), TransactionState::SHRINKING);
 
     };
@@ -548,21 +575,26 @@ TEST_F(LockManagerTest, DeadLock_Test1){
 
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
-        lock_manager_->UnLockRow(&txn0, 0, 0, 0);
-        std::cout << txn_id << " : UnLockRow 0 res: " << res << std::endl; 
+        Lock_data_id lock_row_id(0, 0, 0, Lock_data_type::ROW);
+        lock_manager_->Unlock(&txn0, lock_row_id);
+        std::cout << txn_id << " : Unlock res: " << res << std::endl; 
         // EXPECT_EQ(txn0.get_state(), TransactionState::SHRINKING);
 
-        lock_manager_->UnLockRow(&txn0, 0, 0, 1);
-        std::cout << txn_id << " : UnLockRow 1 res: " << res << std::endl; 
-
-        lock_manager_->UnLockPartition(&txn0, 0, 0);
-        std::cout << txn_id << " : UnLockPartition res: " << res << std::endl; 
+        lock_row_id.row_id_ = 1;
+        lock_manager_->Unlock(&txn0, lock_row_id);
+        std::cout << txn_id << " : Unlock 1 res: " << res << std::endl; 
         // EXPECT_EQ(txn0.get_state(), TransactionState::SHRINKING);
 
-        lock_manager_->UnLockTable(&txn0, 0);
-        std::cout << txn_id << " : UnLockTable res: " << res << std::endl; 
+        Lock_data_id lock_par_id(0, 0, Lock_data_type::PARTITION);
+        lock_manager_->Unlock(&txn0, lock_par_id);
+        std::cout << txn_id << " : Unlock res: " << res << std::endl; 
         // EXPECT_EQ(txn0.get_state(), TransactionState::SHRINKING);
-
+        
+        Lock_data_id lock_tab_id(0, Lock_data_type::TABLE);
+        lock_manager_->Unlock(&txn0, lock_tab_id);
+        std::cout << txn_id << " : Unlock res: " << res << std::endl; 
+        // EXPECT_EQ(txn0.get_state(), TransactionState::SHRINKING);
+    
     });
 
     std::thread t1([&]{
@@ -589,19 +621,25 @@ TEST_F(LockManagerTest, DeadLock_Test1){
         std::cout << txn_id << " : LockRow 1 X res: " << res << std::endl; 
 
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        lock_manager_->UnLockRow(&txn0, 0, 0, 0);
-        std::cout << txn_id << " : UnLockRow 0 res: " << res << std::endl; 
+        
+        Lock_data_id lock_row_id(0, 0, 0, Lock_data_type::ROW);
+        lock_manager_->Unlock(&txn0, lock_row_id);
+        std::cout << txn_id << " : Unlock res: " << res << std::endl; 
         // EXPECT_EQ(txn0.get_state(), TransactionState::SHRINKING);
 
-        lock_manager_->UnLockRow(&txn0, 0, 0, 1);
-        std::cout << txn_id << " : UnLockRow 1 res: " << res << std::endl; 
-
-        lock_manager_->UnLockPartition(&txn0, 0, 0);
-        std::cout << txn_id << " : UnLockPartition res: " << res << std::endl; 
+        lock_row_id.row_id_ = 1;
+        lock_manager_->Unlock(&txn0, lock_row_id);
+        std::cout << txn_id << " : Unlock 1 res: " << res << std::endl; 
         // EXPECT_EQ(txn0.get_state(), TransactionState::SHRINKING);
 
-        lock_manager_->UnLockTable(&txn0, 0);
-        std::cout << txn_id << " : UnLockTable res: " << res << std::endl; 
+        Lock_data_id lock_par_id(0, 0, Lock_data_type::PARTITION);
+        lock_manager_->Unlock(&txn0, lock_par_id);
+        std::cout << txn_id << " : Unlock res: " << res << std::endl; 
+        // EXPECT_EQ(txn0.get_state(), TransactionState::SHRINKING);
+        
+        Lock_data_id lock_tab_id(0, Lock_data_type::TABLE);
+        lock_manager_->Unlock(&txn0, lock_tab_id);
+        std::cout << txn_id << " : Unlock res: " << res << std::endl; 
         // EXPECT_EQ(txn0.get_state(), TransactionState::SHRINKING);
 
     });

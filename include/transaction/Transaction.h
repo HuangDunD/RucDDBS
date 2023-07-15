@@ -32,7 +32,6 @@ enum class AbortReason {
   PARTITION_LOCK_NOT_PRESENT, 
   ATTEMPTED_INTENTION_LOCK_ON_ROW,
   TABLE_UNLOCKED_BEFORE_UNLOCKING_ROWS,
-  INCOMPATIBLE_UPGRADE,
   ATTEMPTED_UNLOCK_BUT_NO_LOCK_HELD, 
   DEAD_LOCK_PREVENT_NO_WAIT
 };
@@ -68,8 +67,6 @@ class TransactionAbortException : public std::exception {
       case AbortReason::TABLE_UNLOCKED_BEFORE_UNLOCKING_ROWS:
         return "Transaction " + std::to_string(txn_id_) +
                " aborted because table locks dropped before dropping row locks";
-      case AbortReason::INCOMPATIBLE_UPGRADE:
-        return "Transaction " + std::to_string(txn_id_) + " aborted because attempted lock upgrade is incompatible";
       case AbortReason::ATTEMPTED_UNLOCK_BUT_NO_LOCK_HELD:
         return "Transaction " + std::to_string(txn_id_) + " aborted because attempted to unlock but no lock held ";
       case AbortReason::DEAD_LOCK_PREVENT_NO_WAIT:
@@ -95,21 +92,7 @@ private:
     std::shared_ptr<std::vector<IP_Port>> distributed_plan_excution_node_; //分布式执行计划涉及节点
     IP_Port coor_ip_;// 协调者节点
 
-    std::shared_ptr<std::unordered_set<Lock_data_id>> table_S_lock_set_;
-    std::shared_ptr<std::unordered_set<Lock_data_id>> table_X_lock_set_;  
-    std::shared_ptr<std::unordered_set<Lock_data_id>> table_IS_lock_set_;  
-    std::shared_ptr<std::unordered_set<Lock_data_id>> table_IX_lock_set_;  
-    std::shared_ptr<std::unordered_set<Lock_data_id>> table_SIX_lock_set_;
-
-    std::shared_ptr<std::unordered_set<Lock_data_id>> partition_S_lock_set_;  
-    std::shared_ptr<std::unordered_set<Lock_data_id>> partition_X_lock_set_;  
-    std::shared_ptr<std::unordered_set<Lock_data_id>> partition_IS_lock_set_;  
-    std::shared_ptr<std::unordered_set<Lock_data_id>> partition_IX_lock_set_;  
-    std::shared_ptr<std::unordered_set<Lock_data_id>> partition_SIX_lock_set_;  
-
-    std::shared_ptr<std::unordered_set<Lock_data_id>> row_S_lock_set_;  
-    std::shared_ptr<std::unordered_set<Lock_data_id>> row_X_lock_set_;  
-
+    std::shared_ptr<std::unordered_set<Lock_data_id>> lock_set_;  // 事务申请的所有锁
 
 public:
 
@@ -117,9 +100,7 @@ public:
 
     inline TransactionState get_state() const {return state_;}
 
-    inline void set_transaction_state(TransactionState state){
-        state_ = state;
-    }
+    inline void set_transaction_state(TransactionState state){ state_ = state; }
 
     inline IsolationLevel get_isolation() const {return isolation_;}
 
@@ -132,168 +113,19 @@ public:
     inline void set_is_distributed(bool val) {is_distributed = val; } 
     inline std::shared_ptr<std::vector<IP_Port>> get_distributed_node_set() {return distributed_plan_excution_node_;}
     inline IP_Port get_coor_ip() {return coor_ip_; }
-    inline void set_coor_ip(IP_Port p) { coor_ip_ = p; }
-
-    inline std::shared_ptr<std::unordered_set<Lock_data_id>> get_table_S_lock_set() {return table_S_lock_set_;} 
-    inline std::shared_ptr<std::unordered_set<Lock_data_id>> get_table_X_lock_set() {return table_X_lock_set_;} 
-    inline std::shared_ptr<std::unordered_set<Lock_data_id>> get_table_IS_lock_set() {return table_IS_lock_set_;} 
-    inline std::shared_ptr<std::unordered_set<Lock_data_id>> get_table_IX_lock_set() {return table_IX_lock_set_;} 
-    inline std::shared_ptr<std::unordered_set<Lock_data_id>> get_table_SIX_lock_set() {return table_SIX_lock_set_;} 
-
-    inline std::shared_ptr<std::unordered_set<Lock_data_id>> get_partition_S_lock_set() {return partition_S_lock_set_;} 
-    inline std::shared_ptr<std::unordered_set<Lock_data_id>> get_partition_X_lock_set() {return partition_X_lock_set_;} 
-    inline std::shared_ptr<std::unordered_set<Lock_data_id>> get_partition_IS_lock_set() {return partition_IS_lock_set_;} 
-    inline std::shared_ptr<std::unordered_set<Lock_data_id>> get_partition_IX_lock_set() {return partition_IX_lock_set_;} 
-    inline std::shared_ptr<std::unordered_set<Lock_data_id>> get_partition_SIX_lock_set() {return partition_SIX_lock_set_;}
-
-    inline std::shared_ptr<std::unordered_set<Lock_data_id>> get_row_S_lock_set() {return row_S_lock_set_;}
-    inline std::shared_ptr<std::unordered_set<Lock_data_id>> get_row_X_lock_set() {return row_X_lock_set_;}
-
-    inline void add_lock_set(LockMode lock_mode, Lock_data_id l_id){
-      switch (l_id.type_)
-      {
-        case Lock_data_type::TABLE:
-          switch (lock_mode)
-          {
-          case LockMode::SHARED:
-            table_S_lock_set_->emplace(l_id);
-            break;
-          case LockMode::EXLUCSIVE:
-            table_X_lock_set_->emplace(l_id);
-            break;
-          case LockMode::INTENTION_SHARED:
-            table_IS_lock_set_->emplace(l_id);
-            break;
-          case LockMode::INTENTION_EXCLUSIVE:
-            table_IX_lock_set_->emplace(l_id);
-            break;
-          case LockMode::S_IX:
-            table_SIX_lock_set_->emplace(l_id);
-            break;
-          default:
-            break;
-          }
-        break;
-          case Lock_data_type::PARTITION:
-          switch (lock_mode)
-          {
-          case LockMode::SHARED:
-            partition_S_lock_set_->emplace(l_id);
-            break;
-          case LockMode::EXLUCSIVE:
-            partition_X_lock_set_->emplace(l_id);
-            break;
-          case LockMode::INTENTION_SHARED:
-            partition_IS_lock_set_->emplace(l_id);
-            break;
-          case LockMode::INTENTION_EXCLUSIVE:
-            partition_IX_lock_set_->emplace(l_id);
-            break;
-          case LockMode::S_IX:
-            partition_SIX_lock_set_->emplace(l_id);
-            break;
-          default:
-            break;
-          }
-        break;
-          case Lock_data_type::ROW:
-          switch (lock_mode)
-          {
-          case LockMode::SHARED:
-            row_S_lock_set_->emplace(l_id);
-            break;
-          case LockMode::EXLUCSIVE:
-            row_X_lock_set_->emplace(l_id);
-            break;
-          default:
-            break;
-          }
-        break;
-      }
-    }
-
-    inline std::shared_ptr<std::unordered_set<Lock_data_id>> get_lock_set(Lock_data_type type, LockMode lock_mode)
-    {
-      switch (type)
-      {
-        case Lock_data_type::TABLE:
-          switch (lock_mode)
-          {
-          case LockMode::SHARED:
-            return table_S_lock_set_;
-          case LockMode::EXLUCSIVE:
-            return table_X_lock_set_;
-          case LockMode::INTENTION_SHARED:
-            return table_IS_lock_set_;
-          case LockMode::INTENTION_EXCLUSIVE:
-            return table_IX_lock_set_;
-          case LockMode::S_IX:
-            return table_SIX_lock_set_;
-          default:
-            break;
-          }
-        break;
-          case Lock_data_type::PARTITION:
-          switch (lock_mode)
-          {
-          case LockMode::SHARED:
-            return partition_S_lock_set_;
-          case LockMode::EXLUCSIVE:
-            return partition_X_lock_set_;
-          case LockMode::INTENTION_SHARED:
-            return partition_IS_lock_set_;
-          case LockMode::INTENTION_EXCLUSIVE:
-            return partition_IX_lock_set_;
-          case LockMode::S_IX:
-            return partition_SIX_lock_set_;
-          default:
-            break;
-          }
-        break;
-          case Lock_data_type::ROW:
-          switch (lock_mode)
-          {
-          case LockMode::SHARED:
-            return row_S_lock_set_;
-          case LockMode::EXLUCSIVE:
-            return row_X_lock_set_;
-          default:
-            break;
-          }
-        break;
-        default:
-        break;
-      }
-      return nullptr;
-    }
-
-    // inline std::shared_ptr<std::unordered_set<std::pair<Lock_data_id, LockMode>>> get_all_lock_set_() {return all_lock_set_;}
+    inline void set_coor_ip(IP_Port ip) { coor_ip_ = ip; }
+    inline std::shared_ptr<std::unordered_set<Lock_data_id>> get_lock_set() { return lock_set_; }
 
     explicit Transaction(txn_id_t txn_id, IsolationLevel isolation_level = IsolationLevel::SERIALIZABLE)
       : txn_id_(txn_id), state_(TransactionState::DEFAULT), isolation_(isolation_level)
     {
-        table_S_lock_set_ = std::make_shared<std::unordered_set<Lock_data_id>>();
-        table_X_lock_set_ = std::make_shared<std::unordered_set<Lock_data_id>>();
-        table_IS_lock_set_ = std::make_shared<std::unordered_set<Lock_data_id>>();
-        table_IX_lock_set_ = std::make_shared<std::unordered_set<Lock_data_id>>();
-        table_SIX_lock_set_ = std::make_shared<std::unordered_set<Lock_data_id>>();
-
-        partition_S_lock_set_ = std::make_shared<std::unordered_set<Lock_data_id>>();
-        partition_X_lock_set_ = std::make_shared<std::unordered_set<Lock_data_id>>();
-        partition_IS_lock_set_ = std::make_shared<std::unordered_set<Lock_data_id>>();
-        partition_IX_lock_set_ = std::make_shared<std::unordered_set<Lock_data_id>>();
-        partition_SIX_lock_set_ = std::make_shared<std::unordered_set<Lock_data_id>>();
-
-        row_S_lock_set_ = std::make_shared<std::unordered_set<Lock_data_id>>();
-        row_X_lock_set_ = std::make_shared<std::unordered_set<Lock_data_id>>();
-
         distributed_plan_excution_node_ = std::make_shared<std::vector<IP_Port>>(); 
         write_set_ = std::make_shared<std::deque<WriteRecord>>();
+        lock_set_ = std::make_shared<std::unordered_set<Lock_data_id>>();
 
         is_distributed = false;
         prev_lsn_ = INVALID_LSN;
-        thread_id_ = std::this_thread::get_id();
-        
+        thread_id_ = std::this_thread::get_id();   
     };
 
     ~Transaction(){};

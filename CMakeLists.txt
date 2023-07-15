@@ -2,9 +2,9 @@ cmake_minimum_required(VERSION 3.2)
 
 project(RUCDDBS)
 
-option(RUCDDBS_STORAGE "if build kv_storage" OFF)
-option(RUCDDBS_TRANSACTION "if build transaction" OFF)
-option(RUCDDBS_TEST "build rucddbs test" OFF)
+option(RUCDDBS_STORAGE "if build kv_storage" ON)
+option(RUCDDBS_TRANSACTION "if build transaction" ON)
+option(RUCDDBS_TEST "build rucddbs test" ON)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED true)

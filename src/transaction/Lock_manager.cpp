@@ -4,60 +4,70 @@
 
 std::atomic<bool> Lock_manager::enable_no_wait_;
 
-//NOTE:
+
 auto Lock_manager::isLockCompatible(const LockRequest *iter, const LockMode &target_lock_mode) -> bool {
-        switch (target_lock_mode) {
-            case LockMode::INTENTION_SHARED:
-                if(iter->lock_mode_ == LockMode::EXLUCSIVE){
-                    return false;
-                }
-                break;
-            case LockMode::INTENTION_EXCLUSIVE:
-                if(iter->lock_mode_ != LockMode::INTENTION_SHARED && iter->lock_mode_ != LockMode::INTENTION_EXCLUSIVE){
-                    return false;
-                }
-                break;
-            case LockMode::SHARED:
-                if(iter->lock_mode_ != LockMode::INTENTION_SHARED && iter->lock_mode_ != LockMode::SHARED){
-                    return false;
-                }
-                break;
-            case LockMode::S_IX:
-                if(iter->lock_mode_ != LockMode::INTENTION_SHARED) {
-                    return false;
-                }
-                break;
-            case LockMode::EXLUCSIVE:
-                return false;
-            default:
+    switch (target_lock_mode) {
+        case LockMode::INTENTION_SHARED:
+            if(iter->lock_mode_ == LockMode::EXLUCSIVE){
                 return false;
             }
-        return true;
-        // if(iter->lock_mode_==LockMode::INTENTION_SHARED && target_lock_mode == LockMode::EXLUCSIVE) return false;
-        // if(iter->lock_mode_==LockMode::INTENTION_EXCLUSIVE && target_lock_mode == LockMode::SHARED) return false;
-        // if(iter->lock_mode_==LockMode::INTENTION_EXCLUSIVE && target_lock_mode == LockMode::S_IX) return false;
-        // if(iter->lock_mode_==LockMode::INTENTION_EXCLUSIVE && target_lock_mode == LockMode::EXLUCSIVE) return false;
-        // if(iter->lock_mode_==LockMode::SHARED && target_lock_mode == LockMode::INTENTION_EXCLUSIVE) return false;
-        // if(iter->lock_mode_==LockMode::SHARED && target_lock_mode == LockMode::S_IX) return false;
-        // if(iter->lock_mode_==LockMode::SHARED && target_lock_mode == LockMode::EXLUCSIVE) return false;
-        // if(iter->lock_mode_==LockMode::S_IX && target_lock_mode != LockMode::INTENTION_SHARED) return false;
-        // if(iter->lock_mode_==LockMode::EXLUCSIVE) return false;
+            break;
+        case LockMode::INTENTION_EXCLUSIVE:
+            if(iter->lock_mode_ != LockMode::INTENTION_SHARED && iter->lock_mode_ != LockMode::INTENTION_EXCLUSIVE){
+                return false;
+            }
+            break;
+        case LockMode::SHARED:
+            if(iter->lock_mode_ != LockMode::INTENTION_SHARED && iter->lock_mode_ != LockMode::SHARED){
+                return false;
+            }
+            break;
+        case LockMode::S_IX:
+            if(iter->lock_mode_ != LockMode::INTENTION_SHARED) {
+                return false;
+            }
+            break;
+        case LockMode::EXLUCSIVE:
+            return false;
+        default:
+            return false;
+        }
+    return true;
 }
 
-auto Lock_manager::isUpdateCompatible(const LockRequest *iter, const LockMode &upgrade_lock_mode) -> bool {
+/// @brief 用于对同一个事务上的加锁请求进行锁升级的兼容性判断
+/// @param iter 锁请求的指针，加锁请求的事务id=该指针的事务id
+/// @param upgrade_lock_mode 新来的加锁模式
+/// @param return_lock_mode 返回需要更新的锁请求模式，例如IX + S -> SIX
+/// @return 是否需要锁升级，如果返回为false，则不需要更改iter
+bool Lock_manager::isUpdateCompatible(const LockRequest *iter, const LockMode &upgrade_lock_mode, LockMode* return_lock_mode) {
     switch (iter->lock_mode_) {
         case LockMode::INTENTION_SHARED:
             if(upgrade_lock_mode == LockMode::INTENTION_SHARED){
                 return false;
             }
+            // IS + IX = IX, IS + S = S, IS + X = X
+            *return_lock_mode = upgrade_lock_mode;
             break;
         case LockMode::SHARED:
-            if(upgrade_lock_mode != LockMode::EXLUCSIVE && upgrade_lock_mode != LockMode::S_IX){
+            if(upgrade_lock_mode == LockMode::EXLUCSIVE) {
+                // S + X = X
+                *return_lock_mode = upgrade_lock_mode;
+            }else if(upgrade_lock_mode == LockMode::INTENTION_EXCLUSIVE){
+                // S + IX = SIX
+                *return_lock_mode = LockMode::S_IX;
+            }else{
                 return false;
             }
             break;
         case LockMode::INTENTION_EXCLUSIVE:
-            if(upgrade_lock_mode != LockMode::EXLUCSIVE && upgrade_lock_mode != LockMode::S_IX){
+            if(upgrade_lock_mode == LockMode::EXLUCSIVE) {
+                // IX + X = X
+                *return_lock_mode = upgrade_lock_mode;
+            }else if(upgrade_lock_mode == LockMode::INTENTION_SHARED){
+                // IX + S= SIX
+                *return_lock_mode = LockMode::S_IX;
+            }else{
                 return false;
             }
             break;
@@ -65,6 +75,8 @@ auto Lock_manager::isUpdateCompatible(const LockRequest *iter, const LockMode &u
             if(upgrade_lock_mode != LockMode::EXLUCSIVE){
                 return false;
             }
+            // SIX + X = X
+            *return_lock_mode = upgrade_lock_mode;
             break;
         case LockMode::EXLUCSIVE:
             return false;
@@ -74,18 +86,19 @@ auto Lock_manager::isUpdateCompatible(const LockRequest *iter, const LockMode &u
         }
     return true;
 }
-
 auto Lock_manager::checkSameTxnLockRequest(Transaction *txn, LockRequestQueue *request_queue, const LockMode target_lock_mode, std::unique_lock<std::mutex> &queue_lock) -> int
 {
     try{
         for(auto &iter : request_queue->request_queue_){
             if( iter->txn_id_ == txn->get_txn_id() ){
-                //如果当前事务正在或已经申请同等模式的锁
-                if(iter->lock_mode_ == target_lock_mode && iter->granted_ == true){
+                LockMode return_lock_mode;
+                bool need_upgrade = isUpdateCompatible(iter, target_lock_mode, &return_lock_mode);
+                // 如果当前事务正在或已经申请模式相同或更低级的锁
+                if(need_upgrade == false && iter->granted_ == true){
                     // 已经获取锁, 上锁成功
                     return true; 
                 }
-                else if(iter->lock_mode_ == target_lock_mode && iter->granted_ == false){
+                else if(need_upgrade == false && iter->granted_ == false){
                     //正在申请锁, 等待这个请求申请成功后返回
                     request_queue->cv_.wait(queue_lock, [&request_queue, &iter, &txn]{
                         //TODO deadlock
@@ -104,17 +117,14 @@ auto Lock_manager::checkSameTxnLockRequest(Transaction *txn, LockRequestQueue *r
                     iter->granted_ = true;
                     return true; 
                 }
-                //如果锁的模式不同, 则需要对锁进行升级, 首先检查是否有正在升级的锁, 如果有, 则返回升级冲突
+                //如果事务想要申请更高级的锁, 则需要对锁进行升级, 首先检查是否有正在升级的锁, 如果有, 则返回升级冲突
                 else if(request_queue->upgrading_ == true){
                     throw TransactionAbortException (txn->get_txn_id(), AbortReason::UPGRADE_CONFLICT);
                 }
-                else if(Lock_manager::isUpdateCompatible(iter, target_lock_mode) == false){
-                    //如果没有冲突则检查是否锁兼容, 如果升级不兼容
-                    throw TransactionAbortException (txn->get_txn_id(), AbortReason::INCOMPATIBLE_UPGRADE);
-                }else{
-                    //如果升级兼容, 则upgrade 
+                else{
+                    //准备升级
                     request_queue->upgrading_ = true; 
-                    iter->lock_mode_ = target_lock_mode;
+                    iter->lock_mode_ = return_lock_mode;
                     iter->granted_ = false;
                     request_queue->cv_.wait(queue_lock, [&request_queue, &iter, &txn]{
                         if(Lock_manager::enable_no_wait_==false)
@@ -128,11 +138,10 @@ auto Lock_manager::checkSameTxnLockRequest(Transaction *txn, LockRequestQueue *r
                             return true;
                         }
                     });
+                    request_queue->upgrading_ = false;
                     if(txn->get_state()==TransactionState::ABORTED) 
                         throw TransactionAbortException (txn->get_txn_id(), AbortReason::DEAD_LOCK_PREVENT_NO_WAIT) ;
-                    request_queue->upgrading_ = false;
                     iter->granted_ = true;
-                    
                     return true;
                 } 
             }
@@ -185,9 +194,7 @@ auto Lock_manager::LockTable(Transaction *txn, LockMode lock_mode, const table_o
         if(checkSameTxnLockRequest(txn, request_queue, target_lock_mode, queue_lock)==true){
             if(txn->get_state() == TransactionState::ABORTED)
                 return false;
-            if(txn->get_lock_set(Lock_data_type::TABLE,target_lock_mode)->count(l_id)==0){
-                txn->add_lock_set(target_lock_mode, l_id);
-            }
+            txn->get_lock_set()->emplace(l_id);
             return true;
         }
         
@@ -195,11 +202,6 @@ auto Lock_manager::LockTable(Transaction *txn, LockMode lock_mode, const table_o
         //检查是否可以上锁, 否则阻塞, 使用条件变量cv来实现
         LockRequest* lock_request = new LockRequest(txn->get_txn_id(), target_lock_mode); 
         request_queue->request_queue_.emplace_back(lock_request); 
-        
-        // request_queue->cv_.wait(queue_lock, [&request_queue, &lock_request, &txn] {
-        //                 return Lock_manager::checkQueueCompatible(request_queue, lock_request) || 
-        //                     txn->get_state()==TransactionState::ABORTED;
-        //             });
 
         request_queue->cv_.wait(queue_lock, [&request_queue, &lock_request, &txn]{
             // 如果不使用NO-Wait算法，则检查队列锁请求兼容情况和事务状态，
@@ -222,7 +224,7 @@ auto Lock_manager::LockTable(Transaction *txn, LockMode lock_mode, const table_o
 
         lock_request->granted_ = true;
 
-        txn->add_lock_set(target_lock_mode, l_id); 
+        txn->get_lock_set()->emplace(l_id);
 
         return true;
     }
@@ -273,9 +275,7 @@ auto Lock_manager::LockPartition(Transaction *txn, LockMode lock_mode, const tab
         if(checkSameTxnLockRequest(txn, request_queue, target_lock_mode, queue_lock)==true){
             if(txn->get_state() == TransactionState::ABORTED)
                 return false;
-            if(txn->get_lock_set(Lock_data_type::PARTITION,target_lock_mode)->count(l_id)==0){
-                txn->add_lock_set(target_lock_mode, l_id);
-            }
+            txn->get_lock_set()->emplace(l_id);
             return true;
         }
 
@@ -299,7 +299,7 @@ auto Lock_manager::LockPartition(Transaction *txn, LockMode lock_mode, const tab
             throw TransactionAbortException (txn->get_txn_id(), AbortReason::DEAD_LOCK_PREVENT_NO_WAIT) ;
             
         lock_request->granted_ = true;
-        txn->add_lock_set(lock_mode, l_id); 
+        txn->get_lock_set()->emplace(l_id);
 
         return true;
     }
@@ -353,9 +353,7 @@ auto Lock_manager::LockRow(Transaction *txn, LockMode lock_mode, const table_oid
         if(checkSameTxnLockRequest(txn, request_queue, target_lock_mode, queue_lock)==true){
             if(txn->get_state() == TransactionState::ABORTED)
                 return false;
-            if(txn->get_lock_set(Lock_data_type::ROW,target_lock_mode)->count(l_id)==0){
-                txn->add_lock_set(target_lock_mode, l_id);
-            }
+            txn->get_lock_set()->emplace(l_id);
             return true;
         }
 
@@ -378,7 +376,7 @@ auto Lock_manager::LockRow(Transaction *txn, LockMode lock_mode, const table_oid
             throw TransactionAbortException (txn->get_txn_id(), AbortReason::DEAD_LOCK_PREVENT_NO_WAIT) ;
 
         lock_request->granted_ = true;
-        txn->add_lock_set(lock_mode, l_id); 
+        txn->get_lock_set()->emplace(l_id);
 
         return true;
     }
@@ -388,49 +386,6 @@ auto Lock_manager::LockRow(Transaction *txn, LockMode lock_mode, const table_oid
         // std::cerr << e.GetInfo() << '\n';
         return false;
     }
-}
-
-auto Lock_manager::UnLockTable(Transaction *txn,  const table_oid_t &oid) -> bool {
-
-    Lock_data_id l_id(oid, Lock_data_type::TABLE);
-    
-    Unlock(txn, l_id);
-
-    //由于锁升级, 需要将所有lock_set中的记录都删除
-    txn->get_lock_set(Lock_data_type::TABLE, LockMode::SHARED)->erase(l_id);
-    txn->get_lock_set(Lock_data_type::TABLE, LockMode::EXLUCSIVE)->erase(l_id);
-    txn->get_lock_set(Lock_data_type::TABLE, LockMode::INTENTION_EXCLUSIVE)->erase(l_id);
-    txn->get_lock_set(Lock_data_type::TABLE, LockMode::INTENTION_SHARED)->erase(l_id);
-    txn->get_lock_set(Lock_data_type::TABLE, LockMode::S_IX)->erase(l_id);
-
-    return true;
-}
-
-auto Lock_manager::UnLockPartition(Transaction *txn, const table_oid_t &oid, const partition_id_t &p_id ) -> bool {
-
-    Lock_data_id l_id(oid, p_id, Lock_data_type::PARTITION);
-
-    Unlock(txn, l_id);
-
-    txn->get_lock_set(Lock_data_type::PARTITION, LockMode::SHARED)->erase(l_id);
-    txn->get_lock_set(Lock_data_type::PARTITION, LockMode::EXLUCSIVE)->erase(l_id);
-    txn->get_lock_set(Lock_data_type::PARTITION, LockMode::INTENTION_EXCLUSIVE)->erase(l_id);
-    txn->get_lock_set(Lock_data_type::PARTITION, LockMode::INTENTION_SHARED)->erase(l_id);
-    txn->get_lock_set(Lock_data_type::PARTITION, LockMode::S_IX)->erase(l_id);
-
-    return true;
-}
-
-auto Lock_manager::UnLockRow(Transaction *txn, const table_oid_t &oid, const partition_id_t &p_id, const row_id_t &row_id) -> bool {
-
-    Lock_data_id l_id(oid, p_id, row_id, Lock_data_type::ROW);
-
-    Unlock(txn, l_id);
-
-    txn->get_lock_set(Lock_data_type::ROW, LockMode::SHARED)->erase(l_id);
-    txn->get_lock_set(Lock_data_type::ROW, LockMode::EXLUCSIVE)->erase(l_id);
-
-    return true;
 }
 
 auto Lock_manager::Unlock(Transaction *txn, const Lock_data_id &l_id) -> bool {
@@ -465,7 +420,3 @@ auto Lock_manager::Unlock(Transaction *txn, const Lock_data_id &l_id) -> bool {
     request_queue->cv_.notify_all();
     return true;
 }
-
-auto Lock_manager::RunNoWaitDetection() -> bool{ 
-    return true;
-} 

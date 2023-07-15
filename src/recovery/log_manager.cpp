@@ -81,6 +81,7 @@ void LogManager::SwapBuffer() {
 }
 
 void LogManager::Flush(lsn_t lsn, bool force) {
+    if( persistent_lsn_ >= lsn) return;
     if (force) {
         needFlush_ = true;
         // notify flush thread to start flushing the log
