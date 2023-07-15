@@ -27,10 +27,12 @@ message Table{
 
 message SQL_Request{
     string Sql_statement = 1;
+    sint64 txn_id = 2;
 };
 
 message SQL_Response{
     string txt = 1;
+    sint64 txn_id = 2;
 };
 
 // 节点和节点通信

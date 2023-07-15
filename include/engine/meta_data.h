@@ -7,10 +7,13 @@
 #include <algorithm>
 #include <sstream>
 #include "op_etcd.h"
+#include <shared_mutex>
 #define par_min -2147483648
 #define par_max 2147483647
 
 extern std::vector<std::string> ips_;
+extern std::unordered_map<std::string, int32_t> table_name_id_map;
+extern std::shared_mutex table_name_id_map_mutex;
 
 enum class ColType {
     TYPE_INT, TYPE_FLOAT, TYPE_STRING

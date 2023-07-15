@@ -5,13 +5,14 @@
 #include <string>
 #include <algorithm>
 #include <memory>
-#include "ast.h"
+#include "include/parser/ast.h"
 #include "parser.h"
 #include "record.h"
 #include "kv_store.h"
 #include "meta_data.h"
-#include<iomanip>
+#include <iomanip>
 #include "session.pb.h"
+#include "transaction_manager.h"
 # define DB_NAME "RucDDBS"
 using namespace std;
 #define debug_test 1
@@ -19,6 +20,8 @@ using namespace std;
 class Operators{
 public:
     shared_ptr<Operators> next_node = nullptr;
+    TransactionManager* transaction_manager_ = transaction_manager_sql;
+    Transaction* txn = nullptr;
     virtual vector<shared_ptr<record>> exec_op() = 0;
     void prt_op(){
         if(debug_test)
@@ -30,7 +33,7 @@ int send_plan(string target_address, shared_ptr<Operators> node_plan, vector<sha
 int get_res(const session::Table &response, vector<shared_ptr<record>>& ret_table);
 // void send_plan(string target_address, shared_ptr<Operators> node_plan);
 vector<shared_ptr<record>> Sql_execute(string str);
-string Sql_execute_client(string str);
+string Sql_execute_client(string str, txn_id_t &txn_id);
 
 class op_executor: public Operators{
 public:
@@ -128,6 +131,13 @@ public:
     
     vector<shared_ptr<record>> exec_op(){
         prt_op();
+        //Lock
+        std::shared_lock<std::shared_mutex> l(table_name_id_map_mutex);
+        auto o_id = table_name_id_map[tab_name];
+        l.unlock();
+        transaction_manager_->getLockManager()->LockTable(txn, LockMode::INTENTION_EXCLUSIVE, o_id);
+        transaction_manager_->getLockManager()->LockPartition(txn, LockMode::INTENTION_EXCLUSIVE, o_id, par);
+        transaction_manager_->getLockManager()->LockRow(txn, LockMode::EXLUCSIVE, o_id, par, rec->row[0]->str);
         // 默认第一列为主键
         string key = "/store_data/" + tab_name + "/" 
             + to_string(par) + "/" + to_string(rec->row[0]->str);
@@ -146,6 +156,17 @@ public:
     int par;
     vector<shared_ptr<record>> exec_op(){
         auto res = next_node->exec_op();
+
+        //Lock
+        std::shared_lock<std::shared_mutex> l(table_name_id_map_mutex);
+        auto o_id = table_name_id_map[tab_name];
+        l.unlock();
+        transaction_manager_->getLockManager()->LockTable(txn, LockMode::S_IX, o_id);
+        transaction_manager_->getLockManager()->LockPartition(txn, LockMode::S_IX, o_id, par);
+        for(auto x: res){
+            transaction_manager_->getLockManager()->LockRow(txn, LockMode::EXLUCSIVE, o_id, par, x->row[0]->str);
+        }
+        
         // 构造key 进行删除
         for(auto iter: res){
             auto key = "/store_data/" + tab_name + "/" + to_string(par) + "/" + to_string(iter->row[0]->str);
@@ -166,6 +187,17 @@ public:
     vector<shared_ptr<record>> exec_op(){
         prt_op();
         auto res = next_node->exec_op();
+
+        //Lock
+        std::shared_lock<std::shared_mutex> l(table_name_id_map_mutex);
+        auto o_id = table_name_id_map[tab_name];
+        l.unlock();
+        transaction_manager_->getLockManager()->LockTable(txn, LockMode::S_IX, o_id);
+        transaction_manager_->getLockManager()->LockPartition(txn, LockMode::S_IX, o_id, par);
+        for(auto x: res){
+            transaction_manager_->getLockManager()->LockRow(txn, LockMode::EXLUCSIVE, o_id, par, x->row[0]->str);
+        }
+        
         // 构造key 进行更新
         for(auto iter: res){
             auto key = "/store_data/" + tab_name + "/" + to_string(par) + "/" + to_string(iter->row[0]->str);
@@ -244,6 +276,16 @@ public:
     
     vector<shared_ptr<record>> exec_op(){
         prt_op();
+
+        //Lock
+        cout << "lock " << endl;
+        std::shared_lock<std::shared_mutex> l(table_name_id_map_mutex);
+        auto o_id = table_name_id_map[tabs];
+        l.unlock();
+        cout << "unlock" << endl;
+        transaction_manager_->getLockManager()->LockTable(txn, LockMode::INTENTION_SHARED, o_id);
+        transaction_manager_->getLockManager()->LockPartition(txn, LockMode::SHARED, o_id, par);
+        cout << "txn " << endl;
         vector<shared_ptr<record>> res;
         auto ret = kv_store::get_par(tabs, par, res);
         if(!ret)

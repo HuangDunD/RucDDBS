@@ -1,0 +1,100 @@
+etcd_meta_data
+etcdctl
+key = /meta_data/ip_address/tab_name
+value = cnt par1,address1 par2,address2
+
+key = /meta_data/par_info/tab_name
+value cnt min,max min,max
+
+key = /meta_data/col_info/tab_name
+value cnt col_name,type,len col_name,type,len
+
+etcd_store_data
+前缀key = /store_data/tab_name
+key = /store_data/tab_name/par1/key_value
+value = cnt value value value
+
+KV 的key 类型
+tab_name + par + 主键
+
+create table：
+    直接写在metadata里面即可
+insert table：
+    转换成关系型
+    找到对应partition写进去就行
+delete：
+    利用metadata发给可能需要delete的节点
+    在每个节点执行delete计划，
+    先执行scan操作，根据scan出的结果
+    调用kv进行delete
+update
+    利用metadata发给可能需要delete的节点
+    在每个节点执行delete计划，
+    先执行scan操作，根据scan出的结果
+    重构scan的结果
+    重写
+table_sacn时候，把表信息加上select
+
+
+// 分区
+key = /meta_data/par_info/tab_name
+value cnt min,max min,max
+默认分区，最小-最大
+修改：create_par_table
+
+// show tables, show Partition [node1: t1,t2] [node2: t1, t2]
+修改：sql_transfer--SQL_excute(改返回值)
+返回值改为一组string
+直接输出
+ show Partition
+table| par| ip | range
+// 执行计划展示
+SQL_excute 添加 explain 语句
+做执行计划的生成
+去打印执行计划
+
+└─
+
+
+create table T1 (id int, val int);
+create table T2 (id int, val int)
+Partition by range (id) (
+    Partition less than (100)
+);
+
+show tables;
+show partition;
+
+insert into T1 values (1, 100);
+insert into T1 values (2, 200);
+insert into T2 values (1, -1);
+insert into T2 values (1000, 1);
+
+select * from T1;
+select * from T2;
+
+select * from T2 where T2.val = 1;
+explain select * from T2 where T2.val = 1;
+
+select T1.id, T2.val from T1, T2 where T1.id = T2.id;
+
+update T2 set val = 100 where T2.id = 1000;
+
+delete from T1 where T1.id = 2;
+
+select * from T1;
+select * from T2;
+
+事务
+多client的处理
+client端：负责构建事务id--发送到server端
+    逻辑：每个client独有一列事务id，事务id采用自增
+        单独查询语句会使用固定事务id
+        begin 语句创建自增id
+server端：根据事务id创建新事务或者继承原有事务
+    id = -1，为一条SQL语句，处理完可以直接commit
+    获取begin时，创建非负的事务id，处理完不commit
+    获取end时，进行提交，处理完重置事务id
+
+id = id + client个数
+每个client初始id = client 序号

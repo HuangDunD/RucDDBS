@@ -9,7 +9,14 @@
 
 std::unordered_map<txn_id_t, Transaction *> TransactionManager::txn_map = {};
 std::shared_mutex TransactionManager::txn_map_mutex = {};
-   
+
+auto lock_manager_ = std::make_unique<Lock_manager>(true);
+auto log_storage_ = std::make_unique<LogStorage>("benchmark_db");
+auto log_manager_ = std::make_unique<LogManager>(log_storage_.get());
+
+auto kv_ = std::make_unique<KVStore>(LOG_DIR,log_manager_.get());
+TransactionManager* transaction_manager_sql = new TransactionManager(lock_manager_.get(),kv_.get(),log_manager_.get(),ConcurrencyMode::TWO_PHASE_LOCKING);
+
 uint64_t TransactionManager::getTimestampFromServer(){
     brpc::Channel channel;
     brpc::ChannelOptions options;

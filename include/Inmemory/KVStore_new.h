@@ -1,8 +1,8 @@
 #pragma once
 
-#include "KVStore_beta.h"
-#include "Transaction.h"
-#include "log_manager.h"
+#include "storage/KVStore_beta.h"
+#include "transaction/Transaction.h"
+#include "recovery/log_manager.h"
 
 class KVStore : public KVStore_beta{
 public:

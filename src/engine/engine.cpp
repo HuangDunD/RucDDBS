@@ -542,7 +542,7 @@ bool showPlan(std::shared_ptr<ast::Explain> explain_tree, vector<vector<string>>
     return true;
 }
 
-string Sql_execute_client(string str){
+string Sql_execute_client(string str, txn_id_t &txn_id){
     parser_sql(str);
     vector<shared_ptr<record>> res;
     vector<vector<string>> res_txt;
@@ -560,10 +560,21 @@ string Sql_execute_client(string str){
             }else if (auto x = std::dynamic_pointer_cast<ast::SelectStmt>(root)) {
                 // 开始事务
                 shared_ptr<op_executor> exec_plan(new op_executor);
+                if(!txn_id){
+                    exec_plan->transaction_manager_->Begin(exec_plan->txn);
+                } else{
+                    exec_plan->txn = exec_plan->transaction_manager_->getTransaction(txn_id);
+                }
+                cout << "txn = " << txn_id << endl;
                 build_select_plan(x, exec_plan);
                 res = exec_plan->exec_op();
                 // 结束事务
                 // prt_plan(exec_plan);
+                if(!txn_id){
+                    exec_plan->transaction_manager_->Commit(exec_plan->txn);
+                } else{
+                    txn_id = exec_plan->txn->get_txn_id();
+                }
             } else if(auto x = std::dynamic_pointer_cast<ast::CreateTable>(ast::parse_tree)){
                 if(create_table(x)){
                     ok_txt = "OK";
@@ -577,24 +588,76 @@ string Sql_execute_client(string str){
                 // 根据table 信息 转成record类型
                 // 找到对应的表ip进行插入
                 shared_ptr<op_executor> exec_plan(new op_executor);
+                if(!txn_id){
+                    exec_plan->transaction_manager_->Begin(exec_plan->txn);
+                } else{
+                    exec_plan->txn = exec_plan->transaction_manager_->getTransaction(txn_id);
+                }
                 build_insert_plan(x, exec_plan);
                 res = exec_plan->exec_op();
                 ok_txt = "OK";
+                if(!txn_id){
+                    exec_plan->transaction_manager_->Commit(exec_plan->txn);
+                } else{
+                    txn_id = exec_plan->txn->get_txn_id();
+                }
             } else if (auto x = std::dynamic_pointer_cast<ast::DeleteStmt>(root)) {
                 // delete;
                 shared_ptr<op_executor> exec_plan(new op_executor);
+                if(!txn_id){
+                    exec_plan->transaction_manager_->Begin(exec_plan->txn);
+                } else{
+                    exec_plan->txn = exec_plan->transaction_manager_->getTransaction(txn_id);
+                }
                 build_delete_plan(x, exec_plan);
                 res = exec_plan->exec_op();
                 ok_txt = "OK";
+                if(!txn_id){
+                    exec_plan->transaction_manager_->Commit(exec_plan->txn);
+                } else{
+                    txn_id = exec_plan->txn->get_txn_id();
+                }
             } else if (auto x = std::dynamic_pointer_cast<ast::UpdateStmt>(root)) {
                 shared_ptr<op_executor> exec_plan(new op_executor);
+                if(!txn_id){
+                    exec_plan->transaction_manager_->Begin(exec_plan->txn);
+                } else{
+                    exec_plan->txn = exec_plan->transaction_manager_->getTransaction(txn_id);
+                }
                 build_update_plan(x, exec_plan);
                 res = exec_plan->exec_op();
                 ok_txt = "OK";
+                if(!txn_id){
+                    exec_plan->transaction_manager_->Commit(exec_plan->txn);
+                } else{
+                    txn_id = exec_plan->txn->get_txn_id();
+                }
             } else if (auto x = std::dynamic_pointer_cast<ast::TxnBegin>(root)) {
                 // begin;
+                shared_ptr<op_executor> exec_plan(new op_executor);
+                exec_plan->transaction_manager_->Begin(exec_plan->txn);
+                txn_id = exec_plan->txn->get_txn_id();
+                cout << "begin txn = " << txn_id << endl; 
+                ok_txt = "OK";
             } else if (auto x = std::dynamic_pointer_cast<ast::TxnCommit>(root)) {
                 // commit;
+                if(!txn_id){
+                    shared_ptr<op_executor> exec_plan(new op_executor);
+                    exec_plan->txn = exec_plan->transaction_manager_->getTransaction(txn_id);
+                    exec_plan->transaction_manager_->Commit(exec_plan->txn);
+                    txn_id = 0;
+                }
+                cout << "commit txn = " << txn_id << endl;
+                ok_txt = "OK";
+            } else if (auto x = std::dynamic_pointer_cast<ast::TxnAbort>(root)) {
+                if(!txn_id){
+                    shared_ptr<op_executor> exec_plan(new op_executor);
+                    exec_plan->txn = exec_plan->transaction_manager_->getTransaction(txn_id);
+                    exec_plan->transaction_manager_->Abort(exec_plan->txn);
+                    txn_id = 0;
+                }
+                cout << "abort txn = " << txn_id << endl;
+                ok_txt = "OK";
             }
         }
     }

@@ -5,7 +5,7 @@
 #include <memory>
 #include "record.h"
 #include "op_etcd.h"
-#include "KVStore_beta.h"
+#include "storage/KVStore_beta.h"
 
 namespace kv_store{
     bool get(string key, shared_ptr<record> &val);

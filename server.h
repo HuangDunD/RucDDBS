@@ -5,6 +5,7 @@
 #include "session.pb.h"
 #include "engine.h"
 #include "kv_store.h"
+#include "transaction_manager.h"
 
 namespace session{
 void ConvertIntoPlan(const ChildPlan* child_plan, std::shared_ptr<Operators> operators){
@@ -126,11 +127,14 @@ public:
                   << " to " << cntl->local_side()
                   << ": " << request->sql_statement();
 
-        cout << request->sql_statement() << endl;
-        auto sql_ret = Sql_execute_client(request->sql_statement());
+
+        cout << request->sql_statement() << "id = "<< request->txn_id() <<endl;
+        txn_id_t txn_id = request->txn_id();
+        auto sql_ret = Sql_execute_client(request->sql_statement(), txn_id);
         cout << "sql - over" << endl;
         cout << sql_ret << endl;
         response->set_txt(sql_ret);
+        response->set_txn_id(txn_id);
     }
     virtual void SendRemotePlan(google::protobuf::RpcController* cntl_base,
                       const RemotePlan* request,
