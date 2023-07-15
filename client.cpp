@@ -5,6 +5,7 @@
 #include <string>
 #include "engine.h"
 #include "session.pb.h"
+#include "transaction_manager.h"
 
 
 DEFINE_string(protocol, "baidu_std", "Protocol type. Defined in src/brpc/options.proto");
@@ -28,6 +29,7 @@ int main(){
 
     session::Session_Service_Stub stub(&channel);
     int log_id = 0;
+    txn_id_t txn_id = 0;
     while(1){
         /* code */
         session::SQL_Request request;
@@ -46,10 +48,12 @@ int main(){
         request.set_sql_statement(sql_str);
         cntl.set_log_id(log_id ++);
 
+        cout <<"txn_id = " <<txn_id << endl;
         stub.SQL_Transfer(&cntl, &request, &response, NULL);
         
-        cout << response.txt() << endl;
-        
+        if(response.txn_id())
+            txn_id = response.txn_id();
+        cout << response.txn_id() << endl <<  response.txt() <<endl;
         if (!cntl.Failed()) {
             LOG(INFO) << "Received response from " << cntl.remote_side()
                 << " to " << cntl.local_side()

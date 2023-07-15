@@ -78,3 +78,5 @@ public:
     void ResumeTransactions(){global_txn_latch_.unlock();}
     
 };
+
+extern TransactionManager* transaction_manager_sql;

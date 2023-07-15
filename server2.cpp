@@ -13,6 +13,7 @@ DEFINE_int32(idle_timeout_s, -1, "Connection will be closed if there is no "
 DEFINE_string(store_path, "/home/xhc/code/RucDDBS/data/data2", "server2 store");
 
 int main(){
+    
     brpc::Server server;
     session::Session_Service_Impl session_service_impl;
 

@@ -10,7 +10,7 @@
 #include "record.h"
 #include "kv_store.h"
 #include "meta_data.h"
-#include<iomanip>
+#include <iomanip>
 #include "session.pb.h"
 #include "transaction_manager.h"
 # define DB_NAME "RucDDBS"
@@ -20,7 +20,7 @@ using namespace std;
 class Operators{
 public:
     shared_ptr<Operators> next_node = nullptr;
-    TransactionManager* transaction_manager_ = nullptr;
+    TransactionManager* transaction_manager_ = transaction_manager_sql;
     Transaction* txn = nullptr;
     virtual vector<shared_ptr<record>> exec_op() = 0;
     void prt_op(){
@@ -33,7 +33,7 @@ int send_plan(string target_address, shared_ptr<Operators> node_plan, vector<sha
 int get_res(const session::Table &response, vector<shared_ptr<record>>& ret_table);
 // void send_plan(string target_address, shared_ptr<Operators> node_plan);
 vector<shared_ptr<record>> Sql_execute(string str);
-string Sql_execute_client(string str);
+string Sql_execute_client(string str, txn_id_t &txn_id);
 
 class op_executor: public Operators{
 public:
@@ -278,12 +278,14 @@ public:
         prt_op();
 
         //Lock
+        cout << "lock " << endl;
         std::shared_lock<std::shared_mutex> l(table_name_id_map_mutex);
         auto o_id = table_name_id_map[tabs];
         l.unlock();
+        cout << "unlock" << endl;
         transaction_manager_->getLockManager()->LockTable(txn, LockMode::INTENTION_SHARED, o_id);
         transaction_manager_->getLockManager()->LockPartition(txn, LockMode::SHARED, o_id, par);
-
+        cout << "txn " << endl;
         vector<shared_ptr<record>> res;
         auto ret = kv_store::get_par(tabs, par, res);
         if(!ret)
