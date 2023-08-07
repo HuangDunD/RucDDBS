@@ -12,7 +12,7 @@ DEFINE_string(protocol, "baidu_std", "Protocol type. Defined in src/brpc/options
 DEFINE_string(connection_type, "", "Connection type. Available values: single, pooled, short");
 DEFINE_string(server, "0.0.0.0:8005", "IP Address of server");
 DEFINE_string(load_balancer, "", "The algorithm for load balancing");
-DEFINE_int32(timeout_ms, 2000, "RPC timeout in milliseconds");
+DEFINE_int32(timeout_ms, 0x7fffffff, "RPC timeout in milliseconds");
 DEFINE_int32(max_retry, 3, "Max retries(not including the first RPC)"); 
 DEFINE_int32(interval_ms, 1000, "Milliseconds between consecutive requests");
 
@@ -46,13 +46,15 @@ int main(){
         }
 
         request.set_sql_statement(sql_str);
+        request.set_txn_id(txn_id);
         cntl.set_log_id(log_id ++);
 
         cout <<"txn_id = " <<txn_id << endl;
         stub.SQL_Transfer(&cntl, &request, &response, NULL);
         
-        if(response.txn_id())
-            txn_id = response.txn_id();
+        // if(response.txn_id())
+        txn_id = response.txn_id();
+        
         cout << response.txn_id() << endl <<  response.txt() <<endl;
         if (!cntl.Failed()) {
             LOG(INFO) << "Received response from " << cntl.remote_side()

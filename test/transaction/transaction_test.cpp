@@ -99,9 +99,11 @@ TEST_F(TransactionTest, TransactionTest1){
     transaction_manager_->Begin(txn1);
 
     // SQL解析之后到metaserver查询相关表在两个server中
-    txn1->set_is_distributed(true);
-    txn1->get_distributed_node_set()->push_back(IP_Port{"127.0.0.1", 8002});
-    txn1->get_distributed_node_set()->push_back(IP_Port{"127.0.0.1", 8003}); 
+    // txn1->set_is_distributed(true);
+    // txn1->get_distributed_node_set()->push_back(IP_Port{"127.0.0.1", 8002});
+    // txn1->get_distributed_node_set()->push_back(IP_Port{"127.0.0.1", 8003}); 
+    txn1->add_distributed_node_set("127.0.0.1:8002");
+    txn1->add_distributed_node_set("127.0.0.1:8003");
 
     brpc::Channel channel;
     brpc::ChannelOptions options;
@@ -156,9 +158,11 @@ TEST_F(TransactionTest, TransactionTest1){
     transaction_manager_->Begin(txn2);
 
     // SQL解析之后到metaserver查询相关表在两个server中
-    txn2->set_is_distributed(true);
-    txn2->get_distributed_node_set()->push_back(IP_Port{"127.0.0.1", 8002});
-    txn2->get_distributed_node_set()->push_back(IP_Port{"127.0.0.1", 8003}); 
+    // txn2->set_is_distributed(true);
+    // txn2->get_distributed_node_set()->push_back(IP_Port{"127.0.0.1", 8002});
+    // txn2->get_distributed_node_set()->push_back(IP_Port{"127.0.0.1", 8003}); 
+    txn2->add_distributed_node_set("127.0.0.1:8002");
+    txn2->add_distributed_node_set("127.0.0.1:8003");
 
     request_plan.set_txn_id(txn1->get_txn_id());
     distributed_plan_service::InsertPlan *insert_plan2 = new distributed_plan_service::InsertPlan();

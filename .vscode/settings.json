@@ -69,7 +69,8 @@
         "regex": "cpp",
         "future": "cpp",
         "csignal": "cpp",
-        "filesystem": "cpp"
+        "filesystem": "cpp",
+        "valarray": "cpp"
     },
     "editor.tokenColorCustomizations": {
         "textMateRules": [

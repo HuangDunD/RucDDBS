@@ -35,7 +35,7 @@ int get_res(const session::Table &response, vector<shared_ptr<record>>& ret_tabl
     return ret_table.size();
 }
 
-int send_plan(string target_address, shared_ptr<Operators> node_plan, vector<shared_ptr<record>>& res){
+int send_plan(string target_address, shared_ptr<Operators> node_plan, vector<shared_ptr<record>>& res, txn_id_t txn_id){
     brpc::Channel channel;
     brpc::ChannelOptions options;
     session::RemotePlan request;
@@ -146,7 +146,7 @@ int send_plan(string target_address, shared_ptr<Operators> node_plan, vector<sha
         node_plan = node_plan->next_node;
     }
 
-    options.timeout_ms = 100;
+    options.timeout_ms = 0xfffffff;
     options.max_retry = 3;
 
     cout << address << endl;
@@ -157,9 +157,12 @@ int send_plan(string target_address, shared_ptr<Operators> node_plan, vector<sha
     int log_id = 0;
     /* code */
     request.set_allocated_child(child_plan);
+    request.set_txn_id(txn_id);
     cntl.set_log_id(log_id ++);
     stub.SendRemotePlan(&cntl, &request, &response, NULL);
-            
+    if(response.abort())
+        throw TransactionAbortException (txn_id, AbortReason::PARTICIPANT_RETURN_ABORT);
+
     if(cntl.Failed()) {
         LOG(WARNING) << cntl.ErrorText();
     }
@@ -197,9 +200,9 @@ bool create_table(shared_ptr<ast::CreateTable> create_table){
 }
 
 
-void build_insert_plan(shared_ptr<ast::InsertStmt> insert_tree, std::shared_ptr<op_executor> exec_plan){
+void build_insert_plan(shared_ptr<ast::InsertStmt> insert_tree, std::shared_ptr<op_executor> exec_plan, Context* context){
     // 构造insert算子
-    shared_ptr<op_insert> insert_plan(new op_insert);
+    shared_ptr<op_insert> insert_plan(new op_insert(context));
     insert_plan->tab_name = insert_tree->tab_name;
     insert_plan->rec.reset(new record);
     auto iter = insert_plan->rec;
@@ -216,15 +219,17 @@ void build_insert_plan(shared_ptr<ast::InsertStmt> insert_tree, std::shared_ptr<
     // insert只可能向某一特定位置插入，最后只可能返回一组ip
     auto ip_address = par_ips.begin()->second;
     insert_plan->par = par_ips.begin()->first;
-
+    for(auto x: par_ips){
+        context->txn_->add_distributed_node_set(x.second);
+    }
     // 构造一个distribution 发过去
-    shared_ptr<op_distribution> distribution_plan(new op_distribution);
+    shared_ptr<op_distribution> distribution_plan(new op_distribution(context));
     exec_plan->next_node = distribution_plan;
     distribution_plan->nodes_plan.push_back(insert_plan);
     distribution_plan->target_address.push_back(ip_address);
 }
 
-void build_delete_plan(shared_ptr<ast::DeleteStmt> delete_tree, std::shared_ptr<op_executor> exec_plan){
+void build_delete_plan(shared_ptr<ast::DeleteStmt> delete_tree, std::shared_ptr<op_executor> exec_plan, Context* context){
     shared_ptr<Operators> cur_node = exec_plan;
     // 针对不同ip构造不同delete_plan,发个不同节点
     Column_info col_info;
@@ -232,17 +237,19 @@ void build_delete_plan(shared_ptr<ast::DeleteStmt> delete_tree, std::shared_ptr<
     auto tab_name = delete_tree->tab_name;
     // 默认第一列为主键
     auto par_ips = GetTableIp(tab_name, col_info.column_name[0], to_string(0), to_string(10000000));
-    shared_ptr<op_distribution> distribution_plan(new op_distribution);
+    shared_ptr<op_distribution> distribution_plan(new op_distribution(context));
     cur_node->next_node = distribution_plan;
     for(auto iter: par_ips){
-        shared_ptr<op_delete> delete_plan(new op_delete);
+        context->txn_->add_distributed_node_set(iter.second);
+
+        shared_ptr<op_delete> delete_plan(new op_delete(context));
         delete_plan->tab_name = tab_name;
         delete_plan->par = iter.first;
         cur_node = delete_plan;
         // 筛选
         for(int i = 0; i < int(delete_tree->conds.size()); i++){
             if(delete_tree->conds.size()){
-                shared_ptr<op_selection> selection_plan(new op_selection);
+                shared_ptr<op_selection> selection_plan(new op_selection(context));
                 selection_plan->conds = delete_tree->conds[i];
                 
                 cur_node->next_node = selection_plan;
@@ -250,7 +257,7 @@ void build_delete_plan(shared_ptr<ast::DeleteStmt> delete_tree, std::shared_ptr<
             }
         }
         // 全表扫描
-        shared_ptr<op_tablescan> scan_plan(new op_tablescan);
+        shared_ptr<op_tablescan> scan_plan(new op_tablescan(context));
         scan_plan->tabs = delete_tree->tab_name;
         scan_plan->par = iter.first;
         cur_node->next_node = scan_plan;
@@ -259,7 +266,7 @@ void build_delete_plan(shared_ptr<ast::DeleteStmt> delete_tree, std::shared_ptr<
     }
 }
 
-void build_update_plan(shared_ptr<ast::UpdateStmt> update_tree, std::shared_ptr<op_executor> exec_plan){
+void build_update_plan(shared_ptr<ast::UpdateStmt> update_tree, std::shared_ptr<op_executor> exec_plan, Context* context){
     shared_ptr<Operators> cur_node = exec_plan;
     // 针对不同ip构造不同delete_plan,发个不同节点
     Column_info col_info;
@@ -267,11 +274,13 @@ void build_update_plan(shared_ptr<ast::UpdateStmt> update_tree, std::shared_ptr<
     auto tab_name = update_tree->tab_name;
     // 默认第一列为主键
     auto par_ips = GetTableIp(tab_name, col_info.column_name[0]);
-    shared_ptr<op_distribution> distribution_plan(new op_distribution);
+    shared_ptr<op_distribution> distribution_plan(new op_distribution(context));
     cur_node->next_node = distribution_plan;
     cur_node = distribution_plan;
     for(auto iter: par_ips){
-        shared_ptr<op_update> update_plan(new op_update);
+        context->txn_->add_distributed_node_set(iter.second);
+        
+        shared_ptr<op_update> update_plan(new op_update(context));
         cur_node = update_plan;
         // 构造
         update_plan->par = iter.first;
@@ -289,7 +298,7 @@ void build_update_plan(shared_ptr<ast::UpdateStmt> update_tree, std::shared_ptr<
         // 筛选
         for(int i = 0; i < int(update_tree->conds.size()); i++){
             if(update_tree->conds.size()){
-                shared_ptr<op_selection> selection_plan(new op_selection);
+                shared_ptr<op_selection> selection_plan(new op_selection(context));
                 selection_plan->conds = update_tree->conds[i];
                 
                 cur_node->next_node = selection_plan;
@@ -297,7 +306,7 @@ void build_update_plan(shared_ptr<ast::UpdateStmt> update_tree, std::shared_ptr<
             }
         }
         // 全表扫描
-        shared_ptr<op_tablescan> scan_plan(new op_tablescan);
+        shared_ptr<op_tablescan> scan_plan(new op_tablescan(context));
         scan_plan->tabs = update_tree->tab_name;
         scan_plan->par = iter.first;
         cur_node->next_node = scan_plan;
@@ -306,12 +315,12 @@ void build_update_plan(shared_ptr<ast::UpdateStmt> update_tree, std::shared_ptr<
     }
 }
 
-void build_select_plan(std::shared_ptr<ast::SelectStmt> select_tree, std::shared_ptr<op_executor> exec_plan) {
+void build_select_plan(std::shared_ptr<ast::SelectStmt> select_tree, std::shared_ptr<op_executor> exec_plan, Context* context) {
     std::shared_ptr<Operators> cur_node = exec_plan;
 
     // 处理投影操作
     if (select_tree->cols.size()) {
-        std::shared_ptr<op_projection> projection_plan(new op_projection);
+        std::shared_ptr<op_projection> projection_plan(new op_projection(context));
         for(auto iter: select_tree->cols){
             shared_ptr<ast::Col> col(new ast::Col(iter->tab_name,iter->col_name));
             projection_plan->cols.push_back(col);
@@ -323,7 +332,7 @@ void build_select_plan(std::shared_ptr<ast::SelectStmt> select_tree, std::shared
     // 处理选择操作
     for (auto& cond : select_tree->conds) {
         if (!cond) continue; // 忽略空条件
-        std::shared_ptr<op_selection> selection_plan(new op_selection);
+        std::shared_ptr<op_selection> selection_plan(new op_selection(context));
         selection_plan->conds = cond;
         cur_node->next_node = selection_plan;
         cur_node = cur_node->next_node;
@@ -331,7 +340,7 @@ void build_select_plan(std::shared_ptr<ast::SelectStmt> select_tree, std::shared
 
     // 处理连接操作
     if (select_tree->tabs.size() > 1) {
-        std::shared_ptr<op_join> join_plan(new op_join);
+        std::shared_ptr<op_join> join_plan(new op_join(context));
         for (auto& tab : select_tree->tabs) {
             Column_info col_info;
             GetColInfo(tab, col_info);
@@ -342,9 +351,10 @@ void build_select_plan(std::shared_ptr<ast::SelectStmt> select_tree, std::shared
                 return;
             }
             // 构造分布查询
-            shared_ptr<op_distribution> dist_plan(new op_distribution);
+            shared_ptr<op_distribution> dist_plan(new op_distribution(context));
             for(auto iter: par_ips){
-                std::shared_ptr<op_tablescan> remote_scan_plan(new op_tablescan);
+                context->txn_->add_distributed_node_set(iter.second);
+                std::shared_ptr<op_tablescan> remote_scan_plan(new op_tablescan(context));
                 remote_scan_plan->tabs = tab;
                 remote_scan_plan->par = iter.first;
                 dist_plan->nodes_plan.push_back(remote_scan_plan);
@@ -364,9 +374,10 @@ void build_select_plan(std::shared_ptr<ast::SelectStmt> select_tree, std::shared
             return;
         }
             // 构造分布查询
-        shared_ptr<op_distribution> dist_plan(new op_distribution);
+        shared_ptr<op_distribution> dist_plan(new op_distribution(context));
         for(auto iter: par_ips){
-            std::shared_ptr<op_tablescan> remote_scan_plan(new op_tablescan);
+            context->txn_->add_distributed_node_set(iter.second);
+            std::shared_ptr<op_tablescan> remote_scan_plan(new op_tablescan(context));
             remote_scan_plan->tabs = select_tree->tabs[0];
             remote_scan_plan->par = iter.first;
             dist_plan->nodes_plan.push_back(remote_scan_plan);
@@ -518,19 +529,19 @@ bool showPartitions(vector<vector<string>> &res_txt){
     return true;
 }
 
-bool showPlan(std::shared_ptr<ast::Explain> explain_tree, vector<vector<string>> &res_txt){
+bool showPlan(std::shared_ptr<ast::Explain> explain_tree, vector<vector<string>> &res_txt, Context* context){
     auto stmt = explain_tree->stmt;
-    shared_ptr<op_executor> exec_plan(new op_executor);
+    shared_ptr<op_executor> exec_plan(new op_executor(context));
     if (ast::parse_tree != nullptr) {
         auto root = stmt;
         if (auto x = std::dynamic_pointer_cast<ast::SelectStmt>(root)) {
-            build_select_plan(x, exec_plan);
+            build_select_plan(x, exec_plan, context);
         } else if (auto x = std::dynamic_pointer_cast<ast::InsertStmt>(root)) {
-            build_insert_plan(x, exec_plan);
+            build_insert_plan(x, exec_plan, context);
         } else if (auto x = std::dynamic_pointer_cast<ast::DeleteStmt>(root)) {
-            build_delete_plan(x, exec_plan);
+            build_delete_plan(x, exec_plan, context);
         } else if (auto x = std::dynamic_pointer_cast<ast::UpdateStmt>(root)) {
-            build_update_plan(x, exec_plan);
+            build_update_plan(x, exec_plan, context);
         }
     }
     vector<string> col_name;
@@ -542,7 +553,7 @@ bool showPlan(std::shared_ptr<ast::Explain> explain_tree, vector<vector<string>>
     return true;
 }
 
-string Sql_execute_client(string str, txn_id_t &txn_id){
+string Sql_execute_client(string str, txn_id_t &txn_id, Context* context){
     parser_sql(str);
     vector<shared_ptr<record>> res;
     vector<vector<string>> res_txt;
@@ -556,17 +567,18 @@ string Sql_execute_client(string str, txn_id_t &txn_id){
             } else if (auto x = std::dynamic_pointer_cast<ast::ShowPartitions>(root)) {
                 showPartitions(res_txt);
             } else if (auto x = std::dynamic_pointer_cast<ast::Explain>(root)) {
-                showPlan(x, res_txt);
+                showPlan(x, res_txt, context);
             }else if (auto x = std::dynamic_pointer_cast<ast::SelectStmt>(root)) {
                 // 开始事务
-                shared_ptr<op_executor> exec_plan(new op_executor);
+                shared_ptr<op_executor> exec_plan(new op_executor(context));
                 if(!txn_id){
-                    exec_plan->transaction_manager_->Begin(exec_plan->txn);
+                    exec_plan->transaction_manager_->Begin(exec_plan->txn);    
                 } else{
                     exec_plan->txn = exec_plan->transaction_manager_->getTransaction(txn_id);
                 }
+                context->txn_ = exec_plan->txn;
                 cout << "txn = " << txn_id << endl;
-                build_select_plan(x, exec_plan);
+                build_select_plan(x, exec_plan, context);
                 res = exec_plan->exec_op();
                 // 结束事务
                 // prt_plan(exec_plan);
@@ -587,13 +599,14 @@ string Sql_execute_client(string str, txn_id_t &txn_id){
             // insert;
                 // 根据table 信息 转成record类型
                 // 找到对应的表ip进行插入
-                shared_ptr<op_executor> exec_plan(new op_executor);
+                shared_ptr<op_executor> exec_plan(new op_executor(context));
                 if(!txn_id){
                     exec_plan->transaction_manager_->Begin(exec_plan->txn);
                 } else{
                     exec_plan->txn = exec_plan->transaction_manager_->getTransaction(txn_id);
                 }
-                build_insert_plan(x, exec_plan);
+                context->txn_ = exec_plan->txn;
+                build_insert_plan(x, exec_plan, context);
                 res = exec_plan->exec_op();
                 ok_txt = "OK";
                 if(!txn_id){
@@ -603,13 +616,14 @@ string Sql_execute_client(string str, txn_id_t &txn_id){
                 }
             } else if (auto x = std::dynamic_pointer_cast<ast::DeleteStmt>(root)) {
                 // delete;
-                shared_ptr<op_executor> exec_plan(new op_executor);
+                shared_ptr<op_executor> exec_plan(new op_executor(context));
                 if(!txn_id){
                     exec_plan->transaction_manager_->Begin(exec_plan->txn);
                 } else{
                     exec_plan->txn = exec_plan->transaction_manager_->getTransaction(txn_id);
                 }
-                build_delete_plan(x, exec_plan);
+                context->txn_ = exec_plan->txn;
+                build_delete_plan(x, exec_plan, context);
                 res = exec_plan->exec_op();
                 ok_txt = "OK";
                 if(!txn_id){
@@ -618,13 +632,14 @@ string Sql_execute_client(string str, txn_id_t &txn_id){
                     txn_id = exec_plan->txn->get_txn_id();
                 }
             } else if (auto x = std::dynamic_pointer_cast<ast::UpdateStmt>(root)) {
-                shared_ptr<op_executor> exec_plan(new op_executor);
+                shared_ptr<op_executor> exec_plan(new op_executor(context));
                 if(!txn_id){
                     exec_plan->transaction_manager_->Begin(exec_plan->txn);
                 } else{
                     exec_plan->txn = exec_plan->transaction_manager_->getTransaction(txn_id);
                 }
-                build_update_plan(x, exec_plan);
+                context->txn_ = exec_plan->txn;
+                build_update_plan(x, exec_plan, context);
                 res = exec_plan->exec_op();
                 ok_txt = "OK";
                 if(!txn_id){
@@ -634,15 +649,15 @@ string Sql_execute_client(string str, txn_id_t &txn_id){
                 }
             } else if (auto x = std::dynamic_pointer_cast<ast::TxnBegin>(root)) {
                 // begin;
-                shared_ptr<op_executor> exec_plan(new op_executor);
+                shared_ptr<op_executor> exec_plan(new op_executor(context));
                 exec_plan->transaction_manager_->Begin(exec_plan->txn);
                 txn_id = exec_plan->txn->get_txn_id();
                 cout << "begin txn = " << txn_id << endl; 
                 ok_txt = "OK";
             } else if (auto x = std::dynamic_pointer_cast<ast::TxnCommit>(root)) {
                 // commit;
-                if(!txn_id){
-                    shared_ptr<op_executor> exec_plan(new op_executor);
+                if(txn_id){
+                    shared_ptr<op_executor> exec_plan(new op_executor(context));
                     exec_plan->txn = exec_plan->transaction_manager_->getTransaction(txn_id);
                     exec_plan->transaction_manager_->Commit(exec_plan->txn);
                     txn_id = 0;
@@ -650,8 +665,8 @@ string Sql_execute_client(string str, txn_id_t &txn_id){
                 cout << "commit txn = " << txn_id << endl;
                 ok_txt = "OK";
             } else if (auto x = std::dynamic_pointer_cast<ast::TxnAbort>(root)) {
-                if(!txn_id){
-                    shared_ptr<op_executor> exec_plan(new op_executor);
+                if(txn_id){
+                    shared_ptr<op_executor> exec_plan(new op_executor(context));
                     exec_plan->txn = exec_plan->transaction_manager_->getTransaction(txn_id);
                     exec_plan->transaction_manager_->Abort(exec_plan->txn);
                     txn_id = 0;

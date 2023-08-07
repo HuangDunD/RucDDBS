@@ -64,10 +64,10 @@ public:
     Transaction* Begin(Transaction*& txn, txn_id_t txn_id, IsolationLevel isolation_level=IsolationLevel::SERIALIZABLE); 
     
     bool Abort(Transaction * txn);
-    bool AbortSingle(Transaction * txn);
+    bool AbortSingle(Transaction * txn, bool use_raft = false);
     
     bool Commit(Transaction * txn);
-    bool CommitSingle(Transaction * txn);
+    bool CommitSingle(Transaction * txn, bool sync_write_set = false, bool use_raft = false);
     
     bool PrepareCommit(Transaction * txn);
 
@@ -78,5 +78,3 @@ public:
     void ResumeTransactions(){global_txn_latch_.unlock();}
     
 };
-
-extern TransactionManager* transaction_manager_sql;

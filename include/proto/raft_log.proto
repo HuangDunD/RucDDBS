@@ -1,0 +1,15 @@
+syntax="proto3";
+package raft_log;
+
+option cc_generic_services = true;
+
+message SendRaftLogRequest{
+    // int32 total_size = 1;
+    // uint64 txn_id = 2;
+    string raft_log= 3;
+}
+message SendRaftLogResponse{}
+
+service Raft_Service{
+    rpc SendRaftLog(SendRaftLogRequest) returns (SendRaftLogResponse);
+};

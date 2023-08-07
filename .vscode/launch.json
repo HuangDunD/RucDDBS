@@ -25,60 +25,60 @@
                 }
             ]
         },
-        // {
-        //     "name": "(gdb) server2",
-        //     "type": "cppdbg",
-        //     "request": "launch",
-        //     // "program": "${fileDirname}/build/${fileBasenameNoExtension}",
-        //     "program": "${workspaceFolder}/build/test/transaction/transaction_test2",
-        //     "args": [
-        //         "-SERVER_NAME", "server2", 
-        //         "-SERVER_LISTEN_PORT", "8003",
-        //         "-log_path", "/home/t500ttt/RucDDBS/data2/"
-        //     ],
-        //     "stopAtEntry": false,
-        //     "cwd": "${workspaceFolder}",
-        //     "environment": [],
-        //     "externalConsole": false,
-        //     "MIMode": "gdb",
-        //     "setupCommands": [
-        //         {
-        //             "description": "Enable pretty-printing for gdb",
-        //             "text": "-enable-pretty-printing",
-        //             "ignoreFailures": true
-        //         },
-        //         {
-        //             "description": "将反汇编风格设置为 Intel",
-        //             "text": "-gdb-set disassembly-flavor intel",
-        //             "ignoreFailures": true
-        //         }
-        //     ],
-        //     "preLaunchTask": "CMake Build"
-        // },
-        // {
-        //     "name": "(gdb) server1",
-        //     "type": "cppdbg",
-        //     "request": "launch",
-        //     "program": "${workspaceFolder}/build/test/transaction/transaction_test",
-        //     "args": [
-        //         "-SERVER_NAME", "server1", 
-        //         "-SERVER_LISTEN_PORT", "8002",
-        //         "-log_path", "/home/t500ttt/RucDDBS/data/"
-        //     ],
-        //     "stopAtEntry": false,
-        //     "cwd": "${workspaceFolder}",
-        //     "environment": [],
-        //     "externalConsole": false,
-        //     "MIMode": "gdb",
-        //     "setupCommands": [
-        //         {
-        //             "description": "Enable pretty-printing for gdb",
-        //             "text": "-enable-pretty-printing",
-        //             "ignoreFailures": true
-        //         }
-        //     ],
-        //     // "preLaunchTask": "CMake Build"
-        // }
+        {
+            "name": "(gdb) server2",
+            "type": "cppdbg",
+            "request": "launch",
+            // "program": "${fileDirname}/build/${fileBasenameNoExtension}",
+            "program": "${workspaceFolder}/build/test/transaction/transaction_test2",
+            "args": [
+                "-SERVER_NAME", "server2", 
+                "-SERVER_LISTEN_PORT", "8003",
+                "-log_path", "/home/t500ttt/RucDDBS/data2/"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "将反汇编风格设置为 Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "CMake Build"
+        },
+        {
+            "name": "(gdb) server1",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/test/transaction/transaction_test",
+            "args": [
+                "-SERVER_NAME", "server1", 
+                "-SERVER_LISTEN_PORT", "8002",
+                "-log_path", "/home/t500ttt/RucDDBS/data/"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            // "preLaunchTask": "CMake Build"
+        },
         {
             "name": "(gdb) workload",
             "type": "cppdbg",
@@ -198,6 +198,54 @@
                     "ignoreFailures": true
                 }
             ],
+        },
+        {
+            "name": "(gdb) full server1",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/server1",
+            "args": [
+                // "-SERVER_NAME", "server1", 
+                "-SERVER_LISTEN_PORT", "8005",
+                "-log_path", "/home/t500ttt/RucDDBS/data/"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "CMake Build"
+        },
+        {
+            "name": "(gdb) full server2",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/server2",
+            "args": [
+                // "-SERVER_NAME", "server1", 
+                "-SERVER_LISTEN_PORT", "8006",
+                "-log_path", "/home/t500ttt/RucDDBS/data2/"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            // "preLaunchTask": "CMake Build"
         }
     ]
 }

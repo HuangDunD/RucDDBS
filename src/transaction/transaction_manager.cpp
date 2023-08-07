@@ -6,16 +6,11 @@
 #include "transaction_manager.h"
 #include "transaction_manager.pb.h"
 #include "dbconfig.h"
+#include "raft_log_record.h"
+#include "raft_log.pb.h"
 
 std::unordered_map<txn_id_t, Transaction *> TransactionManager::txn_map = {};
 std::shared_mutex TransactionManager::txn_map_mutex = {};
-
-auto lock_manager_ = std::make_unique<Lock_manager>(true);
-auto log_storage_ = std::make_unique<LogStorage>("benchmark_db");
-auto log_manager_ = std::make_unique<LogManager>(log_storage_.get());
-
-auto kv_ = std::make_unique<KVStore>(LOG_DIR,log_manager_.get());
-TransactionManager* transaction_manager_sql = new TransactionManager(lock_manager_.get(),kv_.get(),log_manager_.get(),ConcurrencyMode::TWO_PHASE_LOCKING);
 
 uint64_t TransactionManager::getTimestampFromServer(){
     brpc::Channel channel;
@@ -89,7 +84,7 @@ Transaction* TransactionManager::Begin(Transaction*& txn, IsolationLevel isolati
     return txn;
 }
 
-bool TransactionManager::AbortSingle(Transaction * txn){
+bool TransactionManager::AbortSingle(Transaction * txn, bool use_raft){
     // std::cout << txn->get_txn_id() << " " << "abort" << std::endl;
     auto write_set = txn->get_write_set();
     while (!write_set->empty()) {
@@ -107,6 +102,28 @@ bool TransactionManager::AbortSingle(Transaction * txn){
     }
     write_set->clear();
     if(enable_logging){
+        if(use_raft){
+            brpc::ChannelOptions options;
+            options.timeout_ms = 10000;
+            options.max_retry = 3;
+            brpc::Channel channel;
+            // TODO: node ip need
+            IP_Port node;
+            if (channel.Init(node.ip_addr.c_str(), node.port , &options) != 0) {
+                LOG(ERROR) << "Fail to initialize channel";
+            }
+            raft_log::Raft_Service_Stub stub(&channel);
+            brpc::Controller cntl;
+            raft_log::SendRaftLogRequest request;
+            raft_log::SendRaftLogResponse response;
+            RaftLogRecord raftlog(txn->get_txn_id(), RedoRecordType::ABORT);
+            request.set_raft_log(reinterpret_cast<char*>(&raftlog), raftlog.GetSize());
+            stub.SendRaftLog(&cntl, &request, &response, NULL);
+            if(cntl.Failed()) {
+                LOG(WARNING) << cntl.ErrorText();
+            }
+        }
+
         //写Abort日志
         LogRecord record(txn->get_txn_id(), txn->get_prev_lsn(), LogRecordType::ABORT);
         auto lsn = log_manager_->AppendLogRecord(record);
@@ -124,12 +141,39 @@ bool TransactionManager::AbortSingle(Transaction * txn){
     return true;
 }
 
-bool TransactionManager::CommitSingle(Transaction * txn){
+bool TransactionManager::CommitSingle(Transaction * txn, bool sync_write_set, bool use_raft){
     // std::cout << txn->get_txn_id() << " " << "commit" << std::endl;
     if(txn->get_state() == TransactionState::ABORTED){
         return false;
     }
     if(enable_logging){
+        if(use_raft){
+            brpc::ChannelOptions options;
+            options.timeout_ms = 10000;
+            options.max_retry = 3;
+            brpc::Channel channel;
+            // TODO: node ip need
+            IP_Port node;
+            if (channel.Init(node.ip_addr.c_str(), node.port , &options) != 0) {
+                LOG(ERROR) << "Fail to initialize channel";
+            }
+            raft_log::Raft_Service_Stub stub(&channel);
+            brpc::Controller cntl;
+            raft_log::SendRaftLogRequest request;
+            raft_log::SendRaftLogResponse response;
+            if(sync_write_set){
+                RaftLogRecord raftlog(txn->get_txn_id(), txn->get_write_set(), false, true);
+                request.set_raft_log(reinterpret_cast<char*>(&raftlog), raftlog.GetSize());
+            }else{
+                RaftLogRecord raftlog(txn->get_txn_id(), RedoRecordType::COMMIT);
+                request.set_raft_log(reinterpret_cast<char*>(&raftlog), raftlog.GetSize());
+            }
+            stub.SendRaftLog(&cntl, &request, &response, NULL);
+            if(cntl.Failed()) {
+                LOG(WARNING) << cntl.ErrorText();
+            }
+        }
+
         //写Commit日志
         LogRecord record(txn->get_txn_id(), txn->get_prev_lsn(), LogRecordType::COMMIT);
         auto lsn = log_manager_->AppendLogRecord(record);
@@ -193,7 +237,7 @@ bool TransactionManager::Commit(Transaction * txn){
         if((*txn->get_distributed_node_set()->begin()).ip_addr == FLAGS_SERVER_LISTEN_ADDR &&
                 (*txn->get_distributed_node_set()->begin()).port == FLAGS_SERVER_LISTEN_PORT ){
             // 本地事务 无需rpc直接可以调用本地函数
-            if(CommitSingle(txn) == true){
+            if(CommitSingle(txn, true, true) == true){
                 return true;
             }
             else{
@@ -337,11 +381,29 @@ bool TransactionManager::PrepareCommit(Transaction * txn){
         return true;
     }
     if(enable_logging){
+        //TODO: 此处在写raft log, 并返回同步结果
+        RaftLogRecord raftlog(txn->get_txn_id(), txn->get_write_set(), true, false);
+        brpc::ChannelOptions options;
+        options.timeout_ms = 10000;
+        options.max_retry = 3;
+        brpc::Channel channel;
+        // TODO: node ip need
+        IP_Port node;
+        if (channel.Init(node.ip_addr.c_str(), node.port , &options) != 0) {
+            LOG(ERROR) << "Fail to initialize channel";
+        }
+        raft_log::Raft_Service_Stub stub(&channel);
+        brpc::Controller cntl;
+        raft_log::SendRaftLogRequest request;
+        raft_log::SendRaftLogResponse response;
+        request.set_raft_log(reinterpret_cast<char*>(&raftlog), raftlog.GetSize());
+        stub.SendRaftLog(&cntl, &request, &response, NULL);
+        if(cntl.Failed()) {
+            LOG(WARNING) << cntl.ErrorText();
+        }
+
         //写Prepared日志
         LogRecord record(txn->get_txn_id(), txn->get_prev_lsn(), LogRecordType::PREPARED);
-        //TODO: 此处在写raft log, 并返回同步结果
-        
-        
         auto lsn = log_manager_->AppendLogRecord(record);
         if(lsn == INVALID_LSN) return false;
         txn->set_prev_lsn(lsn);

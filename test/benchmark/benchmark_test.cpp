@@ -12,7 +12,7 @@ class BenchmarkTest : public ::testing::Test {
     std::unique_ptr<LogStorage> log_storage_;
     std::unique_ptr<LogManager> log_manager_;
     std::unique_ptr<KVStore> kv_;
-    std::unique_ptr<TransactionManager> transaction_manager_;
+    std::unique_ptr<TransactionManager> transaction_manager_sql;
     std::unique_ptr<Benchmark_Txn> benchmark_txn_manager_;
     
     std::unique_ptr<benchmark_service::BenchmarkServiceImpl> benchmark_service_impl_;
@@ -34,9 +34,9 @@ class BenchmarkTest : public ::testing::Test {
         //     // kv_->put(i, "value"+std::to_string(i));
         // }
 
-        transaction_manager_ = std::make_unique<TransactionManager>(lock_manager_.get(), kv_.get(), log_manager_.get(), 
+        transaction_manager_sql = std::make_unique<TransactionManager>(lock_manager_.get(), kv_.get(), log_manager_.get(), 
             ConcurrencyMode::TWO_PHASE_LOCKING);
-        benchmark_txn_manager_ = std::make_unique<Benchmark_Txn>(transaction_manager_.get());
+        benchmark_txn_manager_ = std::make_unique<Benchmark_Txn>(transaction_manager_sql.get());
 
         brpc::Channel channel;
         brpc::ChannelOptions options;
@@ -60,14 +60,14 @@ class BenchmarkTest : public ::testing::Test {
                 std::cout << "Register success! ip: " << cntl.local_side() << std::endl;
         }
 
-        benchmark_service_impl_ = std::make_unique<benchmark_service::BenchmarkServiceImpl>(transaction_manager_.get());
+        benchmark_service_impl_ = std::make_unique<benchmark_service::BenchmarkServiceImpl>(transaction_manager_sql.get());
         std::thread rpc_thread([&]{
 
             pthread_setname_np(pthread_self(), "rpc_thread");
             //启动事务brpc server
             brpc::Server server;
 
-            transaction_manager::TransactionManagerImpl trans_manager_impl(transaction_manager_.get());
+            transaction_manager::TransactionManagerImpl trans_manager_impl(transaction_manager_sql.get());
             if (server.AddService(&trans_manager_impl, 
                                     brpc::SERVER_DOESNT_OWN_SERVICE) != 0) {
                 LOG(ERROR) << "Fail to add service";

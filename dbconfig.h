@@ -6,8 +6,8 @@
 #include <gflags/gflags.h>
 
 //config for metaserver
-static const std::string DATA_DIR = "/home/xhc/code/RucDDBS/data/";
-static const std::string LOG_DIR = "/home/xhc/code/RucDDBS/log_data";
+static const std::string DATA_DIR = "/home/t500ttt/RucDDBS/data/";
+static const std::string LOG_DIR = "/home/t500ttt/RucDDBS/data/";
 static const std::string META_SERVER_FILE_NAME = "META_SERVER.meta";
 static const int META_SERVER_PORT = 8001; // maybe not used
 static const std::string META_SERVER_LISTEN_ADDR = "0.0.0.0:8001";

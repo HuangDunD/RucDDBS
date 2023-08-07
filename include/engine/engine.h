@@ -17,10 +17,23 @@
 using namespace std;
 #define debug_test 1
 
+class Context {
+public:
+    Context (Transaction *txn, TransactionManager *transaction_manager): 
+        transaction_manager_(transaction_manager), txn_(txn) { }
+    TransactionManager *transaction_manager_;
+    Transaction *txn_;
+};
+
 class Operators{
 public:
+    Operators() = delete;
+    Operators(Context *context){
+        transaction_manager_ = context->transaction_manager_;
+        txn = context->txn_;
+    }
     shared_ptr<Operators> next_node = nullptr;
-    TransactionManager* transaction_manager_ = transaction_manager_sql;
+    TransactionManager* transaction_manager_;
     Transaction* txn = nullptr;
     virtual vector<shared_ptr<record>> exec_op() = 0;
     void prt_op(){
@@ -29,14 +42,15 @@ public:
     }
 };
 
-int send_plan(string target_address, shared_ptr<Operators> node_plan, vector<shared_ptr<record>> &res);
+int send_plan(string target_address, shared_ptr<Operators> node_plan, vector<shared_ptr<record>> &res, txn_id_t txn_id);
 int get_res(const session::Table &response, vector<shared_ptr<record>>& ret_table);
 // void send_plan(string target_address, shared_ptr<Operators> node_plan);
 vector<shared_ptr<record>> Sql_execute(string str);
-string Sql_execute_client(string str, txn_id_t &txn_id);
+string Sql_execute_client(string str, txn_id_t &txn_id, Context* context);
 
 class op_executor: public Operators{
 public:
+    op_executor(Context *context): Operators(context){};
     vector<shared_ptr<record>> exec_op(){
         prt_op();
         return next_node->exec_op();
@@ -45,6 +59,8 @@ public:
 
 class op_projection: public Operators{
 public:
+    op_projection(Context *context): Operators(context){};
+
     vector<shared_ptr<ast::Col>> cols;
 
     vector<shared_ptr<record>> exec_op(){
@@ -74,6 +90,8 @@ public:
 
 class op_selection: public Operators{
 public:
+    op_selection(Context *context): Operators(context){};
+
     std::shared_ptr<ast::BinaryExpr> conds;
     
     vector<shared_ptr<record>> exec_op(){
@@ -125,7 +143,7 @@ public:
     string tab_name;
     int par;
     shared_ptr<record> rec;
-    op_insert(){
+    op_insert(Context *context): Operators(context){
         rec = std::make_shared<record>();
     }
     
@@ -136,8 +154,8 @@ public:
         auto o_id = table_name_id_map[tab_name];
         l.unlock();
         transaction_manager_->getLockManager()->LockTable(txn, LockMode::INTENTION_EXCLUSIVE, o_id);
-        transaction_manager_->getLockManager()->LockPartition(txn, LockMode::INTENTION_EXCLUSIVE, o_id, par);
-        transaction_manager_->getLockManager()->LockRow(txn, LockMode::EXLUCSIVE, o_id, par, rec->row[0]->str);
+        transaction_manager_->getLockManager()->LockPartition(txn, LockMode::EXLUCSIVE, o_id, par);
+        // transaction_manager_->getLockManager()->LockRow(txn, LockMode::EXLUCSIVE, o_id, par, rec->row[0]->str);
         // 默认第一列为主键
         string key = "/store_data/" + tab_name + "/" 
             + to_string(par) + "/" + to_string(rec->row[0]->str);
@@ -152,6 +170,7 @@ public:
 
 class op_delete: public Operators{
 public:
+    op_delete(Context *context): Operators(context){};
     string tab_name;
     int par;
     vector<shared_ptr<record>> exec_op(){
@@ -161,11 +180,11 @@ public:
         std::shared_lock<std::shared_mutex> l(table_name_id_map_mutex);
         auto o_id = table_name_id_map[tab_name];
         l.unlock();
-        transaction_manager_->getLockManager()->LockTable(txn, LockMode::S_IX, o_id);
-        transaction_manager_->getLockManager()->LockPartition(txn, LockMode::S_IX, o_id, par);
-        for(auto x: res){
-            transaction_manager_->getLockManager()->LockRow(txn, LockMode::EXLUCSIVE, o_id, par, x->row[0]->str);
-        }
+        transaction_manager_->getLockManager()->LockTable(txn, LockMode::INTENTION_EXCLUSIVE, o_id);
+        transaction_manager_->getLockManager()->LockPartition(txn, LockMode::EXLUCSIVE, o_id, par);
+        // for(auto x: res){
+        //     transaction_manager_->getLockManager()->LockRow(txn, LockMode::EXLUCSIVE, o_id, par, x->row[0]->str);
+        // }
         
         // 构造key 进行删除
         for(auto iter: res){
@@ -178,6 +197,7 @@ public:
 
 class op_update: public Operators{
 public:
+    op_update(Context *context): Operators(context){};
     string tab_name;
     int par;
     
@@ -192,11 +212,11 @@ public:
         std::shared_lock<std::shared_mutex> l(table_name_id_map_mutex);
         auto o_id = table_name_id_map[tab_name];
         l.unlock();
-        transaction_manager_->getLockManager()->LockTable(txn, LockMode::S_IX, o_id);
-        transaction_manager_->getLockManager()->LockPartition(txn, LockMode::S_IX, o_id, par);
-        for(auto x: res){
-            transaction_manager_->getLockManager()->LockRow(txn, LockMode::EXLUCSIVE, o_id, par, x->row[0]->str);
-        }
+        transaction_manager_->getLockManager()->LockTable(txn, LockMode::INTENTION_EXCLUSIVE, o_id);
+        transaction_manager_->getLockManager()->LockPartition(txn, LockMode::EXLUCSIVE, o_id, par);
+        // for(auto x: res){
+        //     transaction_manager_->getLockManager()->LockRow(txn, LockMode::EXLUCSIVE, o_id, par, x->row[0]->str);
+        // }
         
         // 构造key 进行更新
         for(auto iter: res){
@@ -219,6 +239,7 @@ public:
 
 class op_distribution: public Operators{
 public:
+    op_distribution(Context *context): Operators(context){};
     vector<shared_ptr<Operators>> nodes_plan;
     vector<string> target_address;
     string tab_name;
@@ -230,7 +251,7 @@ public:
         for(int i = 0 ; i < int(nodes_plan.size()); i++){
             cout << "distribution " << target_address[i] << endl;
             vector<shared_ptr<record>> ret;
-            send_plan(target_address[i],nodes_plan[i], ret);
+            send_plan(target_address[i],nodes_plan[i], ret, txn->get_txn_id());
             res.insert(res.end(), ret.begin(), ret.end());
         }
         return res;
@@ -240,6 +261,8 @@ public:
 
 class op_join: public Operators{
 public:
+    op_join(Context *context): Operators(context){};
+
     vector<std::shared_ptr<Operators>> tables_get;
 
     vector<shared_ptr<record>> exec_op(){
@@ -271,6 +294,7 @@ public:
 
 class op_tablescan: public Operators{
 public:
+    op_tablescan(Context *context): Operators(context){};
     string tabs;
     int par;
     

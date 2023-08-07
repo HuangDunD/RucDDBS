@@ -32,13 +32,8 @@
 using lsn_t = int32_t;
 using txn_id_t = uint64_t;
 
-static constexpr int INVALID_TXN_ID = 0;                                     // invalid transaction id
-
 enum class RedoRecordType: std::int32_t { INVALID = 0, CREATE_TABLE, DROP_TABLE, INSERT, 
                                  DELETE, BEGIN, COMMIT, ABORT, PREPARED};
-
-static std::string log_record_type[15] = {"INVALID", "CREATE_TABLE", "DROP_TABLE", "INSERT", 
-                                             "DELETE", "BEGIN", "COMMIT", "ABORT", "PREPARED"};
 
 class RedoRecord
 {
@@ -154,7 +149,7 @@ public:
 
     inline int32_t GetSize() { return total_size_; }
 
-    static std::vector<RedoRecord>& Deserialize(const char* raftlog , txn_id_t *txn_id){ 
+    static std::vector<RedoRecord> Deserialize(const char* raftlog , txn_id_t *txn_id){ 
         // 解析RaftLogRecord, 并且重做操作
         int32_t tatal_size = *reinterpret_cast<const int32_t *>(raftlog);
         raftlog += sizeof(int32_t);
@@ -178,8 +173,7 @@ public:
                     res.push_back(RedoRecord(log_type));
                     break;
                 }
-                case RedoRecordType::INSERT:
-                case RedoRecordType::DELETE: {
+                case RedoRecordType::INSERT: {
                     uint32_t key_size = *reinterpret_cast<const uint32_t *>(raftlog + ptr);
                     ptr += sizeof(uint32_t);
                     const char* key = raftlog + ptr;
@@ -193,6 +187,15 @@ public:
                     res.push_back(RedoRecord(log_type, key_size, key, value_size, value));
                     break;
                 }
+                case RedoRecordType::DELETE: {
+                    uint32_t key_size = *reinterpret_cast<const uint32_t *>(raftlog + ptr);
+                    ptr += sizeof(uint32_t);
+                    const char* key = raftlog + ptr;
+                    ptr += key_size;
+
+                    res.push_back(RedoRecord(log_type, key_size, key, 0, nullptr));
+                    break;
+                }
                 default:
                     std::cerr << "Invalid Log Type";
             }
@@ -200,7 +203,7 @@ public:
         return res;
     }
 
-private:
+public:
     int32_t total_size_{0};
     txn_id_t txn_id_{INVALID_TXN_ID};
     //redo record
@@ -214,7 +217,7 @@ private:
     KVStore *kv_;
 
 public:
-    RaftLogManager(TransactionManager* transaction_manager):transaction_manager_(transaction_manager){};
+    RaftLogManager(TransactionManager* transaction_manager, KVStore *kv):transaction_manager_(transaction_manager), kv_(kv){};
     ~RaftLogManager(){};
 
     // raft log为raft follower所接受到的的日志的字节流

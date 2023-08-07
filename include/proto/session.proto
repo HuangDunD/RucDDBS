@@ -23,6 +23,7 @@ message Col{
 
 message Table{
     repeated Tuple table = 2;
+    bool abort = 3;
 }
 
 message SQL_Request{
@@ -160,6 +161,7 @@ message DistributedPlan {
 
 message RemotePlan {
     ChildPlan child = 1;
+    uint64 txn_id = 2;
 }
 
 service Session_Service{

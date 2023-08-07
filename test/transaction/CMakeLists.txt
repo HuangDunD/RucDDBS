@@ -1,11 +1,13 @@
 add_executable(transaction_test
     transaction_test.cpp 
+    execution_rpc.cpp
     ${EXECUTION_SRC}
     ../../meta_server/build/meta_service.pb.cc 
 )
 
 add_executable(transaction_test2
     transaction_test2.cpp 
+    execution_rpc.cpp
     ${EXECUTION_SRC}
     ../../meta_server/build/meta_service.pb.cc 
 )

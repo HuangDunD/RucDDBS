@@ -24,7 +24,10 @@ public:
                     response->set_ok(false);
                     return;
                 }
-                if(!transaction_manager_->AbortSingle(txn)){
+                if(txn->get_state() == TransactionState::PREPARED){
+                    transaction_manager_->AbortSingle(txn, true);
+                }
+                else if(!transaction_manager_->AbortSingle(txn, false)){
                     response->set_ok(false); 
                     return;
                 }
@@ -71,9 +74,15 @@ public:
                 response->set_ok(false);
                 return;
             }
-            if(!transaction_manager_->CommitSingle(txn)){
-                response->set_ok(false);
-                return;
+            if(txn->get_state() == TransactionState::PREPARED){
+                transaction_manager_->CommitSingle(txn, false, true);
+            }
+            else{
+                //直接提交的rpc
+                if(!transaction_manager_->CommitSingle(txn, true, true)){
+                    response->set_ok(false);
+                    return;
+                };
             }
             response->set_ok(true);
             return;

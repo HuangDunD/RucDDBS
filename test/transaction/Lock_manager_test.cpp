@@ -10,7 +10,7 @@ class LockManagerTest : public ::testing::Test {
    public:
     void SetUp() override {
         ::testing::Test::SetUp();
-        lock_manager_ = std::make_unique<Lock_manager>(false);
+        lock_manager_ = std::make_unique<Lock_manager>(true);
     }
 };
 
@@ -237,7 +237,7 @@ TEST_F(LockManagerTest, BasicTest3_EXCLUSIVE_Partition) {
         }
 
         for(const row_id_t &p : p_vec) {
-            Lock_data_id lock_data_id(0, 0, p, Lock_data_type::ROW);
+            Lock_data_id lock_data_id(0, p, Lock_data_type::PARTITION);
             res = lock_manager_->Unlock(txns[txn_id], lock_data_id);
             EXPECT_TRUE(res);
             std::this_thread::sleep_for(std::chrono::milliseconds(rand()%200));

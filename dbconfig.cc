@@ -11,4 +11,4 @@ DEFINE_string(SERVER_LISTEN_ADDR, "0.0.0.0", "Server listen address, may be IPV4
 
 
 // config for log path
-DEFINE_string(log_path, "/home/xhc/code/RucDDBS/data/", "log path");
+DEFINE_string(log_path, "/home/t500ttt/RucDDBS/data/", "log path");

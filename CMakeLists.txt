@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.2)
 
 project(RUCDDBS)
 
-option(RUCDDBS_STORAGE "if build kv_storage" ON)
-option(RUCDDBS_TRANSACTION "if build transaction" ON)
+option(RUCDDBS_STORAGE "if build kv_storage" OFF)
+option(RUCDDBS_TRANSACTION "if build transaction" OFF)
 option(RUCDDBS_TEST "build rucddbs test" ON)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -80,6 +80,7 @@ set(RECOVERY_DIR ${PROJECT_SOURCE_DIR}/include/recovery/)
 set(EXECUTION_DIR ${PROJECT_SOURCE_DIR}/src/execution)
 set(ENGINE_DIR ${PROJECT_SOURCE_DIR}/include/engine/)
 set(PARSER_DIR ${PROJECT_SOURCE_DIR}/include/parser/)
+set(RAFT_DIR ${PROJECT_SOURCE_DIR}/include/raft/)
 
 add_library(config STATIC dbconfig.cc) 
 aux_source_directory(${PROJECT_SOURCE_DIR}/src/storage STORAGE_SRC)
@@ -98,7 +99,7 @@ IF(RUCDDBS_TEST)
   add_subdirectory(${PROJECT_SOURCE_DIR}/test/storage)
   add_subdirectory(${PROJECT_SOURCE_DIR}/test/recovery)
   add_subdirectory(${PROJECT_SOURCE_DIR}/test/transaction)
-  add_subdirectory(${PROJECT_SOURCE_DIR}/test/benchmark)
+  # add_subdirectory(${PROJECT_SOURCE_DIR}/test/benchmark)
 endif()
 
 if(RUCDDBS_STORAGE)
