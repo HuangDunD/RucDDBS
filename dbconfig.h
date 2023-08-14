@@ -19,6 +19,11 @@ DECLARE_string(META_SERVER_ADDR);
 DECLARE_int32(SERVER_LISTEN_PORT);
 DECLARE_string(SERVER_LISTEN_ADDR);
 
+// config for server
+DECLARE_string(listen_addr);
+DECLARE_int32(idle_timeout_s);
+DECLARE_string(store_path);
+
 // log path
 // static const std::string log_path = "/home/t500ttt/RucDDBS/data/";
 DECLARE_string(log_path);
