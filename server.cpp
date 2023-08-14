@@ -7,8 +7,9 @@
 #include "server.h"
 #include "engine.h"
 
-DEFINE_int32(port, 8006, "TCP Port of this server");
-
+DEFINE_int32(port, 8005, "TCP Port of this server");
+DEFINE_string(listen_addr, "", "Server listen address, may be IPV4/IPV6/UDS."
+            " If this is set, the flag port will be ignored");
 int main(int argc, char **argv){
     gflags::ParseCommandLineFlags(&argc, &argv, true);
 

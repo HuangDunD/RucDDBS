@@ -1,5 +1,6 @@
 #include "kv_store.h"
-KVStore_beta store("./data");
+#include "dbconfig.h"
+KVStore_beta store(FLAGS_store_path);
 namespace kv_store{
     bool get(string key, shared_ptr<record> &val){
         std::cout << "get : " << key << std::endl;

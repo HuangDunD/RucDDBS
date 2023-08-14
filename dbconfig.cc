@@ -11,4 +11,9 @@ DEFINE_string(SERVER_LISTEN_ADDR, "0.0.0.0", "Server listen address, may be IPV4
 
 
 // config for log path
-DEFINE_string(log_path, "/home/t500ttt/RucDDBS/data/", "log path");
+DEFINE_string(log_path, "/home/xhc/code/RucDDBS/data/", "log path");
+
+// config for server
+DEFINE_int32(idle_timeout_s, -1, "Connection will be closed if there is no "
+                "read/write operations during the last `idle_timeout_s'");
+DEFINE_string(store_path, "/home/xhc/code/RucDDBS/data", "data store");
